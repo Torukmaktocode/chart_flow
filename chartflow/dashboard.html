@@ -89,24 +89,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .bottom-bar .bottom-icon{font-size:14px;color:var(--text)}
 .bottom-bar .utc-clock{position:absolute;right:48px;bottom:0;font-size:12px;color:var(--text);font-family:var(--font-mono);white-space:nowrap;line-height:28px;font-weight:600}
 .charts{position:relative;flex:1;display:flex;background:var(--bg);overflow:hidden;padding-bottom:28px;min-width:0}
-.charts.grid-layout{display:grid;padding:0 0 28px 0;background:var(--bg);margin-right:33px}
+.charts.grid-layout{display:grid;padding:0 0 28px 0;background:rgba(255,255,255,.12);margin-right:33px}
 .charts.two{display:grid;padding:0 0 28px 0}
-.charts.grid-layout .chart-wrap,.charts.two .chart-wrap{width:100%;height:100%;min-width:0;min-height:0;border:0;border-radius:0;flex:none;overflow:hidden}
+.charts.grid-layout .chart-wrap,.charts.two .chart-wrap{width:100%;height:100%;min-width:0;min-height:0;border:0;border-radius:0;flex:none;overflow:hidden;background:#efefee}
 .charts.grid-layout canvas,.charts.two canvas{right:auto}
 .chart-wrap.layout-hidden{display:none!important}
 .app.watchlist-open .charts{margin-right:360px}
 .chart-wrap{position:relative;flex:1 1 100%;min-width:0;background:var(--bg);overflow:hidden;border-right:0}
 .chart-wrap:last-child{border-right:0}.chart-wrap.active{outline:0}
 .charts.single .chart-wrap:nth-child(2){display:none}
-canvas{position:absolute;left:var(--sidebar-width,48px);right:0;top:0}
-.leftbar{position:absolute;left:0;top:0;bottom:0;width:var(--sidebar-width,48px);background:var(--surface-1);border-right:1px solid var(--border);z-index:8;display:flex;flex-direction:column;align-items:center;gap:13px;padding-top:12px}
-
-/* Grid sidebar - single element outside grid */
-.ico{width:22px;height:22px;border:1px solid var(--text-dim);border-radius:3px;opacity:.65}.ico.round{border-radius:50%}.ico.line{height:1px;border:0;background:var(--text-dim);margin-top:2px}
+canvas{position:absolute;left:0;right:0;top:0}
 .leftbar-btn{width:28px;height:28px;border:1px solid var(--border);background:var(--surface-2);color:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;font-weight:800;font-family:var(--font-mono);transition:all .15s ease;text-decoration:none;letter-spacing:-.3px}
 .leftbar-btn:hover{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 .leftbar-btn .btn-label{font-size:8px;margin-top:1px}
-.rightbar{position:absolute;right:0;top:0;bottom:0;width:var(--sidebar-width,48px);background:var(--surface-1);border-left:1px solid var(--border);z-index:8;display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:12px}
+.rightbar{position:absolute;right:0;top:0;bottom:0;width:44px;background:var(--surface-1);border-left:1px solid var(--border);z-index:8;display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:10px}
 .app.watchlist-open .chart-wrap .rightbar{display:none}
 .app.watchlist-open .chart-wrap.active .rightbar{position:fixed;right:0;top:38px;bottom:0;width:38px;height:auto;z-index:96;display:flex}
 .watchlist-toggle{font-size:18px}
@@ -213,7 +209,7 @@ canvas{position:absolute;left:var(--sidebar-width,48px);right:0;top:0}
 .ctx-menu-item.in-list .ctx-menu-item-check{display:inline}
 .ctx-menu-sep{height:1px;background:var(--border);margin:4px 10px}
 .ctx-menu-item.ctx-menu-action{color:#f8fafc;font-weight:700}
-.charts.grid-layout .leftbar,.charts.grid-layout .rightbar,.charts.two .leftbar,.charts.two .rightbar{display:none!important}
+.charts.grid-layout .rightbar,.charts.two .rightbar{display:none!important}
 .charts.grid-layout, .charts.two{--sidebar-width:0}
 .grid-sidebar{display:none;position:fixed;right:0;top:38px;bottom:0;width:33px;background:var(--surface-1);border-left:1px solid var(--border);z-index:96;flex-direction:column;align-items:center;gap:16px;padding-top:12px}
 .charts.grid-layout ~ .grid-sidebar,.charts.two ~ .grid-sidebar{display:flex}
@@ -230,10 +226,10 @@ canvas{position:absolute;left:var(--sidebar-width,48px);right:0;top:0}
 .charts.grid-layout .loading,.charts.two .loading{inset:0}
 .charts.grid-layout .indicator-collapse,.charts.two .indicator-collapse{left:8px}
 .charts.grid-layout .indicator-strip,.charts.two .indicator-strip{left:8px}
-.main-title{position:absolute;top:11px;left:56px;right:72px;z-index:7;color:var(--text);font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;overflow:hidden;white-space:nowrap;font-family:var(--font-mono)}
-.indicator-title{position:absolute;top:35px;left:56px;right:72px;z-index:7;color:var(--text-dim);font-size:13px;display:flex;align-items:center;gap:8px;white-space:nowrap}
-.indicator-stack{position:absolute;top:35px;left:56px;right:72px;z-index:9;display:grid;gap:2px;justify-items:start}
-.indicator-chip{height:22px;display:flex;align-items:center;gap:6px;color:var(--text-dim);font-size:13px;white-space:nowrap}
+.main-title{position:absolute;top:11px;left:8px;right:72px;z-index:7;color:#333;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;overflow:hidden;white-space:nowrap;font-family:var(--font-mono)}
+.indicator-title{position:absolute;top:35px;left:8px;right:72px;z-index:7;color:#666;font-size:13px;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.indicator-stack{position:absolute;top:35px;left:8px;right:72px;z-index:9;display:grid;gap:2px;justify-items:start}
+.indicator-chip{height:22px;display:flex;align-items:center;gap:6px;color:#666;font-size:13px;white-space:nowrap}
 .indicator-chip.hidden{opacity:.45}
 .indicator-chip .indicator-eye,.indicator-chip .indicator-gear,.indicator-chip .indicator-remove{opacity:.9}
 .indicator-eye{width:22px;height:20px;border:0;background:transparent;color:var(--text-dim);border-radius:4px;font-size:14px;line-height:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s}
@@ -247,7 +243,7 @@ canvas{position:absolute;left:var(--sidebar-width,48px);right:0;top:0}
 .indicator-gear{width:20px;height:20px;border:0;background:transparent;color:var(--text-dim);border-radius:4px;font-size:13px;line-height:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s}
 .indicator-gear:hover{background:var(--surface-3);color:var(--text)}
 .indicator-collapse{display:none}
-.indicator-strip{position:absolute;top:35px;left:56px;z-index:8;height:24px;display:none;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--accent);border-radius:3px;color:var(--text);font-size:13px;padding:0 6px}
+.indicator-strip{position:absolute;top:35px;left:8px;z-index:8;height:24px;display:none;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--accent);border-radius:3px;color:var(--text);font-size:13px;padding:0 6px}
 .indicator-strip.active{display:flex}
 .strip-btn{width:20px;height:20px;border:0;background:transparent;color:var(--text);border-radius:3px;font-size:13px;line-height:20px;cursor:pointer}
 .strip-btn:hover{background:var(--surface-3);color:#f8fafc}
@@ -338,6 +334,16 @@ canvas{position:absolute;left:var(--sidebar-width,48px);right:0;top:0}
 .alert-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.alert-actions{height:58px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:0 18px}
 .alert-line{position:absolute;left:0;right:72px;height:9px;border-top:1px dashed var(--accent);z-index:5;cursor:ns-resize;pointer-events:auto;opacity:.7}.alert-label{position:absolute;right:76px;transform:translateY(-50%);z-index:10;background:var(--accent);color:var(--bg);border-radius:3px;padding:2px 6px;font-size:11px;font-weight:700;cursor:ns-resize;pointer-events:auto;user-select:none;font-family:var(--font-mono)}.alert-control{position:absolute;left:50%;transform:translate(-50%,-50%);z-index:14;display:none;align-items:center;gap:7px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 5px 3px 8px;font-size:12px;line-height:16px;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.45);pointer-events:auto;font-family:var(--font-mono)}.alert-control.visible{display:flex}.alert-delete{width:22px;height:21px;border:0;background:transparent;color:var(--text);border-left:1px solid var(--border);cursor:pointer;font-size:14px;line-height:18px;transition:color .12s}.alert-delete:hover{color:var(--bear)}
 .toast{position:absolute;right:18px;bottom:56px;z-index:160;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:12px 14px;min-width:260px;box-shadow:0 10px 24px rgba(0,0,0,.55);display:none;font-family:var(--font-ui)}.toast.show{display:block}
+/* Profile System */
+.profile-bar{display:flex;align-items:center;gap:4px;margin-left:8px}
+.profile-btn{height:28px;min-width:32px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim);border-radius:6px;padding:0 8px;font:700 11px var(--font-mono);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px}
+.profile-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.profile-btn.active{background:var(--accent);color:#06090f;border-color:var(--accent)}
+.profile-btn .pf-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5}
+.profile-btn.active .pf-dot{background:#06090f;opacity:1}
+.profile-save{height:28px;border:1px solid var(--bull);background:transparent;color:var(--bull);border-radius:6px;padding:0 8px;font:700 10px var(--font-mono);cursor:pointer;transition:all .15s}
+.profile-save:hover{background:var(--bull);color:#06090f}
+.profile-sep{width:1px;height:18px;background:var(--border);margin:0 4px}
 /* Transitions & Animations */
 .settings-backdrop{transition:opacity .25s ease}
 .settings-backdrop .settings-panel{transition:transform .3s cubic-bezier(.4,0,.2,1)}
@@ -378,6 +384,9 @@ canvas{position:absolute;left:var(--sidebar-width,48px);right:0;top:0}
         </button>
         <button class="indicator-row" id="emaToggle">
           <span>Moving Average Exponential</span>
+        </button>
+        <button class="indicator-row" id="bibiruToggle">
+          <span>Bibiru SMA</span>
         </button>
         <button class="indicator-row" id="displacementToggle">
           <span>Institutional Displacement & Volume Delta</span>
@@ -424,6 +433,15 @@ canvas{position:absolute;left:var(--sidebar-width,48px);right:0;top:0}
         </div>
       </div>
     </div>
+    <div class="profile-bar">
+      <button class="profile-btn active" data-profile="1" onclick="loadProfile(1)" title="Perfil 1"><span class="pf-dot"></span>P1</button>
+      <button class="profile-btn" data-profile="2" onclick="loadProfile(2)" title="Perfil 2"><span class="pf-dot"></span>P2</button>
+      <button class="profile-btn" data-profile="3" onclick="loadProfile(3)" title="Perfil 3"><span class="pf-dot"></span>P3</button>
+      <div class="profile-sep"></div>
+      <button class="profile-save" onclick="applyDarkNeonBlue()" title="Aplicar Dark Trading / Neon Blue" style="font-size:11px;background:#062357;color:#4FBDE2;border-color:#4FBDE2">⚡ DARK</button>
+      <button class="profile-save" onclick="saveCurrentProfile()" title="Guardar configuración actual en el perfil activo">💾</button>
+      <button class="profile-save" onclick="resetAllProfiles()" title="Borrar todos los perfiles" style="font-size:11px">🗑</button>
+    </div>
     <button class="icon-btn" id="fullscreenButton" title="Modo pantalla completa">
       <span class="fullscreen-icon"></span>
       <span class="shortcut-tip">Modo pantalla completa <kbd>Shift</kbd> + <kbd>F</kbd></span>
@@ -432,7 +450,7 @@ canvas{position:absolute;left:var(--sidebar-width,48px);right:0;top:0}
     <button class="btn" id="publishButton" title="Exportar panel como imagen PNG">Publicar</button>
   </div>
   <div class="charts single" id="charts"></div>
-  <div class="grid-sidebar" id="gridSidebar"><a href="http://127.0.0.1:8765/dashboard.html" target="_blank" class="leftbar-btn" title="Stocks Dashboard" style="margin-bottom:4px">📈<span class="btn-label">STK</span></a><a href="http://127.0.0.1:8770/dashboard.html" target="_blank" class="leftbar-btn" title="Dollar, VIX & Bonds Dashboard" style="margin-bottom:4px;background:var(--surface-3);border-color:var(--bull)">💹<span class="btn-label">DVB</span></a><button class="icon-btn watchlist-toggle" data-role="watchlist-button" title="Lista de seguimiento">☰</button><button class="icon-btn alerts-toggle" data-role="alerts-button" title="Alertas"><span class="alerts-toggle-badge" data-role="alerts-badge">0</span>⏱</button></div>
+  <div class="grid-sidebar" id="gridSidebar"><a href="http://127.0.0.1:8765/dashboard.html" target="_blank" class="leftbar-btn" title="Stocks Dashboard" style="margin-bottom:4px">📈<span class="btn-label">STK</span></a><a href="http://127.0.0.1:8770/dashboard.html" target="_blank" class="leftbar-btn" title="Dollar, VIX & Bonds Dashboard" style="margin-bottom:4px;background:var(--surface-3);border-color:var(--bull)">💹<span class="btn-label">DVB</span></a><a href="http://127.0.0.1:3001/" target="_blank" class="leftbar-btn" title="War Room 1 — News & Calendar" style="margin-bottom:4px;background:var(--surface-3);border-color:#ff4444">🔥<span class="btn-label">WR1</span></a><a href="http://127.0.0.1:3001/wr2" target="_blank" class="leftbar-btn" title="War Room 2 — Intelligence Dashboard" style="margin-bottom:4px;background:var(--surface-3);border-color:#ffaa00">🧠<span class="btn-label">WR2</span></a><button class="icon-btn watchlist-toggle" data-role="watchlist-button" title="Lista de seguimiento">☰</button><button class="icon-btn alerts-toggle" data-role="alerts-button" title="Alertas"><span class="alerts-toggle-badge" data-role="alerts-badge">0</span>⏱</button></div>
   <div class="bottom-bar" id="bottomBar">
     <div class="left-section">
       <div class="time-ranges" id="timeRanges">
@@ -598,6 +616,36 @@ canvas{position:absolute;left:var(--sidebar-width,48px);right:0;top:0}
         <div class="option-line"><input class="check" id="emaWaitClose" type="checkbox" checked><label>Espere al cierre de los intervalos de tiempo</label></div>
       </div>
       <div class="settings-foot"><button class="modal-btn" id="emaSettingsCancel">Cancelar</button><button class="modal-btn primary" id="emaSettingsApply">Aceptar</button></div>
+    </div>
+  </div>
+  <div class="settings-backdrop" id="bibiruSettingsBackdrop">
+    <div class="settings-panel">
+      <div class="settings-head">
+        Bibiru SMA
+        <button class="settings-close" id="bibiruSettingsClose">×</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active">Entradas de datos</button>
+        <button class="tab">Estilo</button>
+        <button class="tab">Visibilidad</button>
+      </div>
+      <div class="settings-body" id="bibiruSettingsBody">
+        <div class="settings-section">SMA Rápida</div>
+        <div class="setting-row"><label>Longitud</label><input class="field" id="bibiruSma1Length" type="number" min="1" max="5000" value="5"><span></span></div>
+        <div class="setting-row"><label>Color</label><input class="color-box" id="bibiruSma1Color" type="color" value="#00d4ff"><span></span></div>
+        <div class="option-line"><input class="check" id="bibiruShowSma1" type="checkbox" checked><label>Mostrar SMA Rápida</label></div>
+
+        <div class="settings-section">SMA Lenta</div>
+        <div class="setting-row"><label>Longitud</label><input class="field" id="bibiruSma2Length" type="number" min="1" max="5000" value="25"><span></span></div>
+        <div class="setting-row"><label>Color</label><input class="color-box" id="bibiruSma2Color" type="color" value="#ff9800"><span></span></div>
+        <div class="option-line"><input class="check" id="bibiruShowSma2" type="checkbox" checked><label>Mostrar SMA Lenta</label></div>
+
+        <div class="settings-section">Bibiru Volume</div>
+        <div class="option-line"><input class="check" id="bibiruShowVwap" type="checkbox" checked><label>Mostrar Bibiru Volume (panel inferior)</label></div>
+        <div class="setting-row"><label>Color barras Alcista</label><input class="color-box" id="bibiruVwapBullColor" type="color" value="#00e5a0"><span></span></div>
+        <div class="setting-row"><label>Color barras Bajista</label><input class="color-box" id="bibiruVwapBearColor" type="color" value="#ff3355"><span></span></div>
+      </div>
+      <div class="settings-foot"><button class="modal-btn" id="bibiruSettingsCancel">Cancelar</button><button class="modal-btn primary" id="bibiruSettingsApply">Aceptar</button></div>
     </div>
   </div>
   <div class="settings-backdrop" id="displacementSettingsBackdrop">
@@ -1027,10 +1075,12 @@ let draggedSymbol = null;
 let quoteCache = {};
 let showKillzones = true;
 let showEMA = false;
+let showBibiru = false;
 let indicatorCollapsed = false;
 let activeIndicators = [{id:"ict-default", type:"ict"}];
 let indicatorSeq = 1;
 let editingEmaIndicatorId = null;
+let editingBibiruIndicatorId = null;
 let editingDisplacementIndicatorId = null;
 let editingSmartSignalIndicatorId = null;
 let editingSmfIndicatorId = null;
@@ -1044,11 +1094,11 @@ let editingAlertId = null;
 let sharedAudioContext = null;
 const lastAlertPriceBySymbol = {};
 const designSettings = {
-  bgColor: "#06090f",
+  bgColor: "#efefee",
   gridColor: "#182538",
   gridMode: "both",
-  panelBorder: "#1a2435",
-  reticleColor: "#6a7a90",
+  panelBorder: "#ccc",
+  reticleColor: "#888",
   reticleStyle: "dashed",
   closeColor: false,
   bodyEnabled: true,
@@ -1060,7 +1110,7 @@ const designSettings = {
   bearBorder: "#ff3355",
   bullWick: "#00e5a0",
   bearWick: "#ff3355",
-  axisText: "#8a9ab0",
+  axisText: "#333",
   axisLine: "#1a2838",
   axisSize: 12,
   navButtons: "hover",
@@ -1084,6 +1134,53 @@ const designSettings = {
   wmVisible: true,
 };
 let designTemplates = [];
+
+// ===== TEMPLATE PRECARGADO: DARK TRADING / NEON BLUE =====
+const DARK_NEON_BLUE_TEMPLATE = {
+  name: "Dark Trading / Neon Blue",
+  settings: {
+    bgColor: "#0D0E0E",
+    gridColor: "#091A42",
+    gridMode: "both",
+    panelBorder: "#062357",
+    reticleColor: "#4FBDE2",
+    reticleStyle: "dashed",
+    closeColor: false,
+    bodyEnabled: true,
+    borderEnabled: true,
+    wickEnabled: true,
+    bullBody: "#4FBDE2",
+    bearBody: "#1D81B5",
+    bullBorder: "#A2DCEE",
+    bearBorder: "#0E5892",
+    bullWick: "#4FBDE2",
+    bearWick: "#1D81B5",
+    axisText: "#607B89",
+    axisLine: "#062357",
+    axisSize: 12,
+    navButtons: "hover",
+    panelButtons: "hidden",
+    topMargin: 10,
+    bottomMargin: 8,
+    rightBars: 10,
+    layoutCells: 2,
+    layoutPreset: "1",
+    syncSymbol: false,
+    syncInterval: true,
+    syncGrid: true,
+    syncTime: true,
+    syncRange: false,
+    priceLineColor: "#4FBDE2",
+    priceLineOpacity: 95,
+    priceBadgeBg: "#4FBDE2",
+    priceBadgeText: "#0D0E0E",
+    wmColor: "#1D81B5",
+    wmOpacity: 0.06,
+    wmVisible: true,
+  }
+};
+// ===== FIN TEMPLATE PRECARGADO =====
+
 const indicatorSettings = {
   timezoneOffset: -4,
   showBoxes: true,
@@ -1125,6 +1222,17 @@ const emaSettings = {
   smoothingColor: "#fdd835",
   bbColor: "#43a047",
   bbFillAlpha: 0.10,
+};
+const bibiruSettings = {
+  sma1Length: 5,
+  sma2Length: 25,
+  sma1Color: "#00d4ff",
+  sma2Color: "#ff9800",
+  showSma1: true,
+  showSma2: true,
+  showVwap: true,
+  vwapBullColor: "#00e5a0",
+  vwapBearColor: "#ff3355",
 };
 const EMA_COLORS = ["#2962ff", "#ff9800", "#ab47bc", "#00bcd4", "#fdd835", "#66bb6a", "#ef5350", "#26a69a"];
 const displacementSettings = {
@@ -1714,6 +1822,9 @@ async function refreshWatchlistQuotes(){
 function cloneEmaSettings(source = emaSettings){
   return {...emaSettings, ...(source || {})};
 }
+function cloneBibiruSettings(source = bibiruSettings){
+  return {...bibiruSettings, ...(source || {})};
+}
 function cloneDisplacementSettings(source = displacementSettings){
   return {...displacementSettings, ...(source || {})};
 }
@@ -1735,6 +1846,9 @@ function cloneRtcStoch6Settings(source = rtcStoch6Settings){
 function emaItems(){
   return activeIndicators.filter(item => item?.type === "ema");
 }
+function bibiruItems(){
+  return activeIndicators.filter(item => item?.type === "bibiru");
+}
 function displacementItems(){
   return activeIndicators.filter(item => item?.type === "displacement");
 }
@@ -1752,6 +1866,9 @@ function visibleIndicatorItems(type){
 }
 function visibleEmaItems(){
   return visibleIndicatorItems("ema");
+}
+function visibleBibiruItems(){
+  return visibleIndicatorItems("bibiru");
 }
 function visibleDisplacementItems(){
   return visibleIndicatorItems("displacement");
@@ -1771,6 +1888,11 @@ function hasVisibleIndicator(type){
 function getEmaSettingsFor(item){
   if(!item) return emaSettings;
   if(!item.settings) item.settings = cloneEmaSettings();
+  return item.settings;
+}
+function getBibiruSettingsFor(item){
+  if(!item) return bibiruSettings;
+  if(!item.settings) item.settings = cloneBibiruSettings();
   return item.settings;
 }
 function getDisplacementSettingsFor(item){
@@ -1811,6 +1933,12 @@ function currentEmaItem(){
 function currentEmaSettings(){
   return getEmaSettingsFor(currentEmaItem());
 }
+function currentBibiruItem(){
+  return activeIndicators.find(item => item.id === editingBibiruIndicatorId && item.type === "bibiru") || bibiruItems()[0] || null;
+}
+function currentBibiruSettings(){
+  return getBibiruSettingsFor(currentBibiruItem());
+}
 function currentDisplacementItem(){
   return activeIndicators.find(item => item.id === editingDisplacementIndicatorId && item.type === "displacement") || displacementItems()[0] || null;
 }
@@ -1840,6 +1968,7 @@ function indicatorName(item){
     const settings = getEmaSettingsFor(item);
     return `EMA ${settings.length} ${sourceLabel(settings.source)}`;
   }
+  if(item.type === "bibiru") return "Bibiru SMA";
   if(item.type === "displacement") return "Institutional Displacement & Volume Delta";
   if(item.type === "smartSignal") return "Smart Reversal & Breakout Assistant";
   if(item.type === "smf") return "Smart Money Flow Cloud [BOSWaves]";
@@ -1853,6 +1982,7 @@ function indicatorName(item){
 function syncIndicatorState(){
   showKillzones = hasVisibleIndicator("ict");
   showEMA = hasVisibleIndicator("ema");
+  showBibiru = hasVisibleIndicator("bibiru");
 }
 function addIndicator(type){
   const item = {id:`${type}-${Date.now()}-${indicatorSeq++}`, type, visible:true};
@@ -1860,6 +1990,8 @@ function addIndicator(type){
     item.settings = cloneEmaSettings({
       color: EMA_COLORS[emaItems().length % EMA_COLORS.length],
     });
+  } else if(type === "bibiru") {
+    item.settings = cloneBibiruSettings();
   } else if(type === "displacement") {
     item.settings = cloneDisplacementSettings();
   } else if(type === "smartSignal") {
@@ -1949,29 +2081,9 @@ function candleStyle(bar, prev){
   };
 }
 function drawGrid(ctx, mainW, mainH){
-  const mode = designSettings.gridMode || "both";
-  if(mode === "none") return;
   ctx.save();
-  ctx.strokeStyle = rgba(designSettings.gridColor || "#2a2d3c", .72);
+  ctx.strokeStyle = "transparent";
   ctx.lineWidth = 1;
-  if(mode === "both" || mode === "horizontal") {
-    for(let i=0;i<=5;i++){
-      const yy = Math.round(mainH / 5 * i) + .5;
-      ctx.beginPath();
-      ctx.moveTo(0,yy);
-      ctx.lineTo(mainW,yy);
-      ctx.stroke();
-    }
-  }
-  if(mode === "both" || mode === "vertical") {
-    for(let i=0;i<=8;i++){
-      const xx = Math.round(mainW / 8 * i) + .5;
-      ctx.beginPath();
-      ctx.moveTo(xx,0);
-      ctx.lineTo(xx,mainH);
-      ctx.stroke();
-    }
-  }
   ctx.restore();
 }
 function setStrokePattern(ctx, style){
@@ -2934,8 +3046,7 @@ function computeRtcStrategy(data, settings = rtcSettings){
 function panelHtml(index){
   const inst = activeInstrument();
   return `
-    <div class="leftbar"><div class="ico round"></div><div class="ico line"></div><a href="http://127.0.0.1:8765/dashboard.html" target="_blank" class="leftbar-btn" title="Stocks Dashboard">📈<span class="btn-label">STK</span></a><a href="http://127.0.0.1:8770/dashboard.html" target="_blank" class="leftbar-btn" title="Dollar, VIX & Bonds Dashboard" style="background:var(--surface-3);border-color:var(--bull)">💹<span class="btn-label">DVB</span></a><div class="ico round"></div><div class="ico"></div><div class="ico line"></div><div class="ico"></div></div>
-    <div class="rightbar"><button class="icon-btn watchlist-toggle" data-role="watchlist-button" title="Lista de seguimiento">☰</button><button class="icon-btn alerts-toggle" data-role="alerts-button" title="Alertas"><span class="alerts-toggle-badge" data-role="alerts-badge">0</span>⏱</button></div>
+    <div class="rightbar"><a href="http://127.0.0.1:8765/dashboard.html" target="_blank" class="leftbar-btn" title="Stocks Dashboard">📈<span class="btn-label">STK</span></a><a href="http://127.0.0.1:8770/dashboard.html" target="_blank" class="leftbar-btn" title="Dollar, VIX & Bonds Dashboard" style="background:var(--surface-3);border-color:var(--bull)">💹<span class="btn-label">DVB</span></a><a href="http://127.0.0.1:3001/" target="_blank" class="leftbar-btn" title="Trading War Room" style="background:var(--surface-3);border-color:var(--pu)">🔥<span class="btn-label">WAR</span></a><button class="icon-btn watchlist-toggle" data-role="watchlist-button" title="Lista de seguimiento">☰</button><button class="icon-btn alerts-toggle" data-role="alerts-button" title="Alertas"><span class="alerts-toggle-badge" data-role="alerts-badge">0</span>⏱</button></div>
     <div class="main-title"><span class="tag100" data-role="symbol-tag" style="background:${inst.color}">${inst.tag}</span><span><span data-role="symbol-label">${inst.label}</span> · <span data-role="tf-title">5</span> · <span data-role="symbol-exchange">${inst.exchange}</span></span><span class="ohlc" data-role="ohlc" style="display:none">O -- H -- L -- C --</span><span class="change" data-role="chg" style="display:none">--</span></div>
     <div class="indicator-stack" data-role="indicator-stack"></div>
     <div class="indicator-title" data-role="indicator-title">ICT Killzones & Pivots [TFO] <button class="indicator-gear" data-role="ict-gear" title="Configuración">⚙</button><span class="indicator-code">{}</span></div>
@@ -3132,6 +3243,7 @@ class ChartPanel {
       row.querySelector('[data-action="settings"]').onclick = event => {
         event.stopPropagation();
         if(item?.type === "ema") openEmaSettings(item.id);
+        else if(item?.type === "bibiru") openBibiruSettings(item.id);
         else if(item?.type === "displacement") openDisplacementSettings(item.id);
         else if(item?.type === "smartSignal") openSmartSignalSettings(item.id);
         else if(item?.type === "smf") openSmfSettings(item.id);
@@ -3296,8 +3408,8 @@ class ChartPanel {
           setStrokePattern(ctx, indicatorSettings.pivotStyle);
           const highEnd = indicatorSettings.stopOnceMitigated ? this.pivotMitigationIndex(data, group, group.high, "high") : null;
           const lowEnd = indicatorSettings.stopOnceMitigated ? this.pivotMitigationIndex(data, group, group.low, "low") : null;
-          const highX2 = highEnd == null ? mainW - 8 : Math.min(mainW - 8, x(highEnd));
-          const lowX2 = lowEnd == null ? mainW - 8 : Math.min(mainW - 8, x(lowEnd));
+          const highX2 = highEnd == null ? mainW : Math.min(mainW, x(highEnd));
+          const lowX2 = lowEnd == null ? mainW : Math.min(mainW, x(lowEnd));
           ctx.beginPath();
           ctx.moveTo(x1, y(group.high));
           ctx.lineTo(Math.max(x2, highX2), y(group.high));
@@ -3308,7 +3420,7 @@ class ChartPanel {
           if(indicatorSettings.showMidpoints) {
             const mid = (group.high + group.low) / 2;
             const midEnd = indicatorSettings.stopOnceMitigated ? (this.pivotMitigationIndex(data, group, mid, "high") ?? this.pivotMitigationIndex(data, group, mid, "low")) : null;
-            const midX2 = midEnd == null ? mainW - 8 : Math.min(mainW - 8, x(midEnd));
+            const midX2 = midEnd == null ? mainW : Math.min(mainW, x(midEnd));
             ctx.lineWidth = indicatorSettings.midWidth;
             setStrokePattern(ctx, indicatorSettings.midStyle);
             ctx.beginPath();
@@ -3358,7 +3470,7 @@ class ChartPanel {
       const yy = y(session.open);
       if(yy < -10 || yy > (this.lastScale?.mainH || this.el.clientHeight) + 10) return;
       const x1 = Math.max(0, x(session.start));
-      const x2 = mainW - 8;
+      const x2 = mainW;
       ctx.beginPath();
       ctx.moveTo(x1, yy);
       ctx.lineTo(x2, yy);
@@ -3582,7 +3694,7 @@ class ChartPanel {
         result.levels.forEach(level => {
           const xx = x(level.index);
           const mx = level.sweptIndex !== null ? x(level.sweptIndex) : null;
-          const endX = Math.min(mainW - 58, x(data.length - 1));
+          const endX = Math.min(mainW, x(data.length - 1));
           const yy = y(level.price);
           if(yy < 18 || yy > mainH - 24 || endX < -20 || xx > mainW + 20) return;
           const isHigh = level.type === "high";
@@ -3592,13 +3704,13 @@ class ChartPanel {
           ctx.setLineDash([]);
           ctx.beginPath();
           ctx.moveTo(xx, yy);
-          ctx.lineTo(mx === null ? endX : clamp(mx, -20, mainW - 58), yy);
+          ctx.lineTo(mx === null ? endX : clamp(mx, -20, mainW), yy);
           ctx.stroke();
           if(mx !== null) {
             ctx.setLineDash([5,4]);
             ctx.strokeStyle = rgba(color, .34);
             ctx.beginPath();
-            ctx.moveTo(clamp(mx, -20, mainW - 58), yy);
+            ctx.moveTo(clamp(mx, -20, mainW), yy);
             ctx.lineTo(endX, yy);
             ctx.stroke();
             ctx.setLineDash([]);
@@ -3618,7 +3730,7 @@ class ChartPanel {
       if(settings.showZones) {
         result.zones.forEach(zone => {
           const x1 = x(zone.index);
-          const x2 = Math.min(mainW - 58, x((zone.sweptIndex ?? zone.index) + 12));
+          const x2 = Math.min(mainW, x((zone.sweptIndex ?? zone.index) + 12));
           const pad = Math.max(1, (result.atr[zone.index] || 1) * .14);
           const top = y(zone.price + pad), bottom = y(zone.price - pad);
           const color = zone.type === "high" ? settings.bearColor : settings.bullColor;
@@ -3660,15 +3772,15 @@ class ChartPanel {
             if(Number.isFinite(ev.stop)) {
               ctx.setLineDash([6,4]);
               ctx.strokeStyle = rgba(settings.bearColor, .55);
-              ctx.beginPath(); ctx.moveTo(xx, y(ev.stop)); ctx.lineTo(mainW - 58, y(ev.stop)); ctx.stroke();
+              ctx.beginPath(); ctx.moveTo(xx, y(ev.stop)); ctx.lineTo(mainW, y(ev.stop)); ctx.stroke();
               ctx.fillStyle = settings.bearColor;
-              ctx.fillText("SL", mainW - 88, y(ev.stop) - 4);
+              ctx.fillText("SL", mainW - 40, y(ev.stop) - 4);
               ctx.strokeStyle = rgba(settings.bullColor, .46);
               (ev.targets || []).slice(0, 3).forEach((target, ti) => {
                 const ty = y(target.price);
-                ctx.beginPath(); ctx.moveTo(xx, ty); ctx.lineTo(mainW - 58, ty); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(xx, ty); ctx.lineTo(mainW, ty); ctx.stroke();
                 ctx.fillStyle = settings.bullColor;
-                ctx.fillText(`TP${ti + 1}`, mainW - 92, ty - 4);
+                ctx.fillText(`TP${ti + 1}`, mainW - 44, ty - 4);
               });
               ctx.setLineDash([]);
             }
@@ -3682,6 +3794,7 @@ class ChartPanel {
   drawRtcStochOverlay(ctx, data, x, y, mainW){
     visibleRtcItems("rtcStoch").forEach(item => {
       const settings = getRtcSettingsFor(item);
+      if(!data || data.length < (Number(settings.kPeriod) || 14) + 5) return;
       const st = computeRtcStoch(data, settings);
       const mainH = this.lastScale?.mainH || this.el.clientHeight;
       const h = 112, y0 = mainH - h - 40, x0 = 10, w = Math.min(360, mainW - 76);
@@ -3751,7 +3864,7 @@ class ChartPanel {
       ctx.save();
       if(settings.showOrderBlocks !== false) result.orderBlocks.forEach(zone => {
         const x1 = x(clamp(zone.index, 0, data.length - 1));
-        const x2 = zone.end >= data.length - 1 ? mainW - 90 : Math.min(mainW - 90, x(clamp(zone.end, 0, data.length - 1)));
+        const x2 = zone.end >= data.length - 1 ? mainW : Math.min(mainW, x(clamp(zone.end, 0, data.length - 1)));
         const top = y(zone.hi), h = Math.max(2, y(zone.lo) - top);
         const isSwing = zone.kind === "pivot-ob";
         const base = zone.dir > 0
@@ -3771,7 +3884,7 @@ class ChartPanel {
       });
       result.zones.forEach(zone => {
         const x1 = x(clamp(zone.index, 0, data.length - 1));
-        const x2 = Math.min(mainW - 90, x(clamp(zone.end, 0, data.length - 1)) + 14);
+        const x2 = Math.min(mainW, x(clamp(zone.end, 0, data.length - 1)) + 14);
         const top = y(zone.hi), h = Math.max(2, y(zone.lo) - top);
         if(settings.showFairValueGaps) {
           const color = zone.dir > 0 ? settings.fvgBull : settings.fvgBear;
@@ -3892,6 +4005,8 @@ class ChartPanel {
   drawRtcStoch6Overlay(ctx, data, x, y, mainW){
     visibleRtcItems("rtcStoch6").forEach((item, panelIndex) => {
       const settings = getRtcStoch6SettingsFor(item);
+      // No dibujar stoch si no hay datos suficientes
+      if(!data || data.length < (settings.kPeriod || 14) + 5) return;
       const st = computeRtcStoch6(data, settings);
       const mainH = this.lastScale?.mainH || this.el.clientHeight;
       const pane = this.lastChart?.stochPane || null;
@@ -4115,7 +4230,7 @@ class ChartPanel {
         ctx.strokeStyle = rgba(shiftColor, 0.72);
         ctx.beginPath();
         ctx.moveTo(xx, lineY);
-        ctx.lineTo(Math.min(mainW - 8, x(Math.min(data.length - 1, i + 5))), lineY);
+        ctx.lineTo(Math.min(mainW, x(Math.min(data.length - 1, i + 5))), lineY);
         ctx.stroke();
         ctx.setLineDash([]);
         ctx.fillStyle = rgba(shiftColor, 0.20);
@@ -4133,7 +4248,7 @@ class ChartPanel {
           ctx.fillText(`S: ${formatVolume(entry.sellVol)}`, xx, (sellTop + sellBottom) / 2 + 3);
           ctx.fillText(`B: ${formatVolume(entry.buyVol)}`, xx, (buyTop + buyBottom) / 2 + 3);
         }
-        const labelX = Math.min(mainW - 34, x(Math.min(data.length - 1, i + 5)) + 8);
+        const labelX = Math.min(mainW - 8, x(Math.min(data.length - 1, i + 5)) + 8);
         ctx.textAlign = "left";
         ctx.fillStyle = shiftColor;
         ctx.fillText(`${isBull ? "+" : "-"}${formatVolume(entry.volume)}`, labelX, lineY - 4);
@@ -4208,9 +4323,9 @@ class ChartPanel {
         ctx.strokeStyle = rgba(settings.zoneColor, 0.78);
         ctx.beginPath();
         ctx.moveTo(0, y(support.price));
-        ctx.lineTo(mainW - 8, y(support.price));
+        ctx.lineTo(mainW, y(support.price));
         ctx.moveTo(0, y(resistance.price));
-        ctx.lineTo(mainW - 8, y(resistance.price));
+        ctx.lineTo(mainW, y(resistance.price));
         ctx.stroke();
         ctx.setLineDash([]);
         ctx.font = "bold 10px 'JetBrains Mono', monospace";
@@ -4221,12 +4336,12 @@ class ChartPanel {
           if(!zone.active) return;
           const zy = y(zone.price);
           ctx.fillStyle = rgba(zone.side === "buy" ? settings.bullColor : settings.bearColor, 0.10);
-          ctx.fillRect(0, zy - 12, mainW - 58, 24);
+          ctx.fillRect(0, zy - 12, mainW, 24);
           ctx.strokeStyle = rgba(zone.side === "buy" ? settings.bullColor : settings.bearColor, 0.42);
           ctx.setLineDash([3, 4]);
           ctx.beginPath();
           ctx.moveTo(0, zy);
-          ctx.lineTo(mainW - 58, zy);
+          ctx.lineTo(mainW, zy);
           ctx.stroke();
           ctx.setLineDash([]);
           ctx.font = "bold 10px 'JetBrains Mono', monospace";
@@ -4347,6 +4462,86 @@ class ChartPanel {
       this.drawSeriesLine(ctx, data, indicator.ema, x, y, settings.color, 1.8, settings.offset);
     });
   }
+  drawBibiruOverlay(ctx, data, x, y){
+    if(data.length < 2) return;
+    visibleBibiruItems().forEach(item => {
+      const settings = getBibiruSettingsFor(item);
+      const src = data.map(bar => bar.c);
+      if(settings.showSma1) {
+        const sma1 = smaSeries(src, settings.sma1Length);
+        this.drawSeriesLine(ctx, data, sma1, x, y, settings.sma1Color, 1.8, 0);
+      }
+      if(settings.showSma2) {
+        const sma2 = smaSeries(src, settings.sma2Length);
+        this.drawSeriesLine(ctx, data, sma2, x, y, settings.sma2Color, 1.8, 0);
+      }
+    });
+  }
+  drawBibiruVwapOverlay(ctx, data, x, y, mainW){
+    visibleBibiruItems().forEach((item, panelIndex) => {
+      const settings = getBibiruSettingsFor(item);
+      if(!settings.showVwap) return;
+      if(!data || data.length < 2) return;
+      
+      // ===== DIMENSIONES DEL PANEL =====
+      const mainH = this.lastScale?.mainH || this.el.clientHeight;
+      const pane = this.lastChart?.stochPane || null;
+      const vwapItems = visibleBibiruItems().filter(it => getBibiruSettingsFor(it).showVwap);
+      const vwapIndex = vwapItems.findIndex(it => it.id === item.id);
+      const stochCount = visibleRtcItems("rtcStoch6").length;
+      
+      const h = pane ? pane.h / Math.max(1, pane.count || 1) : 130;
+      const y0 = pane ? pane.y0 + (stochCount + vwapIndex) * h : (mainH - h - 40 - (stochCount + vwapIndex) * 150);
+      const paneX = 0, paneW = mainW;
+      const x0 = this.lastChart?.plotLeftPad ?? 0;
+      const w = this.lastChart?.plotW ?? Math.max(120, mainW - 48);
+      
+      ctx.save();
+      
+      // ===== FONDO DEL PANEL =====
+      ctx.fillStyle = rgba(designSettings.bgColor, .97);
+      ctx.fillRect(paneX, y0, paneW, h);
+      
+      // Línea separadora superior
+      ctx.strokeStyle = "rgba(0,212,255,.2)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(paneX, y0 + .5);
+      ctx.lineTo(paneX + paneW, y0 + .5);
+      ctx.stroke();
+      
+      // ===== BARRAS DE VOLUMEN PLANAS =====
+      const volumes = data.map(bar => Number(bar.v) || 0);
+      const maxVol = Math.max(...volumes, 1);
+      const baseline = y0 + h - 4;
+      const barMaxH = h - 18;
+      const candleW = clamp(w / Math.max(1, data.length) * .65, 3, 14);
+      
+      for(let i = 0; i < data.length; i++){
+        const bar = data[i];
+        const vol = volumes[i];
+        const barH = Math.max(1, (vol / maxVol) * barMaxH);
+        const xx = x0 + (i / Math.max(1, data.length - 1)) * w;
+        
+        // Color plano según dirección de la VELA
+        const isBullCandle = bar.c >= bar.o;
+        ctx.fillStyle = isBullCandle ? settings.vwapBullColor : settings.vwapBearColor;
+        ctx.fillRect(xx - candleW / 2, baseline - barH, candleW, barH);
+      }
+      
+      // ===== ETIQUETA =====
+      ctx.font = "700 11px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "rgba(0,212,255,.7)";
+      ctx.textAlign = "left";
+      ctx.fillText("BIBIRU", x0 + 8, y0 + 14);
+      
+      ctx.font = "600 9px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "rgba(90,106,128,.5)";
+      ctx.fillText("VOL", x0 + 56, y0 + 14);
+      
+      ctx.restore();
+    });
+  }
   draw(){
     this.updateIndicatorUi();
     const isMulti = layoutMode > 1;
@@ -4354,7 +4549,7 @@ class ChartPanel {
     const left = isMulti ? 0 : 44;
     const right = isMulti ? 0 : 48;
     const top = 0, xH = 30, yW = 72;
-    const stochPaneCount = visibleRtcItems("rtcStoch6").length;
+    const stochPaneCount = visibleRtcItems("rtcStoch6").length + visibleBibiruItems().filter(item => getBibiruSettingsFor(item).showVwap).length;
     const hasStochPane = stochPaneCount > 0;
     const totalH = this.el.clientHeight - top - xH;
     const stochPaneUnit = hasStochPane ? clamp(Math.round(totalH * .18), 112, 166) : 0;
@@ -4406,8 +4601,10 @@ class ChartPanel {
     this.drawRtcStochOverlay(ctx, data, x, y, mainW);
     this.drawRtcStoch6Overlay(ctx, data, x, y, mainW);
     this.drawRtcScreener(ctx, data, mainW);
-    this.drawDisplacementOverlay(ctx, data, x, y, mainW, candleW);
     this.drawEMAOverlay(ctx, data, x, y);
+    this.drawBibiruOverlay(ctx, data, x, y);
+    this.drawBibiruVwapOverlay(ctx, data, x, y, mainW);
+    this.drawDisplacementOverlay(ctx, data, x, y, mainW, candleW);
     this.drawSmartSignalOverlay(ctx, data, x, y, mainW);
     this.drawAlertLines(data, y, mainH, mainW);
     const last = data[data.length - 1], prev = data.length > 1 ? data[data.length - 2] : last;
@@ -4417,20 +4614,24 @@ class ChartPanel {
     pline.style.top = Math.round(lastY) + "px";
     pline.style.left = left + "px";
     pline.style.right = (right + yW) + "px";
-    const plColor = designSettings.priceLineColor || "#dfe4f0";
-    const plOpa = Number(designSettings.priceLineOpacity) || 92;
-    pline.style.background = `repeating-linear-gradient(90deg,${rgba(plColor, plOpa / 100)} 0,${rgba(plColor, plOpa / 100)} 2px,transparent 2px,transparent 4px)`;
+    // Color dinámico según dirección de la vela (alcista=verde, bajista=rojo)
+    const isBull = last.c >= last.o;
+    const dc = isBull ? "#00e5a0" : "#ff3355";
+    const dt = isBull ? "#06090f" : "#fff";
+    pline.style.background = `repeating-linear-gradient(90deg,${rgba(dc, .92)} 0,${rgba(dc, .92)} 2px,transparent 2px,transparent 4px)`;
     const pb = this.$("pb");
     pb.style.top = Math.round(lastY) + "px";
     pb.style.right = (right + 6) + "px";
-    pb.style.background = designSettings.priceBadgeBg || "#f1f3fa";
-    pb.style.color = designSettings.priceBadgeText || "#11131b";
+    pb.style.background = dc;
+    pb.style.color = dt;
+    pb.style.border = `1px solid ${dc}`;
+    pb.style.boxShadow = `0 0 10px ${rgba(dc, .2)}`;
     pb.innerHTML = `<span>${fmtPrice(last.c)}</span><span class="cd">${countdownText(this.tf)}</span>`;
     const yCanvas = this.$("yaxis");
     yCanvas.style.left = (left + mainW) + "px"; yCanvas.style.top = "0px";
     const yctx = fitCanvas(yCanvas, yW, totalH + xH);
     yctx.clearRect(0,0,yW,totalH + xH); yctx.fillStyle = designSettings.bgColor; yctx.fillRect(0,0,yW,totalH + xH);
-    yctx.strokeStyle = designSettings.axisLine;
+    yctx.strokeStyle = designSettings.bgColor;
     yctx.beginPath(); yctx.moveTo(.5,0); yctx.lineTo(.5,totalH); yctx.stroke();
     yctx.font = `${clamp(Number(designSettings.axisSize) || 12, 9, 18)}px 'JetBrains Mono', monospace`; yctx.textAlign = "right";
     for(let i=1;i<=8;i++){ const yy = Math.round(mainH / 8 * i); const val = scale.hi - scale.range / 8 * i; yctx.fillStyle = designSettings.axisText; yctx.fillText(fmtPrice(val), yW - 8, clamp(yy + 4, 12, mainH - 3)); }
@@ -4438,7 +4639,7 @@ class ChartPanel {
     xCanvas.style.left = left + "px"; xCanvas.style.top = totalH + "px";
     const xctx = fitCanvas(xCanvas, mainW + yW, xH);
     xctx.clearRect(0,0,mainW + yW,xH); xctx.fillStyle = designSettings.bgColor; xctx.fillRect(0,0,mainW + yW,xH);
-    xctx.strokeStyle = designSettings.axisLine;
+    xctx.strokeStyle = designSettings.bgColor;
     xctx.beginPath(); xctx.moveTo(0,.5); xctx.lineTo(mainW,.5); xctx.stroke();
     xctx.font = `${clamp(Number(designSettings.axisSize) || 11, 9, 18)}px 'JetBrains Mono', monospace`; xctx.textAlign = "center"; xctx.fillStyle = designSettings.axisText;
     const seen = {};
@@ -4632,23 +4833,23 @@ function presetFor(value){
   if(typeof value === "string") return LAYOUT_PRESETS.find(item => item.id === value) || LAYOUT_PRESETS.find(item => item.cells === Number(value)) || LAYOUT_PRESETS[0];
   return LAYOUT_PRESETS.find(item => item.cells === Number(value)) || LAYOUT_PRESETS[0];
 }
-function ensurePanelCount(count){
+function ensurePanelCount(count, skipLoad){
   while(panels.length < count) {
     const tf = designSettings.syncInterval ? (panels[0]?.tf || "5m") : (window.__savedPanelTfs?.[panels.length] || panels[0]?.tf || "5m");
     const panel = new ChartPanel(panels.length, tf);
     panel.symbolKey = designSettings.syncSymbol ? activeSymbolKey : (window.__savedPanelSymbols?.[panel.index] || activeSymbolKey);
     panels.push(panel);
-    panel.loadData();
+    if(!skipLoad) panel.loadData();
   }
   panels.forEach((panel, index) => panel.el.classList.toggle("layout-hidden", index >= count));
 }
-function setLayout(mode){
+function setLayout(mode, skipLoad){
   const preset = presetFor(mode);
   layoutMode = preset.cells;
   layoutPresetId = preset.id;
   designSettings.layoutCells = preset.cells;
   designSettings.layoutPreset = preset.id;
-  ensurePanelCount(preset.cells);
+  ensurePanelCount(preset.cells, skipLoad);
   const charts = document.getElementById("charts");
   charts.className = "charts " + (preset.cells === 1 ? "single" : preset.cells === 2 ? "two grid-layout" : "grid-layout");
   charts.style.gridTemplateColumns = `repeat(${preset.cols}, minmax(0, 1fr))`;
@@ -4659,7 +4860,7 @@ function setLayout(mode){
   if(activeIndex >= preset.cells) setActivePanel(0);
   else setActivePanel(activeIndex);
   applyWatchlistOpen();
-  panels.slice(0, preset.cells).forEach(p => { if(!p.candles.length) p.loadData(); else p.draw(); });
+  if(!skipLoad) panels.slice(0, preset.cells).forEach(p => { if(!p.candles.length) p.loadData(); else p.draw(); });
 }
 function redrawAll(){
   panels.slice(0, layoutMode).forEach(p => p.draw());
@@ -4677,6 +4878,25 @@ function loadDesignSettings(){
     layoutPresetId = designSettings.layoutPreset || String(designSettings.layoutCells || layoutMode);
     layoutMode = presetFor(layoutPresetId).cells;
   } catch {}
+  // Inyectar template precargado si no existe
+  injectPresetTemplates();
+}
+
+function injectPresetTemplates(){
+  const presets = [DARK_NEON_BLUE_TEMPLATE];
+  presets.forEach(preset => {
+    const exists = designTemplates.some(t => t.name === preset.name);
+    if(!exists) designTemplates.unshift({...preset});
+  });
+}
+
+function applyDarkNeonBlue(){
+  Object.assign(designSettings, DARK_NEON_BLUE_TEMPLATE.settings);
+  applyDesignToDom();
+  hydrateDesignSettingsPanel();
+  saveDesignSettings();
+  redrawAll();
+  showToast("Dark Trading / Neon Blue aplicado");
 }
 function saveDesignSettings(){
   localStorage.setItem("nas100DesignSettings", JSON.stringify({
@@ -4938,6 +5158,48 @@ function readEmaSettingsPanel(){
 function applyEmaSettingsPanel(){
   readEmaSettingsPanel();
   closeEmaSettings();
+}
+function openBibiruSettings(indicatorId = null){
+  const item = indicatorId
+    ? activeIndicators.find(ind => ind.id === indicatorId && ind.type === "bibiru")
+    : bibiruItems()[0];
+  editingBibiruIndicatorId = item?.id || null;
+  document.getElementById("bibiruSettingsBackdrop").classList.add("open");
+  hydrateBibiruSettingsPanel();
+}
+function closeBibiruSettings(){
+  document.getElementById("bibiruSettingsBackdrop").classList.remove("open");
+  editingBibiruIndicatorId = null;
+}
+function hydrateBibiruSettingsPanel(){
+  const settings = currentBibiruSettings();
+  document.getElementById("bibiruSma1Length").value = settings.sma1Length;
+  document.getElementById("bibiruSma1Color").value = settings.sma1Color;
+  document.getElementById("bibiruShowSma1").checked = settings.showSma1;
+  document.getElementById("bibiruSma2Length").value = settings.sma2Length;
+  document.getElementById("bibiruSma2Color").value = settings.sma2Color;
+  document.getElementById("bibiruShowSma2").checked = settings.showSma2;
+  document.getElementById("bibiruShowVwap").checked = settings.showVwap;
+  document.getElementById("bibiruVwapBullColor").value = settings.vwapBullColor;
+  document.getElementById("bibiruVwapBearColor").value = settings.vwapBearColor;
+}
+function readBibiruSettingsPanel(){
+  const settings = currentBibiruSettings();
+  settings.sma1Length = clamp(Number(document.getElementById("bibiruSma1Length").value) || 5, 1, 5000);
+  settings.sma1Color = document.getElementById("bibiruSma1Color").value || "#00d4ff";
+  settings.showSma1 = document.getElementById("bibiruShowSma1").checked;
+  settings.sma2Length = clamp(Number(document.getElementById("bibiruSma2Length").value) || 25, 1, 5000);
+  settings.sma2Color = document.getElementById("bibiruSma2Color").value || "#ff9800";
+  settings.showSma2 = document.getElementById("bibiruShowSma2").checked;
+  settings.showVwap = document.getElementById("bibiruShowVwap").checked;
+  settings.vwapBullColor = document.getElementById("bibiruVwapBullColor").value || "#00e5a0";
+  settings.vwapBearColor = document.getElementById("bibiruVwapBearColor").value || "#ff3355";
+  saveIndicatorSettings();
+  redrawAll();
+}
+function applyBibiruSettingsPanel(){
+  readBibiruSettingsPanel();
+  closeBibiruSettings();
 }
 function openDisplacementSettings(indicatorId = null){
   const item = indicatorId
@@ -5529,7 +5791,7 @@ function loadIndicatorSettings(){
     const saved = JSON.parse(localStorage.getItem("nas100IndicatorSettings") || "null");
     if(!saved) return;
     if(Array.isArray(saved.activeIndicators)) {
-      activeIndicators = saved.activeIndicators.filter(item => item && (item.type === "ict" || item.type === "ema" || item.type === "displacement" || item.type === "smartSignal" || item.type === "smf" || item.type === "rtcStrategy" || item.type === "rtcScreener" || item.type === "rtcStoch" || item.type === "strategyJrV8" || item.type === "rtcStoch6"));
+      activeIndicators = saved.activeIndicators.filter(item => item && (item.type === "ict" || item.type === "ema" || item.type === "bibiru" || item.type === "displacement" || item.type === "smartSignal" || item.type === "smf" || item.type === "rtcStrategy" || item.type === "rtcScreener" || item.type === "rtcStoch" || item.type === "strategyJrV8" || item.type === "rtcStoch6"));
     } else {
       const legacy = [];
       if(saved.showKillzones !== false) legacy.push({id:"ict-default", type:"ict"});
@@ -5544,6 +5806,8 @@ function loadIndicatorSettings(){
           ...(item.settings || {}),
           color: item.settings?.color || saved.emaSettings?.color || EMA_COLORS[index % EMA_COLORS.length],
         });
+      } else if(normalized.type === "bibiru") {
+        normalized.settings = cloneBibiruSettings(item.settings || {});
       } else if(normalized.type === "displacement") {
         normalized.settings = cloneDisplacementSettings(item.settings || {});
       } else if(normalized.type === "smartSignal") {
@@ -5649,6 +5913,8 @@ function renderAlertsBtn(){
 function renderAlertsPanel(){
   const list = document.getElementById("alertsPanelList");
   if(!list) return;
+  // Filtrar alertas rotas (sin precio válido)
+  alerts = alerts.filter(a => a.value > 0 && a.symbol);
   if(alerts.length === 0){
     list.innerHTML = `<div class="alerts-panel-empty">No hay alertas creadas.<br><br>Haz clic derecho en el gráfico y selecciona "Añadir una alerta".</div>`;
     return;
@@ -6101,6 +6367,10 @@ function init(){
   panels.slice(0, layoutMode).forEach(p => p.loadData());
   applyDesignToDom();
   refreshWatchlistQuotes();
+  
+  // Si hay perfil, recargar con los símbolos correctos del perfil
+  const hasProfile = !!localStorage.getItem("chartflow_active_profile");
+  if(hasProfile) loadActiveProfile();
   const gsWatchlist = document.querySelector("#gridSidebar [data-role='watchlist-button']");
   if(gsWatchlist) gsWatchlist.onclick = (e) => { e.stopPropagation(); watchlistOpen = !watchlistOpen; applyWatchlistOpen(); saveWatchlist(); };
   const gsAlerts = document.querySelector("#gridSidebar [data-role='alerts-button']");
@@ -6115,6 +6385,10 @@ function init(){
   };
   document.getElementById("emaToggle").onclick = () => {
     addIndicator("ema");
+    document.getElementById("indicatorWrap").classList.remove("open");
+  };
+  document.getElementById("bibiruToggle").onclick = () => {
+    addIndicator("bibiru");
     document.getElementById("indicatorWrap").classList.remove("open");
   };
   document.getElementById("displacementToggle").onclick = () => {
@@ -6165,6 +6439,14 @@ function init(){
   document.getElementById("emaSettingsBody").addEventListener("input", () => {
     clearTimeout(readEmaSettingsPanel.timer);
     readEmaSettingsPanel.timer = setTimeout(readEmaSettingsPanel, 180);
+  });
+  document.getElementById("bibiruSettingsClose").onclick = closeBibiruSettings;
+  document.getElementById("bibiruSettingsCancel").onclick = closeBibiruSettings;
+  document.getElementById("bibiruSettingsApply").onclick = applyBibiruSettingsPanel;
+  document.getElementById("bibiruSettingsBody").addEventListener("change", readBibiruSettingsPanel);
+  document.getElementById("bibiruSettingsBody").addEventListener("input", () => {
+    clearTimeout(readBibiruSettingsPanel.timer);
+    readBibiruSettingsPanel.timer = setTimeout(readBibiruSettingsPanel, 180);
   });
   document.getElementById("displacementSettingsClose").onclick = closeDisplacementSettings;
   document.getElementById("displacementSettingsCancel").onclick = closeDisplacementSettings;
@@ -6394,6 +6676,158 @@ function init(){
     if(utcEl) utcEl.textContent = `${offsetNow()} ${timezoneLabel()}`;
   }), 1000);
 }
+
+// ============ SISTEMA DE PERFILES ============
+let activeProfile = 1;
+
+function getProfiles() {
+  try {
+    return JSON.parse(localStorage.getItem("chartflow_profiles") || "{}");
+  } catch { return {}; }
+}
+
+function saveProfiles(profiles) {
+  localStorage.setItem("chartflow_profiles", JSON.stringify(profiles));
+}
+
+function saveCurrentProfile() {
+  const profiles = getProfiles();
+  
+  // Recopilar configuración INDEPENDIENTE de cada panel
+  const panelConfigs = panels.slice(0, layoutMode).map((p, i) => ({
+    symbol: p.symbolKey || activeSymbolKey,
+    tf: p.tf || "5m",
+  }));
+  
+  profiles[activeProfile] = {
+    layout: layoutMode,
+    panels: panelConfigs,
+    syncSymbol: false,
+    syncInterval: false,
+    savedAt: new Date().toISOString()
+  };
+  
+  saveProfiles(profiles);
+  
+  // Sincronizar con watchlist para persistencia global
+  window.__savedPanelTfs = panelConfigs.map(p => p.tf);
+  window.__savedPanelSymbols = panelConfigs.map(p => p.symbol);
+  saveWatchlist();
+  
+  updateProfileButtons();
+  
+  const syms = panelConfigs.map(p => p.symbol).join(", ");
+  showToast(`Perfil ${activeProfile} guardado: ${syms}`);
+}
+
+function loadProfile(num) {
+  const profiles = getProfiles();
+  const profile = profiles[num];
+  
+  // Actualizar botón activo
+  activeProfile = num;
+  updateProfileButtons();
+  
+  if (!profile) {
+    showToast(`Perfil ${num} vacío — guarda con 💾`);
+    return;
+  }
+  
+  // Desactivar sync global para independencia de paneles
+  designSettings.syncSymbol = false;
+  designSettings.syncInterval = false;
+  designSettings.syncGrid = false;
+  designSettings.syncTime = false;
+  syncDesignSwitches();
+  saveDesignSettings();
+  
+  // PASO 1: Crear layout SIN cargar datos
+  if (profile.layout) {
+    setLayout(profile.layout, true);
+  }
+  
+  // PASO 2: Asignar configuración INDEPENDIENTE a cada panel (sin cargar)
+  if (profile.panels && profile.panels.length) {
+    profile.panels.forEach((cfg, i) => {
+      if (panels[i]) {
+        panels[i].symbolKey = cfg.symbol;
+        if (cfg.tf) panels[i].tf = cfg.tf;
+        panels[i].candles = []; // Limpiar velas viejas ANTES de cargar
+      }
+    });
+    // Sincronizar __savedPanelTfs y __savedPanelSymbols para nuevos paneles
+    window.__savedPanelTfs = profile.panels.map(p => p.tf || "5m");
+    window.__savedPanelSymbols = profile.panels.map(p => p.symbol);
+  } else if (profile.symbols) {
+    profile.symbols.forEach((sym, i) => {
+      if (panels[i] && sym) {
+        panels[i].symbolKey = sym;
+        panels[i].candles = [];
+      }
+    });
+    if (profile.tfs) {
+      profile.tfs.forEach((tf, i) => {
+        if (panels[i] && tf) panels[i].tf = tf;
+      });
+      window.__savedPanelTfs = [...profile.tfs];
+    }
+    window.__savedPanelSymbols = [...profile.symbols];
+  }
+  
+  // PASO 3: Cargar datos SOLO con los símbolos correctos
+  panels.slice(0, layoutMode).forEach(p => {
+    p.resetView();
+    p.loadData();
+  });
+  
+  if (typeof buildTimeframeBar === "function") buildTimeframeBar();
+  
+  const syms = profile.panels 
+    ? profile.panels.map(p => p.symbol).join(", ")
+    : (profile.symbols ? profile.symbols.join(", ") : "N/A");
+  showToast(`Perfil ${num}: ${syms}`);
+}
+
+function loadActiveProfile() {
+  const saved = localStorage.getItem("chartflow_active_profile");
+  if (saved) {
+    activeProfile = parseInt(saved) || 1;
+    loadProfile(activeProfile);
+  }
+  updateProfileButtons();
+}
+
+function updateProfileButtons() {
+  localStorage.setItem("chartflow_active_profile", activeProfile);
+  document.querySelectorAll(".profile-btn").forEach(btn => {
+    const num = parseInt(btn.dataset.profile);
+    btn.classList.toggle("active", num === activeProfile);
+  });
+}
+
+function resetAllProfiles() {
+  if (!confirm("¿Borrar TODOS los perfiles (P1, P2, P3)?")) return;
+  localStorage.removeItem("chartflow_profiles");
+  localStorage.removeItem("chartflow_active_profile");
+  activeProfile = 1;
+  updateProfileButtons();
+  showToast("Todos los perfiles borrados — empieza de cero");
+}
+
+function showToast(msg) {
+  let toast = document.querySelector(".profile-toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.className = "profile-toast";
+    toast.style.cssText = "position:fixed;bottom:50px;left:50%;transform:translateX(-50%);background:var(--surface-2);border:1px solid var(--accent);color:var(--text);border-radius:8px;padding:10px 16px;font:12px var(--font-mono);z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.5)";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.display = "block";
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.style.display = "none"; }, 2500);
+}
+
 init();
 </script>
 </body>

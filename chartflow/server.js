@@ -30,17 +30,18 @@ const SYMBOL_MAP_TO_DASHBOARD = {
 function convertBotAlertToDashboard(botAlert) {
   const symbol = SYMBOL_MAP_TO_DASHBOARD[botAlert.symbol] || botAlert.symbol;
   const operator = botAlert.direction === 'above' ? 'cross_up' : 'cross_down';
+  const price = Number(botAlert.targetPrice) || Number(botAlert.value) || 0;
   
   return {
     id: botAlert.id,
     symbol: symbol,
-    value: botAlert.targetPrice,
+    value: price,
     operator: operator,
     active: botAlert.active !== false,
-    message: botAlert.message || `${symbol} ${botAlert.direction === 'above' ? 'supera' : 'baja de'} $${botAlert.targetPrice}`,
+    message: botAlert.message || `${symbol} ${botAlert.direction === 'above' ? 'supera' : 'baja de'} $${price}`,
     createdAt: botAlert.createdAt,
     triggeredAt: botAlert.triggeredAt,
-    source: 'telegram', // Marcar como creada desde Telegram
+    source: 'telegram',
   };
 }
 
@@ -703,7 +704,16 @@ const server = http.createServer(async (req, res) => {
       if (req.method === "GET") {
         try {
           const rawAlerts = loadAlertsFromDisk();
-          const alerts = rawAlerts.map(convertBotAlertToDashboard);
+          const alerts = rawAlerts.map(convertBotAlertToDashboard).filter(a => a.value > 0 && a.symbol);
+          // Auto-limpiar alertas rotas del archivo
+          const cleanAlerts = rawAlerts.filter(a => {
+            const price = Number(a.targetPrice) || Number(a.value) || 0;
+            return price > 0 && a.symbol;
+          });
+          if (cleanAlerts.length < rawAlerts.length) {
+            saveAlertsToDisk(cleanAlerts);
+            console.log(`🧹 Limpiadas ${rawAlerts.length - cleanAlerts.length} alertas sin precio`);
+          }
           console.log(`📱 Sirviendo ${alerts.length} alertas convertidas`);
           sendJson(res, 200, { alerts });
         } catch (e) {
@@ -719,16 +729,23 @@ const server = http.createServer(async (req, res) => {
         req.on("end", () => {
           try {
             const data = JSON.parse(body);
+            const price = parseFloat(data.value) || parseFloat(data.targetPrice) || 0;
+            if (price <= 0) {
+              sendJson(res, 400, { error: "Se requiere un precio válido" });
+              return;
+            }
             const alerts = loadAlerts();
             
             const newAlert = {
               id: `alert-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
               symbol: data.symbol || "NAS100",
-              value: parseFloat(data.value) || 0,
+              value: price,
+              targetPrice: price,
               operator: data.operator || "cross_up",
+              direction: data.operator === 'cross_up' ? 'above' : 'below',
               active: true,
+              message: data.message || `${data.symbol || "NAS100"} ${data.operator === 'cross_up' ? 'supera' : 'baja de'} $${price}`,
               createdAt: new Date().toISOString(),
-              ...data
             };
             
             alerts.push(newAlert);
