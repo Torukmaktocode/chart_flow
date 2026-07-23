@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Dashboard</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="api-screen">
+  <h2>STOCK DASHBOARD — Real-Time</h2>
+  <p>
+    Necesitas una API key <b style="color:#d1d4dc">gratuita</b> de Finnhub para obtener datos en tiempo real.<br>
+    Registrate en <a href="https://finnhub.io" target="_blank">finnhub.io</a> (gratis, sin tarjeta de credito) y pega tu key abajo.<br>
+    La key se guarda solo en este navegador.
+  </p>
+  <input id="api-input" type="text" placeholder="Pega tu Finnhub API key aqui..." autocomplete="off" spellcheck="false"/>
+  <div id="api-err">API key invalida o sin conexion. Verifica e intenta de nuevo.</div>
+  <button id="api-btn" onclick="checkAndSaveKey()">Conectar</button>
+  <p style="font-size:10px;color:#555e72">Plan gratuito: 60 llamadas/min — suficiente para las 8 acciones</p>
+</div>
+
+<div id="dashboard" style="display:none;height:100%;flex-direction:column">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:6px">
+      <span class="logo">MARKET DASHBOARD</span>
+      <span class="mkt-status closed" id="mkt-status">-- MARKET --</span>
+      <span style="font-size:10px;color:#555e72">NASDAQ · <span id="intervalLabel">5 min</span> · EXT · LIVE</span>
+      <div style="display:flex;gap:2px;margin-left:6px;">
+        <button class="interval-btn" data-interval="5m" onclick="switchInterval('5m')" style="background:#FF8C42;color:#fff;border:none;padding:1px 6px;font-size:9px;font-family:inherit;cursor:pointer;border-radius:2px;">5m</button>
+        <button class="interval-btn" data-interval="15m" onclick="switchInterval('15m')" style="background:#252630;color:#8a8a95;border:none;padding:1px 6px;font-size:9px;font-family:inherit;cursor:pointer;border-radius:2px;">15m</button>
+        <button class="interval-btn" data-interval="30m" onclick="switchInterval('30m')" style="background:#252630;color:#8a8a95;border:none;padding:1px 6px;font-size:9px;font-family:inherit;cursor:pointer;border-radius:2px;">30m</button>
+      </div>
+    </div>
+    <div class="tb-right">
+      <span class="dot-live"></span>
+      <span class="clock" id="clock">NY --:--:--</span>
+      <button class="btn-ref" onclick="loadAll()">Actualizar</button>
+      <span class="api-info" onclick="resetKey()" title="Cambiar API key">[ key ]</span>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

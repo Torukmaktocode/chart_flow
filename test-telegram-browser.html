@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Prueba de Telegram</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: #fff; }
+    button { padding: 10px 20px; margin: 10px; cursor: pointer; background: #00d4ff; color: #000; border: none; border-radius: 5px; }
+    button:hover { background: #00b8d4; }
+    #log { margin-top: 20px; padding: 10px; background: #333; white-space: pre-wrap; min-height: 100px; }
+    .success { color: #00e5a0; }
+    .error { color: #ff3355; }
+  </style>
+</head>
+<body>
+  <h1>Prueba de Alertas por Telegram</h1>
+  <p>Haz clic en el botón para enviar un mensaje de prueba a tu Telegram</p>
+  <button onclick="testTelegram()">📱 Enviar Prueba a Telegram</button>
+  <div id="log">Esperando acción...</div>
+
+  <script>
+    const BOT_TOKEN = "8798093524:AAGon-9SrOKqLefgncEfjL5f1K8H3ZGYmIU";
+    const CHAT_ID = "6954214949";
+
+    function log(msg, type = "") {
+      const logDiv = document.getElementById("log");
+      const line = document.createElement("div");
+      line.textContent = msg;
+      if (type) line.className = type;
+      logDiv.appendChild(line);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    async function testTelegram() {
+      log("📱 Enviando mensaje a Telegram...");
+      
+      const message = `🔔 *PRUEBA DESDE NAVEGADOR* ✅
+
+Si ves este mensaje, ¡las alertas de Telegram funcionan!
+
+💰 *Symbol:* NAS100
+🎯 *Precio:* $21,500.00
+📝 *Estado:* Prueba exitosa
+
+⏰ ${new Date().toLocaleString('es-CL')}
+
+━━━━━━━━━━━━━━━━━━━━━
+🤖 Trading Alert System`;
+
+      try {
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+        log("📡 Conectando a Telegram API...");
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: CHAT_ID,
+            text: message,
+            parse_mode: 'Markdown',
+          }),
+        });
+        
+        log("📥 Respuesta recibida: " + response.status);
+        const data = await response.json();
+        
+        if (data.ok) {
+          log("✅ ¡Mensaje enviado exitosamente!", "success");
+          log("Revisa tu Telegram - debería llegar un mensaje ahora mismo");
+        } else {
+          log("❌ Error de Telegram: " + data.description, "error");
+        }
+      } catch (error) {
+        log("❌ Error de conexión: " + error.message, "error");
+        log("💡 Esto puede ser un problema de CORS", "error");
+        log("Abre la consola del navegador (F12) para ver más detalles", "error");
+      }
+    }
+  </script>
+</body>
+</html>

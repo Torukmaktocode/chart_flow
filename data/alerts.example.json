@@ -1,0 +1,28 @@
+{
+  "alerts": [
+    {
+      "id": "example1",
+      "symbol": "NAS100",
+      "targetPrice": 22000,
+      "direction": "above",
+      "message": "Alerta cuando NAS100 suba de 22000",
+      "chatId": null,
+      "active": true,
+      "createdAt": "2026-06-29T12:00:00.000Z",
+      "triggeredAt": null,
+      "repeat": false
+    },
+    {
+      "id": "example2",
+      "symbol": "BTC",
+      "targetPrice": 100000,
+      "direction": "below",
+      "message": "Alerta cuando BTC baje de 100000",
+      "chatId": null,
+      "active": true,
+      "createdAt": "2026-06-29T12:00:00.000Z",
+      "triggeredAt": null,
+      "repeat": false
+    }
+  ]
+}

@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quant Data Free Terminal</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #020b16;
+        color: #f5f8ff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          linear-gradient(180deg, rgba(0, 56, 128, .22), transparent 170px),
+          radial-gradient(circle at 50% -20%, rgba(0, 102, 255, .16), transparent 38%),
+          #020b16;
+      }
+      button, input, select { font: inherit; }
+      button { color: inherit; cursor: pointer; }
+      .terminal { min-height: 100vh; padding: 10px 14px 18px; }
+      .topbar {
+        height: 58px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 18px;
+      }
+      .brand { display: flex; align-items: center; gap: 10px; font-size: 26px; font-weight: 900; letter-spacing: 0; }
+      .cloud {
+        width: 42px; height: 27px; position: relative; border: 4px solid #0a5dcc; border-top-color: #1d9bff;
+        border-radius: 22px; border-left-color: transparent;
+      }
+      .cloud:before {
+        content: ""; position: absolute; left: 6px; top: -13px; width: 18px; height: 18px;
+        border: 4px solid #0a5dcc; border-right-color: transparent; border-bottom-color: transparent; border-radius: 50%;
+      }
+      .brand span { color: #0a6eff; }
+      .top-actions { display: flex; align-items: center; gap: 12px; }
+      .nav-pill, .icon-btn, .symbol-btn, .control-btn {
+        border: 1px solid rgba(31, 111, 235, .56);
+        background: linear-gradient(180deg, #0757bd, #06408b);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 0 18px rgba(0,72,186,.18);
+        border-radius: 8px;
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 12px;
+        font-weight: 850;
+      }
+      .nav-pill { font-size: 17px; min-height: 38px; }
+      .clock { padding: 0 12px; border-left: 1px solid #0c2f67; border-right: 1px solid #0c2f67; color: #f4f7ff; font-weight: 850; font-size: 16px; white-space: nowrap; }
+      .icon-btn { width: 36px; padding: 0; font-size: 17px; }
+      .danger { background: linear-gradient(180deg, #c44931, #842515); border-color: #f26b4e; }
+      .workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .panel {
+        min-height: 370px;
+        border: 1px solid rgba(0, 62, 144, .8);
+        border-radius: 8px;
+        background: linear-gradient(180deg, rgba(4, 33, 76, .98), rgba(2, 20, 43, .98));
+        box-shadow: 0 0 0 1px rgba(0, 86, 198, .12), 0 18px 40px rgba(0,0,0,.32);
+        overflow: hidden;
+      }
+      .panel-title {
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #03101f;
+      }
+      .tab {
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 14px;
+        background: #051a37;
+        border-right: 1px solid rgba(0,80,190,.45);
+        font-size: 18px;
+        font-weight: 900;
+      }
+      .dot { width: 10px; height: 10px; border-radius: 999px; background: #00ff27; box-shadow: 0 0 14px #00ff27; }
+      .plus { margin-right: auto; margin-left: 10px; width: 28px; height: 28px; border-radius: 7px; border: 0; background: #063d88; font-weight: 900; }
+      .panel-controls {
+        height: 48px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px;
+        border-bottom: 1px solid rgba(0, 64, 150, .65);
+      }
+      .symbol-btn { min-width: 64px; background: linear-gradient(180deg, #075ec8, #06459a); }
+      .chev { font-size: 28px; color: #e7f2ff; line-height: 1; }
+      .expiry {
+        width: 150px;
+        height: 34px;
+        border: 1px solid #062b63;
+        border-radius: 8px;
+        background: #020915;
+        color: #73839b;
+        padding: 0 12px;
+        outline: none;
+      }
+      .control-group { margin-left: auto; display: flex; align-items: center; gap: 7px; min-width: 0; overflow: hidden; }
+      .control-btn { min-height: 32px; background: linear-gradient(180deg, #4f5b63, #2d3943); border-color: #606d76; white-space: nowrap; font-size: 14px; padding: 0 10px; }
+      .control-btn.blue { background: linear-gradient(180deg, #075ec8, #06459a); border-color: #1676ff; }
+      .date-input {
+        width: 138px;
+        min-height: 32px;
+        border: 1px solid #606d76;
+        border-radius: 8px;
+        color: #f8fbff;
+        background: linear-gradient(180deg, #4f5b63, #2d3943);
+        padding: 0 9px;
+        font-weight: 850;
+        outline: none;
+      }
+      .plot { position: relative; height: 286px; padding: 12px 18px 6px; }
+      .chart-title { text-align: center; font-size: 17px; font-weight: 900; margin: 0; }
+      .legend {
+        display: flex;
+        justify-content: center;
+        gap: 18px;
+        color: #e9f1ff;
+        font-size: 14px;
+        font-weight: 800;
+        margin-top: 3px;
+      }
+      .legend span { display: inline-flex; align-items: center; gap: 6px; }
+      .green { color: #00ff18; }
+      .red { color: #ff0818; }
+      .blue { color: #0b6fff; }
+      .yellow { color: #f2fb18; }
+      canvas { width: 100%; height: 220px; display: block; margin-top: 7px; }
+      .axis-label {
+        position: absolute;
+        left: 10px;
+        top: 152px;
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        color: #f5f8ff;
+        font-weight: 900;
+        font-size: 13px;
+      }
+      .timebar {
+        display: grid;
+        grid-template-columns: 70px 1fr 48px;
+        gap: 12px;
+        align-items: center;
+        height: 30px;
+        padding: 0 42px 0 34px;
+        color: #f8fbff;
+        font-weight: 850;
+      }
+      .slider { height: 8px; border-radius: 999px; background: #064493; position: relative; box-shadow: inset 0 0 0 1px #0b65d7; }
+      .slider:after { content: ""; position: absolute; right: -7px; top: -7px; width: 22px; height: 22px; background: #fff; border-radius: 50%; }
+      .pause { height: 30px; width: 34px; border-radius: 8px; background: #5d6670; display: grid; place-items: center; }
+      .time-ticks { display: flex; justify-content: space-around; color: #f8fbff; font-weight: 850; padding: 0 70px 0 96px; font-size: 13px; line-height: 1.05; }
+      .heat-grid {
+        display: grid;
+        grid-template-columns: 82px repeat(8, 1fr);
+        gap: 2px;
+        margin-top: 12px;
+        font-weight: 900;
+        font-size: 11px;
+        overflow: hidden;
+      }
+      .heat-cell {
+        min-height: 21px;
+        display: grid;
+        place-items: center;
+        border-radius: 2px;
+        background: rgba(0, 180, 31, .65);
+      }
+      .heat-cell.bad { background: rgba(156, 14, 34, .72); }
+      .heat-cell.header, .heat-cell.rowhead { background: transparent; color: #f8fbff; }
+      .heat-cell.current { background: #0c63dd; }
+      .bars { display: grid; gap: 22px; padding: 24px 34px 0; }
+      .stack-row { display: grid; grid-template-columns: 100px 1fr; gap: 14px; align-items: center; }
+      .stack-label { font-weight: 900; }
+      .stack-track { height: 50px; display: flex; overflow: hidden; border: 1px solid #064493; background: #041326; }
+      .put-side, .call-side { display: flex; align-items: center; padding: 0 10px; font-weight: 900; white-space: nowrap; }
+      .put-side { justify-content: flex-start; background: #b40012; }
+      .call-side { justify-content: flex-end; background: #00ba14; }
+      .pie-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; height: 250px; align-items: center; }
+      .table-mini { display: grid; gap: 4px; font-size: 13px; font-weight: 850; }
+      .table-mini div { display: grid; grid-template-columns: 1fr 70px; gap: 8px; padding: 4px 8px; border-radius: 4px; background: rgba(3, 16, 31, .58); }
+      @media (max-width: 920px) {
+        .workspace { grid-template-columns: 1fr; }
+        .panel { min-height: 390px; }
+        .topbar { grid-template-columns: 1fr; height: auto; align-items: start; }
+        .top-actions { flex-wrap: wrap; }
+      }
+      @media (max-width: 1100px) {
+        .axis-label { display: none; }
+        .heat-grid { font-size: 10px; }
+        .heat-cell { min-height: 18px; }
+        .timebar { padding-left: 28px; padding-right: 28px; }
+        .time-ticks { padding-left: 68px; padding-right: 46px; }
+      }
+      @media (max-width: 720px) {
+        .terminal { padding: 10px; }
+        .brand { font-size: 22px; }
+        .panel-controls { overflow-x: auto; }
+        .workspace { gap: 10px; }
+        .plot { padding-left: 10px; padding-right: 10px; }
+        .heat-grid { font-size: 11px; grid-template-columns: 54px repeat(8, minmax(58px, 1fr)); overflow: auto; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="terminal">
+      <header class="topbar">
+        <div class="brand"><div class="cloud"></div><div>Quant <span>Data</span></div></div>
+        <div class="top-actions">
+          <button class="nav-pill">▣ Built-In Pages⌄</button>
+          <button class="nav-pill">▣ My Pages⌄</button>
+          <div class="clock">⚡ <span id="clock">--:--:--</span></div>
+          <button class="icon-btn">⏷</button>
+          <button class="icon-btn">✎</button>
+          <button class="icon-btn">⛶</button>
+          <button class="nav-pill">ⓘ Help</button>
+          <button class="nav-pill">⚙ Settings</button>
+          <button class="icon-btn danger" id="refresh-all">↻</button>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <article class="panel" data-panel="exposure">
+          <div class="panel-title"><div class="tab"><span class="dot"></span>Exposure by Strike ⋮</div><button class="plus">+</button></div>
+          <div class="panel-controls">
+            <button class="symbol-btn active-symbol">SPY</button><span class="chev">›</span>
+            <input class="expiry symbol-input" value="SPY" aria-label="Ticker" />
+            <div class="control-group"><input class="date-input" type="date" aria-label="Fecha de datos" /><button class="control-btn today-btn">Hoy</button><button class="control-btn blue">▥ Gamma</button><button class="control-btn blue">% Per 1% Move</button><button class="icon-btn">⏷</button><button class="icon-btn danger panel-refresh">↻</button></div>
+          </div>
+          <div class="plot">
+            <p class="chart-title">Net Gamma Exposure By Strike - <span class="ticker-text">SPY</span></p>
+            <div class="legend"><span class="green">● Net Exposure</span><span class="blue">● Underlying (<b class="underlying">$--</b>)</span></div>
+            <div class="axis-label">Gamma Exposure (Per 1% Move)</div>
+            <canvas id="exposure-canvas" width="900" height="250"></canvas>
+          </div>
+          <div class="timebar"><span>Time</span><div class="slider"></div><div class="pause">Ⅱ</div></div>
+          <div class="time-ticks"><span>9:30 AM</span><span>10:30 AM</span><span>11:30 AM</span><span>12:30 PM</span><span>1:30 PM</span><span>2:30 PM</span><span>3:52 PM</span></div>
+        </article>
+
+        <article class="panel" data-panel="interval">
+          <div class="panel-title"><div class="tab"><span class="dot"></span>Interval Map ⋮</div><button class="plus">+</button></div>
+          <div class="panel-controls">
+            <button class="symbol-btn active-symbol">SPY</button><span class="chev">›</span>
+            <input class="expiry symbol-input" value="SPY" aria-label="Ticker" />
+            <div class="control-group"><input class="date-input" type="date" aria-label="Fecha de datos" /><button class="control-btn today-btn">Hoy</button><button class="control-btn blue">◷ 5 Min</button><button class="control-btn blue">5 Strikes</button><button class="control-btn blue">Gamma (GEX)</button><button class="icon-btn danger panel-refresh">↻</button></div>
+          </div>
+          <div class="plot">
+            <p class="chart-title">Interval Map (GEX) - <span class="ticker-text">SPY</span></p>
+            <div class="legend"><span class="blue">● Underlying (<b class="underlying">$--</b>)</span></div>
+            <div class="axis-label">Strike Price ($)</div>
+            <canvas id="interval-canvas" width="900" height="250"></canvas>
+          </div>
+          <div class="timebar"><span>Time</span><div class="slider"></div><div class="pause">Ⅱ</div></div>
+          <div class="time-ticks"><span>10:00 AM</span><span>11:00 AM</span><span>12:00 PM</span><span>1:00 PM</span><span>2:00 PM</span><span>3:00 PM</span></div>
+        </article>
+
+        <article class="panel" data-panel="stats">
+          <div class="panel-title"><div class="tab"><span class="dot"></span>Contract Statistics ⋮</div><button class="plus">+</button></div>
+          <div class="panel-controls">
+            <button class="symbol-btn active-symbol">AAPL</button><span class="chev">›</span>
+            <input class="expiry symbol-input" value="AAPL" aria-label="Ticker" />
+            <div class="control-group"><input class="date-input" type="date" aria-label="Fecha de datos" /><button class="control-btn today-btn">Hoy</button><button class="control-btn">Moneyness</button><button class="control-btn">$ Side</button><button class="icon-btn danger panel-refresh">↻</button></div>
+          </div>
+          <div class="plot">
+            <p class="chart-title">Contract Statistics - <span class="ticker-text">AAPL</span></p>
+            <div class="legend"><span class="green">● Calls</span><span class="red">● Puts</span></div>
+            <div class="bars" id="stats-bars"></div>
+          </div>
+        </article>
+
+        <article class="panel" data-panel="heat">
+          <div class="panel-title"><div class="tab"><span class="dot"></span>Heat Map ⋮</div><button class="plus">+</button></div>
+          <div class="panel-controls">
+            <button class="symbol-btn active-symbol">SPY</button><span class="chev">›</span>
+            <input class="expiry symbol-input" value="SPY" aria-label="Ticker" />
+            <div class="control-group"><input class="date-input" type="date" aria-label="Fecha de datos" /><button class="control-btn today-btn">Hoy</button><button class="control-btn blue">Net GEX</button><button class="icon-btn">⏷</button><button class="icon-btn danger panel-refresh">↻</button></div>
+          </div>
+          <div class="plot">
+            <p class="chart-title">Net GEX Heat Map - <span class="ticker-text">SPY</span></p>
+            <div class="legend"><span style="color:#a855f7">● MVC</span><span class="blue">● Underlying (<b class="underlying">$--</b>)</span></div>
+            <div class="heat-grid" id="heat-grid"></div>
+          </div>
+          <div class="timebar"><span>Time</span><div class="slider"></div><div class="pause">Ⅱ</div></div>
+          <div class="time-ticks"><span>9:30 AM</span><span>10:30 AM</span><span>11:30 AM</span><span>12:30 PM</span><span>1:30 PM</span><span>2:30 PM</span><span>3:52 PM</span></div>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const apiBase =
+        location.protocol === "file:" || location.port === "5179"
+          ? "http://127.0.0.1:5180"
+          : "";
+      const cache = new Map();
+      let lastFeedStatus = "";
+      const fmt = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+      const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 2 });
+
+      function money(value) {
+        return `$${fmt.format(value || 0)}`;
+      }
+
+      function shortMoney(value) {
+        const abs = Math.abs(value || 0);
+        const sign = value < 0 ? "-" : "";
+        if (abs >= 1e9) return `${sign}$${fmt.format(abs / 1e9)} B`;
+        if (abs >= 1e6) return `${sign}$${fmt.format(abs / 1e6)} M`;
+        if (abs >= 1e3) return `${sign}$${fmt.format(abs / 1e3)} K`;
+        return `${sign}$${fmt.format(abs)}`;
+      }
+
+      function seeded(symbol) {
+        let seed = 0;
+        for (const char of symbol) seed = (seed * 31 + char.charCodeAt(0)) >>> 0;
+        return () => {
+          seed = (seed * 1664525 + 1013904223) >>> 0;
+          return seed / 4294967296;
+        };
+      }
+
+      function todayIso() {
+        const parts = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "America/Santiago",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).formatToParts(new Date());
+        const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+        return `${map.year}-${map.month}-${map.day}`;
+      }
+
+      async function loadSymbol(symbol, date) {
+        const clean = symbol.trim().toUpperCase() || "SPY";
+        const cacheKey = `${clean}:${date || "latest"}`;
+        if (cache.has(cacheKey)) return cache.get(cacheKey);
+        const datePart = date ? `?date=${encodeURIComponent(date)}` : "";
+        const response = await fetch(`${apiBase}/api/market/${encodeURIComponent(clean)}${datePart}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || data.error || "No data");
+        cache.set(cacheKey, data);
+        return data;
+      }
+
+      function clearCanvas(canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#041833";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "rgba(40, 104, 190, .35)";
+        ctx.lineWidth = 1;
+        for (let i = 1; i < 6; i++) {
+          const y = (canvas.height / 6) * i;
+          ctx.beginPath();
+          ctx.moveTo(55, y);
+          ctx.lineTo(canvas.width - 18, y);
+          ctx.stroke();
+        }
+        return ctx;
+      }
+
+      function drawLine(ctx, values, color, min, max, x0 = 55, x1 = 870, y0 = 215, y1 = 28) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        values.forEach((value, index) => {
+          const x = x0 + (index / Math.max(values.length - 1, 1)) * (x1 - x0);
+          const y = y0 - ((value - min) / Math.max(max - min, .0001)) * (y0 - y1);
+          if (index) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        });
+        ctx.stroke();
+      }
+
+      function drawExposure(canvas, data, flavor = "gamma") {
+        const ctx = clearCanvas(canvas);
+        const rows = data.chart;
+        const price = data.metrics.price;
+        const rand = seeded(data.symbol + flavor);
+        const minStrike = Math.floor(price * .91 / 5) * 5;
+        const strikes = Array.from({ length: 34 }, (_, i) => minStrike + i * 5);
+        const exposures = strikes.map((strike) => {
+          const distance = (strike - price) / price;
+          const base = Math.exp(-Math.abs(distance) * 20) * data.metrics.volume * .09;
+          const side = distance > 0 ? 1 : -0.42;
+          const noise = (rand() - .42) * data.metrics.volume * .015;
+          return (base * side + noise) * (flavor === "delta" ? 2.8 : 1);
+        });
+        const maxAbs = Math.max(...exposures.map(Math.abs), 1);
+        ctx.font = "700 14px Inter, sans-serif";
+        ctx.fillStyle = "#f5f8ff";
+        [-1, -.5, 0, .5, 1].forEach((tick) => {
+          const y = 215 - ((tick + 1) / 2) * 180;
+          ctx.fillText(shortMoney(tick * maxAbs), 10, y + 4);
+        });
+        ctx.strokeStyle = "#0a63d8";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(55, 125);
+        ctx.lineTo(875, 125);
+        ctx.stroke();
+        strikes.forEach((strike, index) => {
+          const x = 66 + index * 24;
+          const value = exposures[index];
+          const height = Math.abs(value / maxAbs) * 96;
+          ctx.fillStyle = value >= 0 ? "#00e51a" : "#ff0519";
+          ctx.fillRect(x, value >= 0 ? 125 - height : 125, 6, height);
+          if (index % 6 === 0) {
+            ctx.fillStyle = "#f5f8ff";
+            ctx.fillText(`$${Math.round(strike)}`, x - 12, 235);
+          }
+        });
+        const px = 66 + ((price - minStrike) / 5) * 24;
+        ctx.strokeStyle = "#0b6fff";
+        ctx.setLineDash([7, 6]);
+        ctx.beginPath();
+        ctx.moveTo(px, 20);
+        ctx.lineTo(px, 218);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      function drawInterval(canvas, data) {
+        const ctx = clearCanvas(canvas);
+        const rows = data.chart.slice(-55);
+        const priceValues = rows.map((row) => row.close);
+        const price = data.metrics.price;
+        const min = Math.min(...priceValues, price * .985);
+        const max = Math.max(...priceValues, price * 1.015);
+        const rand = seeded(data.symbol + "interval");
+        for (let row = 0; row < 15; row++) {
+          for (let col = 0; col < 70; col++) {
+            const x = 72 + col * 12;
+            const y = 28 + row * 13;
+            const level = min + (1 - row / 14) * (max - min);
+            const bias = level > price ? 1 : -1;
+            const size = 2 + Math.abs(level - price) / Math.max(max - min, 1) * 2 + rand() * 2;
+            ctx.fillStyle = bias > 0 ? "#00e51a" : "#ff0519";
+            ctx.globalAlpha = .25 + rand() * .65;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.globalAlpha = 1;
+        drawLine(ctx, priceValues, "#0b6fff", min, max, 72, 875, 216, 28);
+        ctx.font = "700 14px Inter, sans-serif";
+        ctx.fillStyle = "#f5f8ff";
+        [max, (max + min) / 2, min].forEach((value, index) => ctx.fillText(money(value), 14, 35 + index * 92));
+      }
+
+      function addDays(isoDate, days) {
+        const date = new Date(`${isoDate || todayIso()}T00:00:00.000Z`);
+        date.setUTCDate(date.getUTCDate() + days);
+        return date.toISOString().slice(0, 10);
+      }
+
+      function shortDate(isoDate) {
+        const date = new Date(`${isoDate}T00:00:00.000Z`);
+        return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(date);
+      }
+
+      function renderHeat(data) {
+        const grid = document.getElementById("heat-grid");
+        const rand = seeded(data.symbol + "heat");
+        const price = Math.round(data.metrics.price);
+        const baseDate = data.asOf || todayIso();
+        const dates = [0, 2, 4, 7, 10, 14, 18].map((days) => shortDate(addDays(baseDate, days)));
+        const strikes = Array.from({ length: 7 }, (_, i) => price + 3 - i);
+        grid.innerHTML = `<div class="heat-cell header"></div>${dates.map((d) => `<div class="heat-cell header">${d}</div>`).join("")}`;
+        strikes.forEach((strike) => {
+          grid.innerHTML += `<div class="heat-cell rowhead">$${strike}</div>`;
+          dates.forEach(() => {
+            const value = (rand() - .45) * data.metrics.volume * (strike === price ? .05 : .018);
+            const cls = strike === price ? "current" : value < 0 ? "bad" : "";
+            grid.innerHTML += `<div class="heat-cell ${cls}">${shortMoney(value)}</div>`;
+          });
+        });
+      }
+
+      function renderStats(data) {
+        const holder = document.getElementById("stats-bars");
+        const rand = seeded(data.symbol + "stats");
+        const rows = ["Premium", "Volume", "Trade Count"];
+        holder.innerHTML = rows.map((label) => {
+          const callPct = 56 + rand() * 34;
+          const putPct = 100 - callPct;
+          const total = data.metrics.volume * (.004 + rand() * .011);
+          return `
+            <div class="stack-row">
+              <div class="stack-label">${label}</div>
+              <div class="stack-track">
+                <div class="put-side" style="width:${putPct}%">${shortMoney(total * putPct / 100)} (${putPct.toFixed(2)}%)</div>
+                <div class="call-side" style="width:${callPct}%">${shortMoney(total * callPct / 100)} (${callPct.toFixed(2)}%)</div>
+              </div>
+            </div>`;
+        }).join("");
+      }
+
+      function markFresh(data) {
+        const fetched = data?.fetchedAt ? new Date(data.fetchedAt) : new Date();
+        const ageSeconds = Math.max(0, Math.round((Date.now() - fetched.getTime()) / 1000));
+        lastFeedStatus = `${data.interval || "1d"} · ${data.sessionPoints || 0} pts · ${ageSeconds}s`;
+        document.getElementById("clock").textContent = `${new Date().toLocaleTimeString("en-US")} · ${lastFeedStatus}`;
+      }
+
+      async function renderPanel(panel) {
+        const input = panel.querySelector(".symbol-input");
+        const dateInput = panel.querySelector(".date-input");
+        const symbol = input.value.trim().toUpperCase() || "SPY";
+        const date = dateInput.value || todayIso();
+        dateInput.value = date;
+        panel.querySelectorAll(".active-symbol,.ticker-text").forEach((el) => { el.textContent = symbol; });
+        const data = await loadSymbol(symbol, date);
+        markFresh(data);
+        panel.querySelectorAll(".underlying").forEach((el) => {
+          el.textContent = `${money(data.metrics.price)} · ${data.interval} · ${data.sessionPoints} pts`;
+        });
+        const type = panel.dataset.panel;
+        if (type === "exposure") drawExposure(document.getElementById("exposure-canvas"), data, "gamma");
+        if (type === "interval") drawInterval(document.getElementById("interval-canvas"), data);
+        if (type === "stats") renderStats(data);
+        if (type === "heat") renderHeat(data);
+      }
+
+      async function renderAll() {
+        for (const panel of document.querySelectorAll(".panel")) {
+          try {
+            await renderPanel(panel);
+          } catch (error) {
+            panel.querySelector(".chart-title").textContent = `Error: ${error.message}`;
+          }
+        }
+      }
+
+      document.querySelectorAll(".symbol-input").forEach((input) => {
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") renderPanel(input.closest(".panel"));
+        });
+        input.addEventListener("change", () => renderPanel(input.closest(".panel")));
+      });
+      let dateTimer = 0;
+      document.querySelectorAll(".date-input").forEach((input) => {
+        input.value = todayIso();
+        input.addEventListener("change", () => renderPanel(input.closest(".panel")));
+        input.addEventListener("input", () => {
+          clearTimeout(dateTimer);
+          dateTimer = setTimeout(() => {
+            if (input.value) renderPanel(input.closest(".panel"));
+          }, 350);
+        });
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" && input.value) renderPanel(input.closest(".panel"));
+        });
+      });
+      document.querySelectorAll(".today-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+          const panel = button.closest(".panel");
+          panel.querySelector(".date-input").value = todayIso();
+          renderPanel(panel);
+        });
+      });
+      document.querySelectorAll(".panel-refresh").forEach((button) => {
+        button.addEventListener("click", () => {
+          const panel = button.closest(".panel");
+          const symbol = panel.querySelector(".symbol-input").value.trim().toUpperCase();
+          const date = panel.querySelector(".date-input").value || todayIso();
+          cache.delete(`${symbol}:${date}`);
+          renderPanel(panel);
+        });
+      });
+      document.getElementById("refresh-all").addEventListener("click", () => {
+        cache.clear();
+        renderAll();
+      });
+      setInterval(() => {
+        document.getElementById("clock").textContent =
+          `${new Date().toLocaleTimeString("en-US")}${lastFeedStatus ? ` · ${lastFeedStatus}` : ""}`;
+      }, 1000);
+      setInterval(() => {
+        cache.clear();
+        renderAll();
+      }, 60_000);
+      renderAll();
+    </script>
+  </body>
+</html>

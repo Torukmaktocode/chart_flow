@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "system-assistant",
+  "agent": {
+    "system-assistant": {
+      "description": "Asistente que maneja comandos del sistema, automatización del navegador y tareas de código. SIEMPRE responde en español.",
+      "mode": "primary",
+      "permission": {
+        "bash": "allow",
+        "edit": "allow"
+      }
+    }
+  },
+  "permission": {
+    "bash": "allow",
+    "edit": "allow"
+  },
+  "skills": {
+    "paths": [".opencode/skills"]
+  }
+}

@@ -569,6 +569,27 @@ function yahooIntervalFor(range, defaultInterval) {
   return defaultInterval;
 }
 
+function ensureVolume(candles) {
+  // Si todas las velas tienen volumen 0, generar tick volume sintético
+  // basado en rango porcentual (útil para CFDs/Forex sin volumen real)
+  const maxVol = candles.reduce((m, c) => Math.max(m, Number(c.v) || 0), 0);
+  if (maxVol > 0 || candles.length < 2) return candles;
+  const medianPrice = candles.reduce((s, c) => s + (c.h + c.l) / 2, 0) / candles.length;
+  const avgRange = candles.reduce((s, c) => s + Math.max(0.0001, c.h - c.l), 0) / candles.length;
+  const pctRange = medianPrice > 0 ? avgRange / medianPrice : 0.001;
+  // Factor base: a mayor rango porcentual, más ticks
+  const baseTicks = Math.max(50, Math.round(pctRange * 100000));
+  return candles.map(c => {
+    const range = Math.max(0.0001, c.h - c.l);
+    const body = Math.abs(c.c - c.o);
+    const pctOfAvg = range / Math.max(avgRange, 0.0001);
+    // Variación basada en rango relativo + body, con algo de ruido
+    const noise = 0.85 + Math.random() * 0.3; // ±15%
+    const tickVol = Math.max(10, Math.round(baseTicks * pctOfAvg * (1 + body / range) * noise));
+    return { ...c, v: tickVol };
+  });
+}
+
 async function chartData(tf, symbolKey, countOverride, rangeOverride, fromTs, toTs) {
   const cfg = TIMEFRAMES[tf] || TIMEFRAMES["5m"];
   const inst = normalizeInstrument(symbolKey);
@@ -576,7 +597,7 @@ async function chartData(tf, symbolKey, countOverride, rangeOverride, fromTs, to
 
   try {
     const tvBars = countOverride > 0 ? countOverride : 900;
-    const candles = await fetchTradingViewCandles(tf, inst.tv, tvBars, fromTs);
+    const candles = ensureVolume(await fetchTradingViewCandles(tf, inst.tv, tvBars, fromTs));
     const tvCovers = !fromTs || (candles.length > 1 && candles[0].t <= fromTs + 3600000);
     if (candles.length > 1 && tvCovers) {
       return {
@@ -626,6 +647,7 @@ async function chartData(tf, symbolKey, countOverride, rangeOverride, fromTs, to
 
     let candles = cleanOutliers(parseYahoo(response.data));
     candles = aggregate(candles, cfg.minutes);
+    candles = ensureVolume(candles);
     if (fromTs && toTs) candles = candles.filter(c => c.t >= fromTs && c.t <= toTs);
     const maxKeep = countOverride > 0 ? countOverride : 900;
     if (candles.length > maxKeep) candles = candles.slice(-maxKeep);

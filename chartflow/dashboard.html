@@ -258,6 +258,7 @@ canvas{position:absolute;left:0;right:0;top:0}
 .app.nav-always .bottom-tools{opacity:1}
 .mini{width:27px;height:24px;border-radius:5px;background:var(--surface-3);color:var(--text);border:0;font-weight:800;font-family:var(--font-mono);font-size:11px;transition:background .12s}
 .mini:hover{background:var(--accent);color:var(--bg)}
+.mini.profile-color-btn.active{background:var(--accent);color:var(--bg);box-shadow:0 0 0 1px var(--text)}
 .price-line{position:absolute;left:44px;right:120px;height:1px;background:repeating-linear-gradient(90deg,rgba(0,212,255,.55) 0,rgba(0,212,255,.55) 1px,transparent 1px,transparent 4px);z-index:4;box-shadow:0 0 8px rgba(0,212,255,.25);animation:pricePulse 2s ease-in-out infinite}
 @keyframes pricePulse{0%,100%{opacity:.7}50%{opacity:1}}
 .price-badge{position:absolute;right:44px;transform:translateY(-50%);min-width:62px;background:var(--accent);color:var(--bg);border-radius:2px;padding:3px 5px;text-align:center;font-size:11px;font-weight:700;line-height:12px;z-index:9;font-family:var(--font-mono);box-shadow:0 0 12px rgba(0,212,255,.4)}
@@ -412,6 +413,9 @@ canvas{position:absolute;left:0;right:0;top:0}
         <button class="indicator-row" id="rtcStoch6Toggle">
           <span>RTC Estocástico v6</span>
         </button>
+        <button class="indicator-row" id="macdProToggle">
+          <span>MACD Pro</span>
+        </button>
       </div>
     </div>
     <div class="tool">Alerta</div>
@@ -433,14 +437,23 @@ canvas{position:absolute;left:0;right:0;top:0}
         </div>
       </div>
     </div>
-    <div class="profile-bar">
-      <button class="profile-btn active" data-profile="1" onclick="loadProfile(1)" title="Perfil 1"><span class="pf-dot"></span>P1</button>
-      <button class="profile-btn" data-profile="2" onclick="loadProfile(2)" title="Perfil 2"><span class="pf-dot"></span>P2</button>
-      <button class="profile-btn" data-profile="3" onclick="loadProfile(3)" title="Perfil 3"><span class="pf-dot"></span>P3</button>
+    <div class="profile-bar" style="gap:2px" title="Templates de paneles — guardan símbolos, temporalidades y layout">
+      <span class="lbl" style="font-size:9px;font-weight:700;color:var(--accent);margin-right:1px;letter-spacing:0">📊</span>
+      <button class="profile-btn active" data-panel-template="1" onclick="loadPanelTemplate(1)" title="Panel template 1">1</button>
+      <button class="profile-btn" data-panel-template="2" onclick="loadPanelTemplate(2)" title="Panel template 2">2</button>
+      <button class="profile-btn" data-panel-template="3" onclick="loadPanelTemplate(3)" title="Panel template 3">3</button>
       <div class="profile-sep"></div>
-      <button class="profile-save" onclick="applyDarkNeonBlue()" title="Aplicar Dark Trading / Neon Blue" style="font-size:11px;background:#062357;color:#4FBDE2;border-color:#4FBDE2">⚡ DARK</button>
-      <button class="profile-save" onclick="saveCurrentProfile()" title="Guardar configuración actual en el perfil activo">💾</button>
-      <button class="profile-save" onclick="resetAllProfiles()" title="Borrar todos los perfiles" style="font-size:11px">🗑</button>
+      <button class="profile-save" onclick="saveCurrentPanelTemplate()" title="Guardar en template activo">💾</button>
+      <button class="profile-save" onclick="savePanelTemplateAs()" title="Guardar como...">✏️</button>
+    </div>
+    <div class="profile-bar" style="gap:2px;margin-left:4px" title="Modos de color — guardan solo colores y estilo visual">
+      <span class="lbl" style="font-size:9px;font-weight:700;color:var(--accent);margin-right:1px;letter-spacing:0">🎨</span>
+      <button class="profile-btn active" data-color-template="1" onclick="loadColorTemplate(1)">M1</button>
+      <button class="profile-btn" data-color-template="2" onclick="loadColorTemplate(2)">M2</button>
+      <button class="profile-btn" data-color-template="3" onclick="loadColorTemplate(3)">M3</button>
+      <div class="profile-sep"></div>
+      <button class="profile-save" onclick="saveCurrentColorTemplate()" title="Guardar en modo activo">💾</button>
+      <button class="profile-save" onclick="saveColorTemplateAs()" title="Guardar como...">✏️</button>
     </div>
     <button class="icon-btn" id="fullscreenButton" title="Modo pantalla completa">
       <span class="fullscreen-icon"></span>
@@ -633,17 +646,28 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="settings-section">SMA Rápida</div>
         <div class="setting-row"><label>Longitud</label><input class="field" id="bibiruSma1Length" type="number" min="1" max="5000" value="5"><span></span></div>
         <div class="setting-row"><label>Color</label><input class="color-box" id="bibiruSma1Color" type="color" value="#00d4ff"><span></span></div>
+        <div class="setting-row"><label>Grosor</label><select class="select" id="bibiruSma1Width" style="width:80px"><option value="0.5">0.5</option><option value="1">1</option><option value="1.5">1.5</option><option value="2" selected>2</option><option value="2.5">2.5</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select><span></span></div>
         <div class="option-line"><input class="check" id="bibiruShowSma1" type="checkbox" checked><label>Mostrar SMA Rápida</label></div>
 
         <div class="settings-section">SMA Lenta</div>
         <div class="setting-row"><label>Longitud</label><input class="field" id="bibiruSma2Length" type="number" min="1" max="5000" value="25"><span></span></div>
         <div class="setting-row"><label>Color</label><input class="color-box" id="bibiruSma2Color" type="color" value="#ff9800"><span></span></div>
+        <div class="setting-row"><label>Grosor</label><select class="select" id="bibiruSma2Width" style="width:80px"><option value="0.5">0.5</option><option value="1">1</option><option value="1.5">1.5</option><option value="2" selected>2</option><option value="2.5">2.5</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select><span></span></div>
         <div class="option-line"><input class="check" id="bibiruShowSma2" type="checkbox" checked><label>Mostrar SMA Lenta</label></div>
 
         <div class="settings-section">Bibiru Volume</div>
         <div class="option-line"><input class="check" id="bibiruShowVwap" type="checkbox" checked><label>Mostrar Bibiru Volume (panel inferior)</label></div>
+        <div class="setting-row"><label>Altura del panel</label><input class="field" id="bibiruVwapHeight" type="range" min="30" max="200" value="80" style="width:100px" oninput="document.getElementById('bibiruVwapHeightValue').textContent=this.value"><span id="bibiruVwapHeightValue" style="min-width:30px;text-align:right;font-size:12px;font-family:var(--font-mono)">80</span><span style="font-size:10px;color:var(--text-dim)">px</span></div>
         <div class="setting-row"><label>Color barras Alcista</label><input class="color-box" id="bibiruVwapBullColor" type="color" value="#00e5a0"><span></span></div>
         <div class="setting-row"><label>Color barras Bajista</label><input class="color-box" id="bibiruVwapBearColor" type="color" value="#ff3355"><span></span></div>
+        <div class="settings-section" style="margin-top:12px">Perfiles de color Bibiru</div>
+        <div style="display:flex;align-items:center;gap:4px;padding:2px 0">
+          <button class="mini profile-color-btn active" data-bibiru-color-profile="A" onclick="loadBibiruColorProfile('A')" title="Perfil de color A" style="font-weight:700;width:28px">A</button>
+          <button class="mini profile-color-btn" data-bibiru-color-profile="B" onclick="loadBibiruColorProfile('B')" title="Perfil de color B" style="font-weight:700;width:28px">B</button>
+          <span style="flex:1"></span>
+          <button class="mini" onclick="saveBibiruColorProfile()" title="Guardar perfil de color actual" style="font-size:13px;line-height:18px">💾</button>
+          <button class="mini" onclick="saveBibiruColorProfileAs()" title="Guardar como..." style="font-size:13px;line-height:18px">✏️</button>
+        </div>
       </div>
       <div class="settings-foot"><button class="modal-btn" id="bibiruSettingsCancel">Cancelar</button><button class="modal-btn primary" id="bibiruSettingsApply">Aceptar</button></div>
     </div>
@@ -854,6 +878,42 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="setting-row"><label>Color Neutral</label><input class="color-box" id="jrPanelNeutralColor" type="color" value="#666666"><span></span></div>
       </div>
       <div class="settings-foot"><button class="modal-btn" id="strategyJrSettingsCancel">Cancelar</button><button class="modal-btn primary" id="strategyJrSettingsApply">Aceptar</button></div>
+    </div>
+  </div>
+  <div class="settings-backdrop" id="macdProSettingsBackdrop">
+    <div class="settings-panel">
+      <div class="settings-head">
+        MACD Pro
+        <button class="settings-close" id="macdProSettingsClose">×</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active">Entradas de datos</button>
+        <button class="tab">Estilo</button>
+        <button class="tab">Visibilidad</button>
+      </div>
+      <div class="settings-body" id="macdProSettingsBody">
+        <div class="settings-section">MACD Pro</div>
+        <div class="setting-row"><label>Modo</label><select class="select" id="macdProMode"><option value="Basic">Basic</option><option value="Logarithmic">Logarithmic</option><option value="Percent">Percent</option></select><span class="info-dot">i</span></div>
+        <div class="setting-row"><label>Fuente</label><select class="select" id="macdProSource"><option value="close">Cierre</option><option value="open">Apertura</option><option value="high">Máximo</option><option value="low">Mínimo</option><option value="hl2">HL2</option><option value="hlc3">HLC3</option><option value="ohlc4">OHLC4</option></select><span></span></div>
+        <div class="setting-row"><label>MA Oscilador</label><select class="select" id="macdProOscType"><option value="EMA">EMA</option><option value="WMA">WMA</option><option value="LMA">LMA</option><option value="SMA">SMA</option><option value="VWRMA">VWRMA</option><option value="VWRMA (s)">VWRMA (s)</option></select><span></span></div>
+        <div class="setting-row"><label>Rápido</label><input class="field" id="macdProFastLength" type="number" min="1" max="500" value="12"><span></span></div>
+        <div class="setting-row"><label>Lento</label><input class="field" id="macdProSlowLength" type="number" min="1" max="500" value="26"><span></span></div>
+        <div class="settings-section">Señal</div>
+        <div class="setting-row"><label>Suavizado</label><select class="select" id="macdProSigType"><option value="EMA">EMA</option><option value="WMA">WMA</option><option value="LMA">LMA</option><option value="SMA">SMA</option><option value="DEMA">DEMA</option></select><span></span></div>
+        <div class="setting-row"><label>Longitud</label><input class="field" id="macdProSigLength" type="number" min="1" max="500" value="8"><span></span></div>
+        <div class="setting-row"><label>Desplazamiento</label><input class="field" id="macdProSigOffset" type="number" min="0" max="100" value="0"><span></span></div>
+        <div class="settings-section">Histograma</div>
+        <div class="setting-row"><label>Suavizado</label><select class="select" id="macdProHistType"><option value="OFF">OFF</option><option value="EMA">EMA</option><option value="WMA">WMA</option><option value="LMA">LMA</option><option value="SMA">SMA</option></select><span></span></div>
+        <div class="setting-row"><label>Longitud</label><input class="field" id="macdProHistLength" type="number" min="1" max="50" value="5"><span></span></div>
+        <div class="settings-section">Colores</div>
+        <div class="setting-row"><label>Línea MACD</label><input class="color-box" id="macdProMacdColor" type="color" value="#006ABA"><span></span></div>
+        <div class="setting-row"><label>Línea Señal</label><input class="color-box" id="macdProSignalColor" type="color" value="#BA0032"><span></span></div>
+        <div class="setting-row"><label>Hist. alcista creciente</label><input class="color-box" id="macdProGrowAbove" type="color" value="#208AFF"><span></span></div>
+        <div class="setting-row"><label>Hist. bajista creciente</label><input class="color-box" id="macdProGrowBelow" type="color" value="#FFC4D4"><span></span></div>
+        <div class="setting-row"><label>Hist. alcista decreciente</label><input class="color-box" id="macdProFallAbove" type="color" value="#C4D4FF"><span></span></div>
+        <div class="setting-row"><label>Hist. bajista decreciente</label><input class="color-box" id="macdProFallBelow" type="color" value="#FF206A"><span></span></div>
+      </div>
+      <div class="settings-foot"><button class="modal-btn" id="macdProSettingsCancel">Cancelar</button><button class="modal-btn primary" id="macdProSettingsApply">Aceptar</button></div>
     </div>
   </div>
   <div class="settings-backdrop" id="rtcSettingsBackdrop">
@@ -1076,6 +1136,7 @@ let quoteCache = {};
 let showKillzones = true;
 let showEMA = false;
 let showBibiru = false;
+let showMACDPro = false;
 let indicatorCollapsed = false;
 let activeIndicators = [{id:"ict-default", type:"ict"}];
 let indicatorSeq = 1;
@@ -1085,6 +1146,7 @@ let editingDisplacementIndicatorId = null;
 let editingSmartSignalIndicatorId = null;
 let editingSmfIndicatorId = null;
 let editingRtcIndicatorId = null;
+let editingMacdProIndicatorId = null;
 const panels = [];
 let contextState = {panel:null, price:null, x:0, y:0};
 let lastAlertPrice = null;
@@ -1134,6 +1196,8 @@ const designSettings = {
   wmVisible: true,
 };
 let designTemplates = [];
+let activePanelTemplate = 1;
+let activeColorTemplate = 1;
 
 // ===== TEMPLATE PRECARGADO: DARK TRADING / NEON BLUE =====
 const DARK_NEON_BLUE_TEMPLATE = {
@@ -1228,9 +1292,12 @@ const bibiruSettings = {
   sma2Length: 25,
   sma1Color: "#00d4ff",
   sma2Color: "#ff9800",
+  sma1Width: 2,
+  sma2Width: 2,
   showSma1: true,
   showSma2: true,
   showVwap: true,
+  vwapHeight: 80,
   vwapBullColor: "#00e5a0",
   vwapBearColor: "#ff3355",
 };
@@ -1398,6 +1465,26 @@ const rtcStoch6Settings = {
   showPanel: true,
   showLabels: true,
 };
+const macdProSettings = {
+  mode: "Basic",
+  oscType: "EMA",
+  fastLength: 12,
+  slowLength: 26,
+  sigType: "EMA",
+  sigLength: 8,
+  sigOffset: 0,
+  histType: "OFF",
+  histLength: 5,
+  source: "close",
+  macdColor: "#006ABA",
+  signalColor: "#BA0032",
+  growAboveColor: "#208AFF",
+  growBelowColor: "#FFC4D4",
+  fallAboveColor: "#C4D4FF",
+  fallBelowColor: "#FF206A",
+  panelHeight: 130,
+};
+const MACD_PRO_COLORS = ["#006ABA", "#BA0032", "#208AFF", "#FFC4D4"];
 
 function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
 function normalizeSymbolKey(value){
@@ -1843,6 +1930,9 @@ function cloneStrategyJrSettings(source = strategyJrSettings){
 function cloneRtcStoch6Settings(source = rtcStoch6Settings){
   return {...rtcStoch6Settings, ...(source || {})};
 }
+function cloneMacdProSettings(source = macdProSettings){
+  return {...macdProSettings, ...(source || {})};
+}
 function emaItems(){
   return activeIndicators.filter(item => item?.type === "ema");
 }
@@ -1927,6 +2017,23 @@ function getRtcStoch6SettingsFor(item){
   if(!item.settings) item.settings = cloneRtcStoch6Settings();
   return item.settings;
 }
+function macdProItems(){
+  return activeIndicators.filter(item => item?.type === "macdPro");
+}
+function visibleMacdProItems(){
+  return visibleIndicatorItems("macdPro");
+}
+function getMacdProSettingsFor(item){
+  if(!item) return macdProSettings;
+  if(!item.settings) item.settings = cloneMacdProSettings();
+  return item.settings;
+}
+function currentMacdProItem(){
+  return activeIndicators.find(item => item.id === editingMacdProIndicatorId && item.type === "macdPro") || macdProItems()[0] || null;
+}
+function currentMacdProSettings(){
+  return getMacdProSettingsFor(currentMacdProItem());
+}
 function currentEmaItem(){
   return activeIndicators.find(item => item.id === editingEmaIndicatorId && item.type === "ema") || emaItems()[0] || null;
 }
@@ -1977,12 +2084,17 @@ function indicatorName(item){
   if(item.type === "rtcStoch") return "RTC Estocástico RSI";
   if(item.type === "strategyJrV8") return "Strategy JR V8";
   if(item.type === "rtcStoch6") return "RTC Estocástico v6";
+  if(item.type === "macdPro") {
+    const s = getMacdProSettingsFor(item);
+    return `MACD Pro (${s.fastLength},${s.slowLength},${s.sigLength})`;
+  }
   return "ICT Killzones & Pivots [TFO]";
 }
 function syncIndicatorState(){
   showKillzones = hasVisibleIndicator("ict");
   showEMA = hasVisibleIndicator("ema");
   showBibiru = hasVisibleIndicator("bibiru");
+  showMACDPro = hasVisibleIndicator("macdPro");
 }
 function addIndicator(type){
   const item = {id:`${type}-${Date.now()}-${indicatorSeq++}`, type, visible:true};
@@ -2004,6 +2116,8 @@ function addIndicator(type){
     item.settings = cloneStrategyJrSettings();
   } else if(type === "rtcStoch6") {
     item.settings = cloneRtcStoch6Settings();
+  } else if(type === "macdPro") {
+    item.settings = cloneMacdProSettings();
   }
   activeIndicators.push(item);
   syncIndicatorState();
@@ -2168,9 +2282,12 @@ function sourceValue(bar, source){
 function effectiveVolume(bar){
   const volume = Number(bar.v);
   if(Number.isFinite(volume) && volume > 0) return volume;
+  // Volumen sintético basado en rango porcentual (para CFDs/Forex sin volumen real)
+  const mid = (Number(bar.h) + Number(bar.l)) / 2;
   const range = Math.max(0.0001, Number(bar.h) - Number(bar.l));
   const body = Math.abs(Number(bar.c) - Number(bar.o));
-  return Math.max(1, (range + body) * 1000);
+  const pctRange = range / Math.max(mid, 0.0001);
+  return Math.max(10, Math.round(pctRange * 100000 * (1 + body / range)));
 }
 function formatVolume(value){
   const abs = Math.abs(Number(value) || 0);
@@ -2758,6 +2875,97 @@ function computeRtcStoch6(data, settings = rtcStoch6Settings){
   });
   return {raw, k, signals};
 }
+
+// --- Funciones helper para MACD Pro ---
+function logMASeries(values, length){
+  const out = new Array(values.length).fill(null);
+  for(let i = length - 1; i < values.length; i++){
+    let wSum = 0, sum = 0, ok = true;
+    for(let j = 0; j < length; j++){
+      const v = Number(values[i - j]);
+      if(!Number.isFinite(v)){ ok = false; break; }
+      const w = Math.log(length + 1 - j);
+      wSum += w;
+      sum += v * w;
+    }
+    if(ok) out[i] = sum / wSum;
+  }
+  return out;
+}
+function vwrmaSeries(values, volumes, length){
+  const pv = rmaSeries(values.map((v, i) => Number.isFinite(v) ? v * (Number(volumes[i]) || 1) : null), length);
+  const vol = rmaSeries(volumes.map(v => Number(v) || 1), length);
+  return pv.map((v, i) => Number.isFinite(v) && Number.isFinite(vol[i]) && vol[i] > 0 ? v / vol[i] : null);
+}
+function svwrmaSeries(values, data, length){
+  const synthVol = data.map((bar, i) => {
+    if(i === 0) return 1;
+    const prevC = Number(data[i - 1].c);
+    const c = Number(bar.c), h = Number(bar.h), l = Number(bar.l), o = Number(bar.o);
+    return Math.abs(c - prevC)
+      + Math.abs(h - Math.max(o, c)) * 2
+      + Math.abs(Math.min(o, c) - l) * 2;
+  });
+  const pv = rmaSeries(values.map((v, i) => Number.isFinite(v) ? v * synthVol[i] : null), length);
+  const vol = rmaSeries(synthVol, length);
+  return pv.map((v, i) => Number.isFinite(v) && Number.isFinite(vol[i]) && vol[i] > 0 ? v / vol[i] : null);
+}
+function demaSeries(values, length){
+  const ema1 = emaSeries(values, length);
+  const ema2 = emaSeries(ema1, length);
+  return ema1.map((v, i) => Number.isFinite(v) && Number.isFinite(ema2[i]) ? 2 * v - ema2[i] : null);
+}
+function macdProMA(values, volumes, length, type, data){
+  if(type === "EMA") return emaSeries(values, length);
+  if(type === "WMA") return wmaSeries(values, length);
+  if(type === "LMA") return logMASeries(values, length);
+  if(type === "SMA") return smaSeries(values, length);
+  if(type === "VWRMA") return vwrmaSeries(values, volumes, length);
+  if(type === "VWRMA (s)") return svwrmaSeries(values, data, length);
+  return emaSeries(values, length);
+}
+function macdProSignalMA(values, volumes, length, type){
+  if(type === "DEMA") return demaSeries(values, length);
+  return macdProMA(values, volumes, length, type);
+}
+// --- FIN funciones helper MACD Pro ---
+
+function computeMACDPro(data, settings = macdProSettings){
+  const src = data.map(bar => {
+    let value = sourceValue(bar, settings.source);
+    if(settings.mode === "Logarithmic" && value > 0) value = Math.log(value);
+    return value;
+  });
+  const volumes = data.map(bar => Number(bar.v) || 1);
+  const fastMA = macdProMA(src, volumes, settings.fastLength, settings.oscType, data);
+  const slowMA = macdProMA(src, volumes, settings.slowLength, settings.oscType, data);
+  let macd;
+  if(settings.mode === "Percent") {
+    macd = fastMA.map((v, i) => {
+      if(!Number.isFinite(v) || !Number.isFinite(slowMA[i]) || slowMA[i] === 0) return null;
+      return 100 * (v - slowMA[i]) / slowMA[i];
+    });
+  } else {
+    macd = fastMA.map((v, i) => {
+      if(!Number.isFinite(v) || !Number.isFinite(slowMA[i])) return null;
+      return v - slowMA[i];
+    });
+  }
+  const signal = macdProSignalMA(macd, volumes, settings.sigLength, settings.sigType);
+  const offset = clamp(Number(settings.sigOffset) || 0, 0, 100);
+  const displaced = offset > 0
+    ? [...new Array(offset).fill(null), ...signal.slice(0, -offset)]
+    : signal;
+  let hist;
+  if(settings.histType === "OFF") {
+    hist = macd.map((v, i) => Number.isFinite(v) && Number.isFinite(displaced[i]) ? v - displaced[i] : null);
+  } else {
+    const rawHist = macd.map((v, i) => Number.isFinite(v) && Number.isFinite(displaced[i]) ? v - displaced[i] : null);
+    hist = macdProMA(rawHist, volumes, settings.histLength, settings.histType, data);
+  }
+  return {macd, signal: displaced, hist};
+}
+
 function computeStrategyJr(data, settings = strategyJrSettings){
   const closes = data.map(b => b.c);
   const fast = emaSeries(closes, clamp(Number(settings.fast) || 2, 1, 100));
@@ -3248,6 +3456,7 @@ class ChartPanel {
         else if(item?.type === "smartSignal") openSmartSignalSettings(item.id);
         else if(item?.type === "smf") openSmfSettings(item.id);
         else if(item?.type === "strategyJrV8") openStrategyJrSettings(item.id);
+        else if(item?.type === "macdPro") openMacdProSettings(item.id);
         else if(item?.type === "rtcStrategy" || item?.type === "rtcScreener" || item?.type === "rtcStoch" || item?.type === "rtcStoch6") openRtcSettings(item.id);
         else openSettings();
       };
@@ -4432,48 +4641,60 @@ class ChartPanel {
   }
   drawEMAOverlay(ctx, data, x, y){
     if(data.length < 2) return;
+    const useFull = this.candles.length >= data.length && this.candles.length > 0;
+    const fullData = useFull ? this.candles : data;
+    const dataStart = useFull ? Math.max(0, this.candles.indexOf(data[0])) : 0;
     visibleEmaItems().forEach(item => {
       const settings = getEmaSettingsFor(item);
-      const indicator = computeEMAIndicator(data, settings);
+      const indicator = computeEMAIndicator(fullData, settings);
+      const sl = (arr) => arr.slice(dataStart, dataStart + data.length);
+      const off = settings.offset || 0;
       if(indicator.smoothing && indicator.stdev) {
-        const upper = indicator.smoothing.map((v, i) => Number.isFinite(v) && Number.isFinite(indicator.stdev[i]) ? v + indicator.stdev[i] * settings.bbMult : null);
-        const lower = indicator.smoothing.map((v, i) => Number.isFinite(v) && Number.isFinite(indicator.stdev[i]) ? v - indicator.stdev[i] * settings.bbMult : null);
+        const upper = sl(indicator.smoothing.map((v, i) => Number.isFinite(v) && Number.isFinite(indicator.stdev[i]) ? v + indicator.stdev[i] * settings.bbMult : null));
+        const lower = sl(indicator.smoothing.map((v, i) => Number.isFinite(v) && Number.isFinite(indicator.stdev[i]) ? v - indicator.stdev[i] * settings.bbMult : null));
         ctx.save();
         ctx.fillStyle = rgba(settings.bbColor, settings.bbFillAlpha);
         ctx.beginPath();
         let started = false;
         upper.forEach((value, i) => {
           if(!Number.isFinite(value)) return;
-          const xx = x(i + settings.offset);
+          const xx = x(i + off);
           const yy = y(value);
           if(!started){ ctx.moveTo(xx, yy); started = true; }
           else ctx.lineTo(xx, yy);
         });
         for(let i = lower.length - 1; i >= 0; i--) {
           if(!Number.isFinite(lower[i])) continue;
-          ctx.lineTo(x(i + settings.offset), y(lower[i]));
+          ctx.lineTo(x(i + off), y(lower[i]));
         }
         if(started) ctx.fill();
         ctx.restore();
-        this.drawSeriesLine(ctx, data, upper, x, y, settings.bbColor, 1.2, settings.offset);
-        this.drawSeriesLine(ctx, data, lower, x, y, settings.bbColor, 1.2, settings.offset);
+        this.drawSeriesLine(ctx, data, upper, x, y, settings.bbColor, 1.2, off);
+        this.drawSeriesLine(ctx, data, lower, x, y, settings.bbColor, 1.2, off);
       }
-      if(indicator.smoothing) this.drawSeriesLine(ctx, data, indicator.smoothing, x, y, settings.smoothingColor, 1.5, settings.offset);
-      this.drawSeriesLine(ctx, data, indicator.ema, x, y, settings.color, 1.8, settings.offset);
+      const smLine = indicator.smoothing ? sl(indicator.smoothing) : null;
+      if(smLine) this.drawSeriesLine(ctx, data, smLine, x, y, settings.smoothingColor, 1.5, off);
+      const emaLine = sl(indicator.ema);
+      this.drawSeriesLine(ctx, data, emaLine, x, y, settings.color, 1.8, off);
     });
   }
   drawBibiruOverlay(ctx, data, x, y){
     if(data.length < 2) return;
+    // Calcular SMA sobre TODAS las velas para que no desaparezca al hacer zoom
+    const useFullData = this.candles.length >= data.length && this.candles.length > 0;
+    const allSrc = useFullData ? this.candles.map(bar => bar.c) : data.map(bar => bar.c);
+    const dataStart = useFullData ? Math.max(0, this.candles.indexOf(data[0])) : 0;
     visibleBibiruItems().forEach(item => {
       const settings = getBibiruSettingsFor(item);
-      const src = data.map(bar => bar.c);
       if(settings.showSma1) {
-        const sma1 = smaSeries(src, settings.sma1Length);
-        this.drawSeriesLine(ctx, data, sma1, x, y, settings.sma1Color, 1.8, 0);
+        const allSma1 = smaSeries(allSrc, settings.sma1Length);
+        const sma1 = allSma1.slice(dataStart, dataStart + data.length);
+        this.drawSeriesLine(ctx, data, sma1, x, y, settings.sma1Color, settings.sma1Width || 2, 0);
       }
       if(settings.showSma2) {
-        const sma2 = smaSeries(src, settings.sma2Length);
-        this.drawSeriesLine(ctx, data, sma2, x, y, settings.sma2Color, 1.8, 0);
+        const allSma2 = smaSeries(allSrc, settings.sma2Length);
+        const sma2 = allSma2.slice(dataStart, dataStart + data.length);
+        this.drawSeriesLine(ctx, data, sma2, x, y, settings.sma2Color, settings.sma2Width || 2, 0);
       }
     });
   }
@@ -4542,6 +4763,92 @@ class ChartPanel {
       ctx.restore();
     });
   }
+  drawMACDProOverlay(ctx, data, x, y, mainW){
+    visibleMacdProItems().forEach((item, panelIndex) => {
+      const settings = getMacdProSettingsFor(item);
+      if(!data || data.length < Math.max(settings.fastLength, settings.slowLength) + 5) return;
+      const result = computeMACDPro(data, settings);
+      const mainH = this.lastScale?.mainH || this.el.clientHeight;
+      const pane = this.lastChart?.stochPane || null;
+      const stoch6Count = visibleRtcItems("rtcStoch6").length;
+      const bibiruVolItems = visibleBibiruItems().filter(it => getBibiruSettingsFor(it).showVwap);
+      const macdProItems = visibleMacdProItems();
+      const macdProIndex = macdProItems.findIndex(it => it.id === item.id);
+      const h = pane ? pane.h / Math.max(1, pane.count || 1) : 130;
+      const y0 = pane ? pane.y0 + (stoch6Count + bibiruVolItems.length + macdProIndex) * h : (mainH - h - 40 - (stoch6Count + bibiruVolItems.length + macdProIndex) * 150);
+      const paneX = 0, paneW = mainW;
+      const x0 = this.lastChart?.plotLeftPad ?? 0;
+      const w = this.lastChart?.plotW ?? Math.max(120, mainW - 48);
+      const mapX = i => x0 + (i / Math.max(1, data.length - 1)) * w;
+      // Encontrar escala para MACD
+      let maxVal = 0;
+      result.macd.forEach(v => { if(Number.isFinite(v)) maxVal = Math.max(maxVal, Math.abs(v)); });
+      result.signal.forEach(v => { if(Number.isFinite(v)) maxVal = Math.max(maxVal, Math.abs(v)); });
+      result.hist.forEach(v => { if(Number.isFinite(v)) maxVal = Math.max(maxVal, Math.abs(v)); });
+      maxVal = maxVal * 1.2 || 1;
+      const sy = value => y0 + h / 2 - (clamp(value, -maxVal, maxVal) / maxVal) * (h / 2 - 8);
+      ctx.save();
+      // Fondo del panel
+      ctx.fillStyle = rgba(designSettings.bgColor, .97);
+      ctx.fillRect(paneX, y0, paneW, h);
+      ctx.strokeStyle = "rgba(0,212,255,.2)";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(paneX, y0 + .5); ctx.lineTo(paneX + paneW, y0 + .5); ctx.stroke();
+      // Línea cero
+      ctx.strokeStyle = "rgba(90,106,128,.3)";
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(paneX, sy(0)); ctx.lineTo(paneX + paneW, sy(0)); ctx.stroke();
+      ctx.setLineDash([]);
+      // Histograma
+      const halfCandleW = Math.max(1, clamp(w / Math.max(1, data.length) * .28, 1, 8));
+      result.hist.forEach((value, i) => {
+        if(!Number.isFinite(value)) return;
+        const xx = mapX(i);
+        const yy0 = sy(0);
+        const yy1 = sy(value);
+        const prev = result.hist[i - 1];
+        let color;
+        if(value > 0) {
+          color = (Number.isFinite(prev) && value > prev) ? settings.growAboveColor : settings.fallAboveColor;
+        } else {
+          color = (Number.isFinite(prev) && value > prev) ? settings.growBelowColor : settings.fallBelowColor;
+        }
+        ctx.fillStyle = color;
+        const barH = Math.max(1, Math.abs(yy1 - yy0));
+        const barTop = value >= 0 ? yy1 : yy0;
+        ctx.fillRect(xx - halfCandleW, barTop, halfCandleW * 2, barH);
+      });
+      // Línea MACD
+      this.drawSeriesLine(ctx, data, result.macd, mapX, sy, settings.macdColor, 1.6);
+      // Línea Signal
+      this.drawSeriesLine(ctx, data, result.signal, mapX, sy, settings.signalColor, 1.2);
+      // Etiqueta
+      ctx.font = "700 11px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "rgba(0,212,255,.7)";
+      ctx.textAlign = "left";
+      ctx.fillText("MACD Pro", x0 + 8, y0 + 14);
+      ctx.font = "600 9px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "rgba(90,106,128,.5)";
+      ctx.fillText(`${settings.mode} (${settings.fastLength},${settings.slowLength},${settings.sigLength})`, x0 + 72, y0 + 14);
+      // Valores actuales
+      const lastMacd = result.macd.at(-1);
+      const lastSig = result.signal.at(-1);
+      const lastHist = result.hist.at(-1);
+      if(Number.isFinite(lastMacd)) {
+        ctx.textAlign = "right";
+        const valText = lastMacd.toFixed(2);
+        ctx.font = "700 11px 'JetBrains Mono', monospace";
+        ctx.fillStyle = settings.macdColor;
+        ctx.fillText(valText, paneX + paneW - 6, y0 + 14);
+        if(Number.isFinite(lastSig)) {
+          ctx.font = "600 10px 'JetBrains Mono', monospace";
+          ctx.fillStyle = settings.signalColor;
+          ctx.fillText(lastSig.toFixed(2), paneX + paneW - 6, y0 + 26);
+        }
+      }
+      ctx.restore();
+    });
+  }
   draw(){
     this.updateIndicatorUi();
     const isMulti = layoutMode > 1;
@@ -4549,10 +4856,19 @@ class ChartPanel {
     const left = isMulti ? 0 : 44;
     const right = isMulti ? 0 : 48;
     const top = 0, xH = 30, yW = 72;
-    const stochPaneCount = visibleRtcItems("rtcStoch6").length + visibleBibiruItems().filter(item => getBibiruSettingsFor(item).showVwap).length;
-    const hasStochPane = stochPaneCount > 0;
     const totalH = this.el.clientHeight - top - xH;
-    const stochPaneUnit = hasStochPane ? clamp(Math.round(totalH * .18), 112, 166) : 0;
+    const stoch6Count = visibleRtcItems("rtcStoch6").length;
+    const bibiruVolItems = visibleBibiruItems().filter(item => getBibiruSettingsFor(item).showVwap);
+    const macdProCount = visibleMacdProItems().length;
+    const stochPaneCount = stoch6Count + bibiruVolItems.length + macdProCount;
+    const hasStochPane = stochPaneCount > 0;
+    const stochPaneUnit = hasStochPane
+      ? (bibiruVolItems.length > 0
+        ? getBibiruSettingsFor(bibiruVolItems[0]).vwapHeight || 80
+        : macdProCount > 0
+          ? (getMacdProSettingsFor(visibleMacdProItems()[0]).panelHeight || 130)
+          : clamp(Math.round(totalH * .18), 112, 166))
+      : 0;
     const stochPaneH = Math.min(Math.round(totalH * .45), stochPaneUnit * stochPaneCount);
     const mainW = this.el.clientWidth - left - right - yW;
     const mainH = totalH - stochPaneH;
@@ -4578,9 +4894,37 @@ class ChartPanel {
     const candleW = clamp(plotW / Math.max(1, data.length) * .62, 3, 13);
     this.drawKillzones(ctx, data, scale, x, y, mainW, candleW);
     this.drawOpeningPrices(ctx, data, x, y, mainW);
+    // Pre-calcular colores MACD Pro para barcolorear velas
+    const macdProBarColors = [];
+    const macdProItems_ = visibleMacdProItems();
+    if(macdProItems_.length > 0) {
+      macdProItems_.forEach(item => {
+        const settings = getMacdProSettingsFor(item);
+        if(data.length < Math.max(settings.fastLength, settings.slowLength) + 2) return;
+        const result = computeMACDPro(data, settings);
+        result.hist.forEach((value, i) => {
+          if(!Number.isFinite(value)) return;
+          const prev = result.hist[i - 1];
+          let color;
+          if(value > 0) {
+            color = (Number.isFinite(prev) && value > prev) ? settings.growAboveColor : settings.fallAboveColor;
+          } else {
+            color = (Number.isFinite(prev) && value > prev) ? settings.growBelowColor : settings.fallBelowColor;
+          }
+          // Guardar el color con más prioridad (último indicador gana)
+          macdProBarColors[i] = color;
+        });
+      });
+    }
     data.forEach((p,i) => {
       const xx = x(i), yo = y(p.o), yc = y(p.c), yh = y(p.h), yl = y(p.l);
-      const style = candleStyle(p, data[i - 1]);
+      const style = {...candleStyle(p, data[i - 1])};
+      // Aplicar barcolor de MACD Pro si existe
+      if(macdProBarColors[i]) {
+        style.body = macdProBarColors[i];
+        style.border = macdProBarColors[i];
+        style.wick = macdProBarColors[i];
+      }
       if(designSettings.wickEnabled) {
         ctx.strokeStyle = style.wick;
         ctx.beginPath(); ctx.moveTo(xx,yh); ctx.lineTo(xx,yl); ctx.stroke();
@@ -4604,6 +4948,7 @@ class ChartPanel {
     this.drawEMAOverlay(ctx, data, x, y);
     this.drawBibiruOverlay(ctx, data, x, y);
     this.drawBibiruVwapOverlay(ctx, data, x, y, mainW);
+    this.drawMACDProOverlay(ctx, data, x, y, mainW);
     this.drawDisplacementOverlay(ctx, data, x, y, mainW, candleW);
     this.drawSmartSignalOverlay(ctx, data, x, y, mainW);
     this.drawAlertLines(data, y, mainH, mainW);
@@ -5159,6 +5504,63 @@ function applyEmaSettingsPanel(){
   readEmaSettingsPanel();
   closeEmaSettings();
 }
+function openMacdProSettings(indicatorId = null){
+  const item = indicatorId
+    ? activeIndicators.find(ind => ind.id === indicatorId && ind.type === "macdPro")
+    : macdProItems()[0];
+  editingMacdProIndicatorId = item?.id || null;
+  document.getElementById("macdProSettingsBackdrop").classList.add("open");
+  hydrateMacdProSettingsPanel();
+}
+function closeMacdProSettings(){
+  document.getElementById("macdProSettingsBackdrop").classList.remove("open");
+  editingMacdProIndicatorId = null;
+}
+function hydrateMacdProSettingsPanel(){
+  const settings = currentMacdProSettings();
+  document.getElementById("macdProMode").value = settings.mode || "Basic";
+  document.getElementById("macdProSource").value = settings.source || "close";
+  document.getElementById("macdProOscType").value = settings.oscType || "EMA";
+  document.getElementById("macdProFastLength").value = settings.fastLength || 12;
+  document.getElementById("macdProSlowLength").value = settings.slowLength || 26;
+  document.getElementById("macdProSigType").value = settings.sigType || "EMA";
+  document.getElementById("macdProSigLength").value = settings.sigLength || 8;
+  document.getElementById("macdProSigOffset").value = settings.sigOffset || 0;
+  document.getElementById("macdProHistType").value = settings.histType || "OFF";
+  document.getElementById("macdProHistLength").value = settings.histLength || 5;
+  document.getElementById("macdProMacdColor").value = settings.macdColor || "#006ABA";
+  document.getElementById("macdProSignalColor").value = settings.signalColor || "#BA0032";
+  document.getElementById("macdProGrowAbove").value = settings.growAboveColor || "#208AFF";
+  document.getElementById("macdProGrowBelow").value = settings.growBelowColor || "#FFC4D4";
+  document.getElementById("macdProFallAbove").value = settings.fallAboveColor || "#C4D4FF";
+  document.getElementById("macdProFallBelow").value = settings.fallBelowColor || "#FF206A";
+}
+function readMacdProSettingsPanel(){
+  const settings = currentMacdProSettings();
+  if(!settings) return;
+  settings.mode = document.getElementById("macdProMode").value || "Basic";
+  settings.source = document.getElementById("macdProSource").value || "close";
+  settings.oscType = document.getElementById("macdProOscType").value || "EMA";
+  settings.fastLength = clamp(Number(document.getElementById("macdProFastLength").value) || 12, 1, 500);
+  settings.slowLength = clamp(Number(document.getElementById("macdProSlowLength").value) || 26, 1, 500);
+  settings.sigType = document.getElementById("macdProSigType").value || "EMA";
+  settings.sigLength = clamp(Number(document.getElementById("macdProSigLength").value) || 8, 1, 500);
+  settings.sigOffset = clamp(Number(document.getElementById("macdProSigOffset").value) || 0, 0, 100);
+  settings.histType = document.getElementById("macdProHistType").value || "OFF";
+  settings.histLength = clamp(Number(document.getElementById("macdProHistLength").value) || 5, 1, 50);
+  settings.macdColor = document.getElementById("macdProMacdColor").value || "#006ABA";
+  settings.signalColor = document.getElementById("macdProSignalColor").value || "#BA0032";
+  settings.growAboveColor = document.getElementById("macdProGrowAbove").value || "#208AFF";
+  settings.growBelowColor = document.getElementById("macdProGrowBelow").value || "#FFC4D4";
+  settings.fallAboveColor = document.getElementById("macdProFallAbove").value || "#C4D4FF";
+  settings.fallBelowColor = document.getElementById("macdProFallBelow").value || "#FF206A";
+  saveIndicatorSettings();
+  redrawAll();
+}
+function applyMacdProSettingsPanel(){
+  readMacdProSettingsPanel();
+  closeMacdProSettings();
+}
 function openBibiruSettings(indicatorId = null){
   const item = indicatorId
     ? activeIndicators.find(ind => ind.id === indicatorId && ind.type === "bibiru")
@@ -5166,6 +5568,7 @@ function openBibiruSettings(indicatorId = null){
   editingBibiruIndicatorId = item?.id || null;
   document.getElementById("bibiruSettingsBackdrop").classList.add("open");
   hydrateBibiruSettingsPanel();
+  updateBibiruColorProfileButtons();
 }
 function closeBibiruSettings(){
   document.getElementById("bibiruSettingsBackdrop").classList.remove("open");
@@ -5175,11 +5578,15 @@ function hydrateBibiruSettingsPanel(){
   const settings = currentBibiruSettings();
   document.getElementById("bibiruSma1Length").value = settings.sma1Length;
   document.getElementById("bibiruSma1Color").value = settings.sma1Color;
+  document.getElementById("bibiruSma1Width").value = settings.sma1Width ?? 2;
   document.getElementById("bibiruShowSma1").checked = settings.showSma1;
   document.getElementById("bibiruSma2Length").value = settings.sma2Length;
   document.getElementById("bibiruSma2Color").value = settings.sma2Color;
+  document.getElementById("bibiruSma2Width").value = settings.sma2Width ?? 2;
   document.getElementById("bibiruShowSma2").checked = settings.showSma2;
   document.getElementById("bibiruShowVwap").checked = settings.showVwap;
+  document.getElementById("bibiruVwapHeight").value = settings.vwapHeight || 80;
+  document.getElementById("bibiruVwapHeightValue").textContent = settings.vwapHeight || 80;
   document.getElementById("bibiruVwapBullColor").value = settings.vwapBullColor;
   document.getElementById("bibiruVwapBearColor").value = settings.vwapBearColor;
 }
@@ -5187,11 +5594,15 @@ function readBibiruSettingsPanel(){
   const settings = currentBibiruSettings();
   settings.sma1Length = clamp(Number(document.getElementById("bibiruSma1Length").value) || 5, 1, 5000);
   settings.sma1Color = document.getElementById("bibiruSma1Color").value || "#00d4ff";
+  settings.sma1Width = Number(document.getElementById("bibiruSma1Width").value) || 2;
   settings.showSma1 = document.getElementById("bibiruShowSma1").checked;
   settings.sma2Length = clamp(Number(document.getElementById("bibiruSma2Length").value) || 25, 1, 5000);
   settings.sma2Color = document.getElementById("bibiruSma2Color").value || "#ff9800";
+  settings.sma2Width = Number(document.getElementById("bibiruSma2Width").value) || 2;
   settings.showSma2 = document.getElementById("bibiruShowSma2").checked;
   settings.showVwap = document.getElementById("bibiruShowVwap").checked;
+  settings.vwapHeight = clamp(Number(document.getElementById("bibiruVwapHeight").value) || 80, 30, 200);
+  document.getElementById("bibiruVwapHeightValue").textContent = settings.vwapHeight;
   settings.vwapBullColor = document.getElementById("bibiruVwapBullColor").value || "#00e5a0";
   settings.vwapBearColor = document.getElementById("bibiruVwapBearColor").value || "#ff3355";
   saveIndicatorSettings();
@@ -5200,6 +5611,94 @@ function readBibiruSettingsPanel(){
 function applyBibiruSettingsPanel(){
   readBibiruSettingsPanel();
   closeBibiruSettings();
+}
+
+// ============ PERFILES DE COLOR BIBIRU (A/B) ============
+let activeBibiruColorProfile = "A";
+const BIBIRU_COLOR_KEYS = ["sma1Color","sma2Color","vwapBullColor","vwapBearColor"];
+
+function getBibiruColorProfiles() {
+  try { return JSON.parse(localStorage.getItem("bibiruColorProfiles") || "{}"); }
+  catch { return {}; }
+}
+function saveBibiruColorProfiles(profiles) {
+  localStorage.setItem("bibiruColorProfiles", JSON.stringify(profiles));
+}
+
+function saveBibiruColorProfile() {
+  const profiles = getBibiruColorProfiles();
+  const settings = currentBibiruSettings();
+  const colors = {};
+  BIBIRU_COLOR_KEYS.forEach(k => { colors[k] = settings[k]; });
+  const existing = profiles[activeBibiruColorProfile];
+  profiles[activeBibiruColorProfile] = {
+    name: existing?.name || `Perfil ${activeBibiruColorProfile}`,
+    colors: colors,
+    savedAt: new Date().toISOString()
+  };
+  saveBibiruColorProfiles(profiles);
+  localStorage.setItem("bibiruActiveColorProfile", activeBibiruColorProfile);
+  updateBibiruColorProfileButtons();
+  showToast(`Bibiru perfil ${activeBibiruColorProfile} guardado`);
+}
+
+function saveBibiruColorProfileAs() {
+  const name = prompt("Nombre para este perfil de color:", `Perfil ${activeBibiruColorProfile}`);
+  if (!name || !name.trim()) return;
+  const profiles = getBibiruColorProfiles();
+  const settings = currentBibiruSettings();
+  const colors = {};
+  BIBIRU_COLOR_KEYS.forEach(k => { colors[k] = settings[k]; });
+  profiles[activeBibiruColorProfile] = {
+    name: name.trim(),
+    colors: colors,
+    savedAt: new Date().toISOString()
+  };
+  saveBibiruColorProfiles(profiles);
+  updateBibiruColorProfileButtons();
+  showToast(`Bibiru perfil ${activeBibiruColorProfile} guardado como: "${name.trim()}"`);
+}
+
+function loadBibiruColorProfile(profileId) {
+  const profiles = getBibiruColorProfiles();
+  const profile = profiles[profileId];
+  activeBibiruColorProfile = profileId;
+  updateBibiruColorProfileButtons();
+  localStorage.setItem("bibiruActiveColorProfile", profileId);
+  
+  if (!profile || !profile.colors) {
+    showToast(`Bibiru perfil ${profileId} vacío — guarda con 💾`);
+    return;
+  }
+  
+  // Aplicar colores al setting activo
+  const settings = currentBibiruSettings();
+  BIBIRU_COLOR_KEYS.forEach(k => {
+    if (profile.colors[k]) settings[k] = profile.colors[k];
+  });
+  saveIndicatorSettings();
+  hydrateBibiruSettingsPanel();
+  redrawAll();
+  showToast(`Bibiru perfil ${profileId} aplicado: ${profile.name || `Perfil ${profileId}`}`);
+}
+
+function updateBibiruColorProfileButtons() {
+  const profiles = getBibiruColorProfiles();
+  document.querySelectorAll("[data-bibiru-color-profile]").forEach(btn => {
+    const pid = btn.dataset.bibiruColorProfile;
+    btn.classList.toggle("active", pid === activeBibiruColorProfile);
+    const p = profiles[pid];
+    btn.title = p?.name ? `${p.name}` : `Perfil ${pid} — vacío`;
+  });
+}
+
+function loadActiveBibiruColorProfile() {
+  const saved = localStorage.getItem("bibiruActiveColorProfile");
+  if (saved && (saved === "A" || saved === "B")) {
+    activeBibiruColorProfile = saved;
+    loadBibiruColorProfile(saved);
+  }
+  updateBibiruColorProfileButtons();
 }
 function openDisplacementSettings(indicatorId = null){
   const item = indicatorId
@@ -5743,28 +6242,33 @@ function toggleFullscreen(){
 }
 async function loadAlertsFromServer() {
   try {
-    const response = await fetch('/api/alerts');
-    const data = await response.json();
-    if (data.alerts) {
-      alerts = data.alerts;
-      renderAlertsBtn();
-      renderAlertsPanel();
-      redrawAll();
-      console.log(`📥 ${alerts.length} alertas cargadas del servidor`);
-    }
-  } catch (e) {
-    console.error('Error cargando alertas del servidor:', e);
-    // Fallback a localStorage
+    // Primero cargar desde localStorage (es la fuente de verdad local)
     try { alerts = JSON.parse(localStorage.getItem("nas100Alerts") || "[]"); }
     catch { alerts = []; }
-  }
-}
-
-async function saveAlertsToServer() {
-  try {
-    localStorage.setItem("nas100Alerts", JSON.stringify(alerts));
+    
+    // Luego intentar obtener del servidor para complementar
+    const response = await fetch('/api/alerts');
+    const data = await response.json();
+    if (data.alerts && data.alerts.length > 0) {
+      // Hacer merge: las alertas locales tienen prioridad, agregar las del servidor que no existan
+      const localIds = new Set(alerts.map(a => a.id));
+      const serverAlerts = data.alerts.filter(a => !localIds.has(a.id));
+      if (serverAlerts.length > 0) {
+        alerts = [...alerts, ...serverAlerts];
+        localStorage.setItem("nas100Alerts", JSON.stringify(alerts));
+        console.log(`📥 ${serverAlerts.length} alertas adicionales del servidor`);
+      }
+    }
+    renderAlertsBtn();
+    renderAlertsPanel();
+    redrawAll();
   } catch (e) {
-    console.error('Error guardando en localStorage:', e);
+    console.error('Error cargando alertas del servidor:', e);
+    // Fallback a localStorage (ya lo intentamos arriba)
+    if (!alerts || alerts.length === 0) {
+      try { alerts = JSON.parse(localStorage.getItem("nas100Alerts") || "[]"); }
+      catch { alerts = []; }
+    }
   }
 }
 
@@ -5774,16 +6278,30 @@ function loadAlerts() {
 
 function saveAlerts() {
   localStorage.setItem("nas100Alerts", JSON.stringify(alerts));
-  // También enviar al servidor
+  // También enviar al servidor (fire & forget)
   syncAlertsToServer();
 }
 
 async function syncAlertsToServer() {
   try {
-    // Por ahora solo guardamos localmente
-    // El servidor recibe alertas del bot de Telegram
+    // Enviar TODAS las alertas al servidor en formato compatible
+    const payload = alerts.map(a => ({
+      id: a.id,
+      symbol: a.symbol,
+      targetPrice: a.value,
+      direction: a.operator === 'cross_up' ? 'above' : a.operator === 'cross_down' ? 'below' : 'cross',
+      message: a.message || `${a.symbol} alerta`,
+      active: a.active !== false,
+      createdAt: a.createdAt ? new Date(a.createdAt).toISOString() : new Date().toISOString(),
+    }));
+    await fetch('/api/alerts/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alerts: payload }),
+    });
+    console.log(`📤 ${alerts.length} alertas sincronizadas al servidor`);
   } catch (e) {
-    console.error('Error sincronizando alertas:', e);
+    console.error('Error sincronizando alertas al servidor:', e);
   }
 }
 function loadIndicatorSettings(){
@@ -5791,7 +6309,7 @@ function loadIndicatorSettings(){
     const saved = JSON.parse(localStorage.getItem("nas100IndicatorSettings") || "null");
     if(!saved) return;
     if(Array.isArray(saved.activeIndicators)) {
-      activeIndicators = saved.activeIndicators.filter(item => item && (item.type === "ict" || item.type === "ema" || item.type === "bibiru" || item.type === "displacement" || item.type === "smartSignal" || item.type === "smf" || item.type === "rtcStrategy" || item.type === "rtcScreener" || item.type === "rtcStoch" || item.type === "strategyJrV8" || item.type === "rtcStoch6"));
+      activeIndicators = saved.activeIndicators.filter(item => item && (item.type === "ict" || item.type === "ema" || item.type === "bibiru" || item.type === "displacement" || item.type === "smartSignal" || item.type === "smf" || item.type === "rtcStrategy" || item.type === "rtcScreener" || item.type === "rtcStoch" || item.type === "strategyJrV8" || item.type === "rtcStoch6" || item.type === "macdPro"));
     } else {
       const legacy = [];
       if(saved.showKillzones !== false) legacy.push({id:"ict-default", type:"ict"});
@@ -5820,6 +6338,8 @@ function loadIndicatorSettings(){
         normalized.settings = cloneStrategyJrSettings(item.settings || {});
       } else if(normalized.type === "rtcStoch6") {
         normalized.settings = cloneRtcStoch6Settings(item.settings || {});
+      } else if(normalized.type === "macdPro") {
+        normalized.settings = cloneMacdProSettings(item.settings || {});
       }
       return normalized;
     });
@@ -5837,6 +6357,7 @@ function saveIndicatorSettings(){
     ...indicatorSettings,
     showKillzones,
     showEMA,
+    showMACDPro,
     activeIndicators,
     emaSettings,
     indicatorCollapsed,
@@ -5868,23 +6389,32 @@ function toggleAlertActive(alertId){
 // ============================================
 async function syncDeleteAlertToServer(alertId) {
   try {
-    await fetch('/api/alerts', {
+    await fetch(`/api/alerts/${alertId}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: alertId })
     });
     console.log(`🗑️ Alerta ${alertId} eliminada del servidor`);
   } catch (e) {
     console.error('Error eliminando del servidor:', e);
   }
+  // Re-sincronizar todo para mantener consistencia
+  syncAlertsToServer();
 }
 
 async function syncUpdateAlertToServer(alert) {
+  if (!alert) return;
   try {
-    await fetch('/api/alerts', {
+    const payload = {
+      id: alert.id,
+      symbol: alert.symbol,
+      targetPrice: alert.value,
+      direction: alert.operator === 'cross_up' ? 'above' : alert.operator === 'cross_down' ? 'below' : 'cross',
+      message: alert.message,
+      active: alert.active !== false,
+    };
+    await fetch(`/api/alerts/${alert.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(alert)
+      body: JSON.stringify(payload)
     });
     console.log(`🔄 Alerta ${alert.id} actualizada en servidor`);
   } catch (e) {
@@ -5894,14 +6424,24 @@ async function syncUpdateAlertToServer(alert) {
 
 async function syncAlertsToServer() {
   try {
-    // Enviar todas las alertas al servidor
-    await fetch('/api/alerts', {
+    // Enviar alertas al servidor en formato compatible
+    const payload = alerts.map(a => ({
+      id: a.id,
+      symbol: a.symbol,
+      targetPrice: a.value,
+      direction: a.operator === 'cross_up' ? 'above' : a.operator === 'cross_down' ? 'below' : 'cross',
+      message: a.message || `${a.symbol} alerta`,
+      active: a.active !== false,
+      createdAt: a.createdAt ? new Date(a.createdAt).toISOString() : new Date().toISOString(),
+    }));
+    await fetch('/api/alerts/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ alerts })
+      body: JSON.stringify({ alerts: payload }),
     });
+    console.log(`📤 ${alerts.length} alertas sincronizadas al servidor`);
   } catch (e) {
-    console.error('Error sincronizando:', e);
+    console.error('Error sincronizando alertas al servidor:', e);
   }
 }
 function renderAlertsBtn(){
@@ -6225,10 +6765,12 @@ function unlockAlertSound(){
 }
 function showToast(message){
   const toast = document.getElementById("toast");
-  toast.textContent = message;
-  toast.classList.add("show");
-  clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => toast.classList.remove("show"), 5200);
+  if(toast) {
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => toast.classList.remove("show"), 5200);
+  }
 }
 function exportChartPNG(){
   const panel = panels[activeIndex];
@@ -6358,6 +6900,7 @@ function init(){
   loadAlerts();
   initAlertsPanel();
   loadIndicatorSettings();
+  loadActiveBibiruColorProfile();
   loadDesignSettings();
   applyDesignToDom();
   window.addEventListener("pointerdown", unlockAlertSound, {once:true});
@@ -6368,9 +6911,10 @@ function init(){
   applyDesignToDom();
   refreshWatchlistQuotes();
   
-  // Si hay perfil, recargar con los símbolos correctos del perfil
-  const hasProfile = !!localStorage.getItem("chartflow_active_profile");
-  if(hasProfile) loadActiveProfile();
+  // Cargar templates de panel y modo de color
+  migrateOldProfiles();
+  loadActivePanelTemplate();
+  loadActiveColorTemplate();
   const gsWatchlist = document.querySelector("#gridSidebar [data-role='watchlist-button']");
   if(gsWatchlist) gsWatchlist.onclick = (e) => { e.stopPropagation(); watchlistOpen = !watchlistOpen; applyWatchlistOpen(); saveWatchlist(); };
   const gsAlerts = document.querySelector("#gridSidebar [data-role='alerts-button']");
@@ -6423,6 +6967,10 @@ function init(){
     addIndicator("rtcStoch6");
     document.getElementById("indicatorWrap").classList.remove("open");
   };
+  document.getElementById("macdProToggle").onclick = () => {
+    addIndicator("macdPro");
+    document.getElementById("indicatorWrap").classList.remove("open");
+  };
   syncIndicatorToggle();
   document.getElementById("settingsClose").onclick = closeSettings;
   document.getElementById("settingsCancel").onclick = closeSettings;
@@ -6439,6 +6987,14 @@ function init(){
   document.getElementById("emaSettingsBody").addEventListener("input", () => {
     clearTimeout(readEmaSettingsPanel.timer);
     readEmaSettingsPanel.timer = setTimeout(readEmaSettingsPanel, 180);
+  });
+  document.getElementById("macdProSettingsClose").onclick = closeMacdProSettings;
+  document.getElementById("macdProSettingsCancel").onclick = closeMacdProSettings;
+  document.getElementById("macdProSettingsApply").onclick = applyMacdProSettingsPanel;
+  document.getElementById("macdProSettingsBody").addEventListener("change", readMacdProSettingsPanel);
+  document.getElementById("macdProSettingsBody").addEventListener("input", () => {
+    clearTimeout(readMacdProSettingsPanel.timer);
+    readMacdProSettingsPanel.timer = setTimeout(readMacdProSettingsPanel, 180);
   });
   document.getElementById("bibiruSettingsClose").onclick = closeBibiruSettings;
   document.getElementById("bibiruSettingsCancel").onclick = closeBibiruSettings;
@@ -6677,155 +7233,285 @@ function init(){
   }), 1000);
 }
 
-// ============ SISTEMA DE PERFILES ============
-let activeProfile = 1;
+// ===== (Perfiles P1-P2-P3 reemplazados por Panel Templates 1-3 y Color Modes M1-M3) =====
 
-function getProfiles() {
-  try {
-    return JSON.parse(localStorage.getItem("chartflow_profiles") || "{}");
-  } catch { return {}; }
+// ============ SISTEMA DE TEMPLATES DE PANEL (1-3) ============
+function getPanelTemplates() {
+  try { return JSON.parse(localStorage.getItem("chartflow_panel_templates") || "{}"); }
+  catch { return {}; }
+}
+function savePanelTemplates(templates) {
+  localStorage.setItem("chartflow_panel_templates", JSON.stringify(templates));
 }
 
-function saveProfiles(profiles) {
-  localStorage.setItem("chartflow_profiles", JSON.stringify(profiles));
-}
-
-function saveCurrentProfile() {
-  const profiles = getProfiles();
-  
-  // Recopilar configuración INDEPENDIENTE de cada panel
+function saveCurrentPanelTemplate() {
+  const templates = getPanelTemplates();
   const panelConfigs = panels.slice(0, layoutMode).map((p, i) => ({
     symbol: p.symbolKey || activeSymbolKey,
     tf: p.tf || "5m",
   }));
-  
-  profiles[activeProfile] = {
+  const existing = templates[activePanelTemplate];
+  templates[activePanelTemplate] = {
+    name: existing?.name || `Panel ${activePanelTemplate}`,
     layout: layoutMode,
+    layoutPreset: layoutPresetId || String(layoutMode),
     panels: panelConfigs,
-    syncSymbol: false,
-    syncInterval: false,
+    syncSymbol: designSettings.syncSymbol || false,
+    syncInterval: designSettings.syncInterval || false,
+    watchlistTabs: JSON.parse(JSON.stringify(watchlistTabs)),
+    activeWatchlistTab: activeWatchlistTab,
     savedAt: new Date().toISOString()
   };
-  
-  saveProfiles(profiles);
-  
-  // Sincronizar con watchlist para persistencia global
+  savePanelTemplates(templates);
   window.__savedPanelTfs = panelConfigs.map(p => p.tf);
   window.__savedPanelSymbols = panelConfigs.map(p => p.symbol);
   saveWatchlist();
-  
-  updateProfileButtons();
-  
+  localStorage.setItem("chartflow_active_panel_template", activePanelTemplate);
   const syms = panelConfigs.map(p => p.symbol).join(", ");
-  showToast(`Perfil ${activeProfile} guardado: ${syms}`);
+  showToast(`Panel ${activePanelTemplate} guardado: ${syms}`);
 }
 
-function loadProfile(num) {
-  const profiles = getProfiles();
-  const profile = profiles[num];
+function savePanelTemplateAs() {
+  const name = prompt("Nombre para este template de panel:", `Panel ${activePanelTemplate}`);
+  if (!name || !name.trim()) return;
+  const templates = getPanelTemplates();
+  const panelConfigs = panels.slice(0, layoutMode).map((p, i) => ({
+    symbol: p.symbolKey || activeSymbolKey,
+    tf: p.tf || "5m",
+  }));
+  templates[activePanelTemplate] = {
+    name: name.trim(),
+    layout: layoutMode,
+    layoutPreset: layoutPresetId || String(layoutMode),
+    panels: panelConfigs,
+    syncSymbol: designSettings.syncSymbol || false,
+    syncInterval: designSettings.syncInterval || false,
+    watchlistTabs: JSON.parse(JSON.stringify(watchlistTabs)),
+    activeWatchlistTab: activeWatchlistTab,
+    savedAt: new Date().toISOString()
+  };
+  savePanelTemplates(templates);
+  updatePanelTemplateButtons();
+  showToast(`Panel ${activePanelTemplate} guardado como: "${name.trim()}"`);
+}
+
+function loadPanelTemplate(num) {
+  const templates = getPanelTemplates();
+  const template = templates[num];
+  activePanelTemplate = num;
+  updatePanelTemplateButtons();
+  localStorage.setItem("chartflow_active_panel_template", num);
   
-  // Actualizar botón activo
-  activeProfile = num;
-  updateProfileButtons();
-  
-  if (!profile) {
-    showToast(`Perfil ${num} vacío — guarda con 💾`);
+  if (!template) {
+    showToast(`Panel ${num} vacío — guarda con 💾`);
     return;
   }
   
-  // Desactivar sync global para independencia de paneles
+  // Precargar datos ANTES de crear paneles
+  const panelData = template.panels || [];
+  const templateTfs = panelData.map(p => p.tf || "5m");
+  const templateSymbols = panelData.map(p => p.symbol);
+  if (panelData.length > 0) {
+    window.__savedPanelTfs = [...templateTfs];
+    window.__savedPanelSymbols = [...templateSymbols];
+  }
+  
+  // Desactivar sync
   designSettings.syncSymbol = false;
   designSettings.syncInterval = false;
   designSettings.syncGrid = false;
   designSettings.syncTime = false;
   syncDesignSwitches();
+  
+  // Aplicar layout
+  if (template.layout) {
+    designSettings.layoutCells = template.layout;
+    designSettings.layoutPreset = template.layoutPreset || String(template.layout);
+    layoutMode = template.layout;
+    layoutPresetId = template.layoutPreset || String(template.layout);
+    setLayout(template.layout, true);
+  }
   saveDesignSettings();
   
-  // PASO 1: Crear layout SIN cargar datos
-  if (profile.layout) {
-    setLayout(profile.layout, true);
-  }
-  
-  // PASO 2: Asignar configuración INDEPENDIENTE a cada panel (sin cargar)
-  if (profile.panels && profile.panels.length) {
-    profile.panels.forEach((cfg, i) => {
+  // Asignar config a cada panel
+  if (panelData.length > 0) {
+    panelData.forEach((cfg, i) => {
       if (panels[i]) {
         panels[i].symbolKey = cfg.symbol;
         if (cfg.tf) panels[i].tf = cfg.tf;
-        panels[i].candles = []; // Limpiar velas viejas ANTES de cargar
-      }
-    });
-    // Sincronizar __savedPanelTfs y __savedPanelSymbols para nuevos paneles
-    window.__savedPanelTfs = profile.panels.map(p => p.tf || "5m");
-    window.__savedPanelSymbols = profile.panels.map(p => p.symbol);
-  } else if (profile.symbols) {
-    profile.symbols.forEach((sym, i) => {
-      if (panels[i] && sym) {
-        panels[i].symbolKey = sym;
         panels[i].candles = [];
       }
     });
-    if (profile.tfs) {
-      profile.tfs.forEach((tf, i) => {
-        if (panels[i] && tf) panels[i].tf = tf;
-      });
-      window.__savedPanelTfs = [...profile.tfs];
-    }
-    window.__savedPanelSymbols = [...profile.symbols];
+    window.__savedPanelTfs = [...templateTfs];
+    window.__savedPanelSymbols = [...templateSymbols];
   }
   
-  // PASO 3: Cargar datos SOLO con los símbolos correctos
-  panels.slice(0, layoutMode).forEach(p => {
-    p.resetView();
-    p.loadData();
-  });
+  // Restaurar watchlist tabs
+  if (template.watchlistTabs && Array.isArray(template.watchlistTabs)) {
+    watchlistTabs = template.watchlistTabs;
+    if (typeof template.activeWatchlistTab === "number") {
+      activeWatchlistTab = template.activeWatchlistTab;
+    }
+    renderWatchlist();
+  }
   
+  // Cargar datos
+  panels.slice(0, layoutMode).forEach(p => { p.resetView(); p.loadData(); });
   if (typeof buildTimeframeBar === "function") buildTimeframeBar();
   
-  const syms = profile.panels 
-    ? profile.panels.map(p => p.symbol).join(", ")
-    : (profile.symbols ? profile.symbols.join(", ") : "N/A");
-  showToast(`Perfil ${num}: ${syms}`);
+  const syms = panelData.length ? panelData.map(p => p.symbol).join(", ") : "N/A";
+  showToast(`Panel ${num}: ${syms}`);
 }
 
-function loadActiveProfile() {
-  const saved = localStorage.getItem("chartflow_active_profile");
-  if (saved) {
-    activeProfile = parseInt(saved) || 1;
-    loadProfile(activeProfile);
-  }
-  updateProfileButtons();
-}
-
-function updateProfileButtons() {
-  localStorage.setItem("chartflow_active_profile", activeProfile);
-  document.querySelectorAll(".profile-btn").forEach(btn => {
-    const num = parseInt(btn.dataset.profile);
-    btn.classList.toggle("active", num === activeProfile);
+function updatePanelTemplateButtons() {
+  const templates = getPanelTemplates();
+  document.querySelectorAll("[data-panel-template]").forEach(btn => {
+    const num = parseInt(btn.dataset.panelTemplate);
+    btn.classList.toggle("active", num === activePanelTemplate);
+    const t = templates[num];
+    btn.title = t?.name ? `${t.name} (${t.panels?.length || 0} paneles)` : `Panel ${num} — vacío`;
   });
 }
 
-function resetAllProfiles() {
-  if (!confirm("¿Borrar TODOS los perfiles (P1, P2, P3)?")) return;
-  localStorage.removeItem("chartflow_profiles");
-  localStorage.removeItem("chartflow_active_profile");
-  activeProfile = 1;
-  updateProfileButtons();
-  showToast("Todos los perfiles borrados — empieza de cero");
+function resetAllPanelTemplates() {
+  if (!confirm("¿Borrar TODOS los templates de panel?")) return;
+  localStorage.removeItem("chartflow_panel_templates");
+  localStorage.removeItem("chartflow_active_panel_template");
+  activePanelTemplate = 1;
+  updatePanelTemplateButtons();
+  showToast("Todos los templates de panel borrados");
 }
 
-function showToast(msg) {
-  let toast = document.querySelector(".profile-toast");
-  if (!toast) {
-    toast = document.createElement("div");
-    toast.className = "profile-toast";
-    toast.style.cssText = "position:fixed;bottom:50px;left:50%;transform:translateX(-50%);background:var(--surface-2);border:1px solid var(--accent);color:var(--text);border-radius:8px;padding:10px 16px;font:12px var(--font-mono);z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.5)";
-    document.body.appendChild(toast);
+function loadActivePanelTemplate() {
+  const saved = localStorage.getItem("chartflow_active_panel_template");
+  if (saved) {
+    activePanelTemplate = parseInt(saved) || 1;
+    loadPanelTemplate(activePanelTemplate);
   }
-  toast.textContent = msg;
-  toast.style.display = "block";
-  clearTimeout(toast._timer);
-  toast._timer = setTimeout(() => { toast.style.display = "none"; }, 2500);
+  updatePanelTemplateButtons();
+}
+
+// ============ SISTEMA DE MODOS DE COLOR (M1-M3) ============
+function getColorTemplates() {
+  try { return JSON.parse(localStorage.getItem("chartflow_color_templates") || "{}"); }
+  catch { return {}; }
+}
+function saveColorTemplates(templates) {
+  localStorage.setItem("chartflow_color_templates", JSON.stringify(templates));
+}
+
+function saveCurrentColorTemplate() {
+  const templates = getColorTemplates();
+  const settings = {...designSettings};
+  // No guardar layout ni sync en el template de color
+  delete settings.layoutCells;
+  delete settings.layoutPreset;
+  templates[activeColorTemplate] = {
+    name: `Modo ${activeColorTemplate}`,
+    settings: settings,
+    savedAt: new Date().toISOString()
+  };
+  saveColorTemplates(templates);
+  localStorage.setItem("chartflow_active_color_template", activeColorTemplate);
+  showToast(`Modo de color ${activeColorTemplate} guardado`);
+}
+
+function saveColorTemplateAs() {
+  const name = prompt("Nombre para este modo de color:", `Modo ${activeColorTemplate}`);
+  if (!name || !name.trim()) return;
+  const templates = getColorTemplates();
+  const settings = {...designSettings};
+  delete settings.layoutCells;
+  delete settings.layoutPreset;
+  templates[activeColorTemplate] = {
+    name: name.trim(),
+    settings: settings,
+    savedAt: new Date().toISOString()
+  };
+  saveColorTemplates(templates);
+  updateColorTemplateButtons();
+  showToast(`Modo de color ${activeColorTemplate} guardado como: "${name.trim()}"`);
+}
+
+function loadColorTemplate(num) {
+  const templates = getColorTemplates();
+  const template = templates[num];
+  activeColorTemplate = num;
+  updateColorTemplateButtons();
+  localStorage.setItem("chartflow_active_color_template", num);
+  
+  if (!template) {
+    showToast(`Modo ${num} vacío — guarda con 💾`);
+    return;
+  }
+  
+  // Solo aplicar settings de color/estilo (no layout ni sync)
+  const colorSettings = {...template.settings};
+  delete colorSettings.layoutCells;
+  delete colorSettings.layoutPreset;
+  Object.assign(designSettings, colorSettings);
+  applyDesignToDom();
+  saveDesignSettings();
+  redrawAll();
+  showToast(`Modo de color ${num} aplicado: ${template.name || `Modo ${num}`}`);
+}
+
+function updateColorTemplateButtons() {
+  const templates = getColorTemplates();
+  document.querySelectorAll("[data-color-template]").forEach(btn => {
+    const num = parseInt(btn.dataset.colorTemplate);
+    btn.classList.toggle("active", num === activeColorTemplate);
+    const t = templates[num];
+    btn.title = t?.name || `Modo ${num} — vacío`;
+  });
+}
+
+function resetAllColorTemplates() {
+  if (!confirm("¿Borrar TODOS los modos de color?")) return;
+  localStorage.removeItem("chartflow_color_templates");
+  localStorage.removeItem("chartflow_active_color_template");
+  activeColorTemplate = 1;
+  updateColorTemplateButtons();
+  showToast("Todos los modos de color borrados");
+}
+
+function loadActiveColorTemplate() {
+  const saved = localStorage.getItem("chartflow_active_color_template");
+  if (saved) {
+    activeColorTemplate = parseInt(saved) || 1;
+    loadColorTemplate(activeColorTemplate);
+  }
+  updateColorTemplateButtons();
+}
+
+// Migrar perfiles viejos (P1-P2-P3) al nuevo sistema si existen
+function migrateOldProfiles() {
+  const oldProfiles = (() => { try { return JSON.parse(localStorage.getItem("chartflow_profiles") || "null"); } catch { return null; } })();
+  if (!oldProfiles) return;
+  const newTemplates = getPanelTemplates();
+  let migrated = false;
+  Object.entries(oldProfiles).forEach(([key, val]) => {
+    const num = parseInt(key);
+    if (num >= 1 && num <= 3 && !newTemplates[num]) {
+      newTemplates[num] = {
+        name: `Panel ${num}`,
+        layout: val.layout || 1,
+        layoutPreset: val.layoutPreset || String(val.layout || 1),
+        panels: val.panels || [],
+        syncSymbol: val.syncSymbol || false,
+        syncInterval: val.syncInterval || false,
+        watchlistTabs: val.watchlistTabs || null,
+        activeWatchlistTab: val.activeWatchlistTab || 0,
+        migratedFrom: true,
+        savedAt: val.savedAt || new Date().toISOString()
+      };
+      migrated = true;
+    }
+  });
+  if (migrated) {
+    savePanelTemplates(newTemplates);
+    // No borramos los viejos por si acaso
+  }
 }
 
 init();

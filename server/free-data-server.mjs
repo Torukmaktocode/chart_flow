@@ -4,25 +4,11 @@ import { get as httpsGet } from "node:https";
 import { createServer } from "node:http";
 import { dirname, extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sendJson, normalizeSymbol, stdev, defaultSymbolAliases as aliases } from "./lib/utils.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const port = Number(process.env.PORT || 5180);
 const cache = new Map();
-
-const aliases = {
-  EURUSD: "EURUSD=X",
-  GBPUSD: "GBPUSD=X",
-  USDJPY: "USDJPY=X",
-  USDCLP: "USDCLP=X",
-  XAUUSD: "GC=F",
-  BTCUSD: "BTC-USD",
-  BTCUSDT_P: "BTC-USD",
-  ETHUSDT_P: "ETH-USD",
-  SOLUSDT_P: "SOL-USD",
-  SPX: "^GSPC",
-  NDX: "^NDX",
-  DJI: "^DJI"
-};
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -30,26 +16,6 @@ const contentTypes = {
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8"
 };
-
-function sendJson(res, status, payload) {
-  res.writeHead(status, {
-    "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": "*"
-  });
-  res.end(JSON.stringify(payload));
-}
-
-function normalizeSymbol(raw) {
-  const clean = String(raw || "AAPL").trim().toUpperCase();
-  return aliases[clean] || clean;
-}
-
-function stdev(values) {
-  if (values.length < 2) return 0;
-  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
-  const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (values.length - 1);
-  return Math.sqrt(variance);
-}
 
 function requestJson(targetUrl) {
   return new Promise((resolve, reject) => {
@@ -66,25 +32,18 @@ function requestJson(targetUrl) {
       (response) => {
         let body = "";
         response.setEncoding("utf8");
-        response.on("data", (chunk) => {
-          body += chunk;
-        });
+        response.on("data", (chunk) => { body += chunk; });
         response.on("end", () => {
           if ((response.statusCode || 0) < 200 || (response.statusCode || 0) >= 300) {
-            reject(new Error(`Yahoo Chart respondió HTTP ${response.statusCode}: ${body.slice(0, 120)}`));
+            reject(new Error(`Yahoo Chart respondió HTTP ${response.statusCode}`));
             return;
           }
-          try {
-            resolve(JSON.parse(body));
-          } catch (error) {
-            reject(error);
-          }
+          try { resolve(JSON.parse(body)); }
+          catch (error) { reject(error); }
         });
       }
     );
-    req.on("timeout", () => {
-      req.destroy(new Error("Timeout al conectar con Yahoo Chart"));
-    });
+    req.on("timeout", () => req.destroy(new Error("Timeout al conectar con Yahoo Chart")));
     req.on("error", reject);
   });
 }
@@ -135,10 +94,6 @@ function buildMetrics(meta, rows) {
   };
 }
 
-async function fetchMarket(symbol) {
-  return fetchMarketForDate(symbol, null);
-}
-
 function unixSeconds(date) {
   return Math.floor(date.getTime() / 1000);
 }
@@ -156,12 +111,10 @@ async function fetchMarketForDate(symbol, asOfRaw) {
   if (cached && Date.now() - cached.created < 45_000) return cached.value;
 
   const yahooUrl = asOf
-    ? `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${unixSeconds(asOf)}&period2=${unixSeconds(new Date(asOf.getTime() + 86400_000))}&interval=5m&includePrePost=false&events=div%7Csplit`
-    : `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=3mo&interval=1d&includePrePost=false&events=div%7Csplit`;
-  let payload;
-  let interval = asOf ? "5m" : "1d";
-  let result;
-  let rows = [];
+    ? `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${unixSeconds(asOf)}&period2=${unixSeconds(new Date(asOf.getTime() + 86400_000))}&interval=5m`
+    : `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=3mo&interval=1d`;
+
+  let payload, interval = asOf ? "5m" : "1d", result, rows = [];
 
   try {
     payload = await requestJson(yahooUrl);
@@ -172,7 +125,7 @@ async function fetchMarketForDate(symbol, asOfRaw) {
   }
 
   if (asOf && (!result || rows.length < 2)) {
-    const fallbackUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${unixSeconds(new Date(asOf.getTime() - 92 * 86400_000))}&period2=${unixSeconds(new Date(asOf.getTime() + 86400_000))}&interval=1d&includePrePost=false&events=div%7Csplit`;
+    const fallbackUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${unixSeconds(new Date(asOf.getTime() - 92 * 86400_000))}&period2=${unixSeconds(new Date(asOf.getTime() + 86400_000))}&interval=1d`;
     payload = await requestJson(fallbackUrl);
     interval = "1d";
     result = payload?.chart?.result?.[0];
@@ -186,24 +139,15 @@ async function fetchMarketForDate(symbol, asOfRaw) {
   const meta = result.meta || {};
   const metrics = buildMetrics(meta, rows);
   const value = {
-    symbol,
-    name: meta.longName || meta.shortName || symbol,
-    provider: "Yahoo Finance Chart API no oficial",
-    fetchedAt: new Date().toISOString(),
-    asOf: asOfRaw || null,
-    interval,
-    sessionPoints: rows.length,
-    chart: rows,
-    metrics,
-    options: {
-      putCallVolumeRatio: null,
-      putCallOiRatio: null,
-      maxPain: null,
-      highestOi: []
-    },
+    symbol, name: meta.longName || meta.shortName || symbol,
+    provider: "Yahoo Finance Chart API",
+    fetchedAt: new Date().toISOString(), asOf: asOfRaw || null,
+    interval, sessionPoints: rows.length,
+    chart: rows, metrics,
+    options: { putCallVolumeRatio: null, putCallOiRatio: null, maxPain: null, highestOi: [] },
     warnings: [
       "Precio, volumen y series salen de Yahoo Chart sin API key.",
-      "Opciones, dark pool y order flow institucional requieren proveedores pagos; aquí se muestran proxies cuantitativos reales derivados de precio y volumen."
+      "Opciones, dark pool y order flow requieren proveedores pagos; aquí se muestran proxies cuantitativos derivados de precio y volumen."
     ]
   };
   cache.set(key, { created: Date.now(), value });
@@ -215,7 +159,7 @@ async function routeApi(req, res, url) {
   if (!match) return sendJson(res, 404, { error: "Ruta API no encontrada." });
 
   try {
-    const symbol = normalizeSymbol(decodeURIComponent(match[1]));
+    const symbol = normalizeSymbol(decodeURIComponent(match[1]), aliases);
     const data = await fetchMarketForDate(symbol, url.searchParams.get("date"));
     sendJson(res, 200, data);
   } catch (error) {

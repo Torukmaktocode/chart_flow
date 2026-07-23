@@ -1,0 +1,5 @@
+{
+  "botToken": "REEMPLAZAR_CON_TU_TOKEN",
+  "chatId": "REEMPLAZAR_CON_TU_CHAT_ID",
+  "_note": "Copia .env.example a .env y configura tus credenciales allí"
+}
