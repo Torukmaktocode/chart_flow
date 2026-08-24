@@ -1,4 +1,4 @@
-# 📊 Quant Free Dashboard - Sistema de Trading
+# 📊 Free Dashboard - Sistema de Trading
 
 Sistema completo de dashboards y herramientas de trading en tiempo real. 100% gratuito, sin API keys.
 
