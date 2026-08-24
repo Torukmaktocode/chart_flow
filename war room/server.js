@@ -22,6 +22,12 @@ const parser = new Parser({
 app.use(cors());
 app.use(express.json());
 
+// ── SERVIR INDEX.HTML EN LA RAÍZ ───────────────────────────────
+const path = require('path');
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // ── CACHE ─────────────────────────────────────────────────────
 let newsCache     = [];
 let mktCache      = {};
@@ -207,27 +213,18 @@ async function fetchOne(feed) {
 
 // ── MÓDULO SQUAWK X (@DeItaone @FirstSquawk @LiveSquawk) ─────
 // ─────────────────────────────────────────────────────────────
-// X (Twitter) no tiene RSS público. Estrategia en cascada:
-//   1. Nitter (mirrors públicos de Twitter con RSS)
-//   2. RSS bridge vía rss.app
-//   3. LiveSquawk.com tiene su propio feed RSS (gratis)
-//   4. Si todo falla → caché anterior + log de advertencia
-// El servidor rota instancias de Nitter automáticamente.
+// X (Twitter) no tiene RSS público. Estrategia:
+//   1. xcancel.com (funciona reliably, sin bloqueos)
+//   2. n.opnxng.com (backup)
+//   3. twiiit.com (backup)
+//   4. LiveSquawk.com feed RSS directo
+//   5. Si todo falla → caché anterior
 // ─────────────────────────────────────────────────────────────
 
 const NITTER_INSTANCES = [
-  'https://nitter.net',
-  'https://nitter.privacydev.net',
-  'https://nitter.poast.org',
-  'https://nitter.cz',
-  'https://nitter.1d4.us',
-  'https://twiiit.com',
-  'https://nitter.unixfox.eu',
-  'https://nitter.lunar.icu',
-  'https://bird.trom.tf',
-  'https://nitter.rawbit.ninja',
-  'https://n.opnxng.com',
   'https://xcancel.com',
+  'https://n.opnxng.com',
+  'https://twiiit.com',
 ];
 
 // Cuentas Squawk
@@ -258,169 +255,107 @@ const SQUAWK_ACCOUNTS = [
   },
 ];
 
-let workingNitter  = '';        // instancia que funcionó la última vez
-let squawkCache    = [];        // cache propio para squawk
+let workingNitter  = 'https://xcancel.com';
+let squawkCache    = [];
 let lastSquawkFetch = 0;
-const SQUAWK_TTL   = 60 * 1000; // refresca cada 60s (más rápido que el resto)
+const SQUAWK_TTL   = 60 * 1000;
 
-// Probar si una instancia de Nitter responde con RSS válido
-async function probeNitter(base, handle) {
-  const url = `${base}/${handle}/rss`;
+// ── SCRAPING DE XCANCEL.COM (reemplaza Nitter RSS muerto) ───
+// xcancel.com sirve páginas HTML con tweets parseables
+// No necesita API keys ni whitelist
+
+function decodeHtmlEntities(str) {
+  return str
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x27;/g, "'")
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
+}
+
+async function scrapeXcancelProfile(handle) {
+  const url = `https://xcancel.com/${handle}`;
   const res = await fetch(url, {
-    timeout: 5000,
+    timeout: 12000,
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      'Accept':     'application/rss+xml, application/xml, text/xml, */*',
+      'Accept': 'text/html',
+      'Accept-Language': 'en-US,en;q=0.9',
     }
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const text = await res.text();
-  if (!text.includes('<rss') && !text.includes('<feed')) throw new Error('No RSS');
-  if (!text.includes('<item') && !text.includes('<entry')) throw new Error('Sin items');
-  return text;
+  if (!res.ok) throw new Error(`xcancel HTTP ${res.status}`);
+  const html = await res.text();
+  if (!html.includes('timeline-item')) throw new Error('Sin tweets en página');
+  return html;
 }
 
-// Encontrar instancia de Nitter que funcione
-async function findWorkingNitter(handle) {
-  // Primero intenta la que funcionó antes
-  if (workingNitter) {
-    try {
-      const xml = await probeNitter(workingNitter, handle);
-      return { base: workingNitter, xml };
-    } catch { workingNitter = ''; }
-  }
-  // Rotar por todas las instancias
-  for (const inst of NITTER_INSTANCES) {
-    try {
-      const xml = await probeNitter(inst, handle);
-      workingNitter = inst;
-      console.log(`[SQUAWK] Nitter OK: ${inst}`);
-      return { base: inst, xml };
-    } catch { /* siguiente */ }
-  }
-  throw new Error('Ninguna instancia de Nitter disponible');
-}
-
-// Parsear el XML de Nitter y convertir a formato estándar
-function parseNitterXML(xml, account) {
+function parseXcancelHtml(html, account) {
   const items = [];
-  // Soporta tanto Atom (<entry>) como RSS (<item>)
-  const blockRx  = /<(?:item|entry)>([\s\S]*?)<\/(?:item|entry)>/g;
-  const titleRx   = /<title(?:[^>]*)>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/;
-  const linkRx    = /<(?:link|guid)[^>]*>([^<]+)/;
-  const dateRx    = /<(?:pubDate|updated|dc:date)>([^<]+)/;
-  const contentRx = /<(?:description|content(?::\w+)?)(?:[^>]*)>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/(?:description|content(?::\w+)?)>/;
+  // Extraer todos los tweet-content, tweet-link y tweet-date
+  const bodyRx  = /<div class="tweet-content[^"]*"[^>]*>([\s\S]*?)<\/div>/g;
+  const linkRx  = /<a class="tweet-link" href="([^"]+)"/g;
+  const dateRx  = /<span class="tweet-date"><a[^>]*title="([^"]+)"/g;
 
-  let match;
-  while ((match = blockRx.exec(xml)) !== null) {
-    const block   = match[1];
-    const titleM  = block.match(titleRx);
-    const linkM   = block.match(linkRx);
-    const dateM   = block.match(dateRx);
-    const bodyM   = block.match(contentRx);
-    if (!titleM) continue;
+  const bodies = [], links = [], dates = [];
+  let m;
+  while ((m = bodyRx.exec(html)) !== null) bodies.push(m[1]);
+  while ((m = linkRx.exec(html)) !== null) links.push(m[1]);
+  while ((m = dateRx.exec(html)) !== null) dates.push(m[1]);
 
-    const rawTitle = titleM[1].replace(/<[^>]+>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
-    const rawBody  = bodyM ? bodyM[1].replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim().slice(0,400) : '';
-    const url      = linkM ? linkM[1].trim() : '';
-    const ts       = dateM ? new Date(dateM[1]).getTime() : Date.now();
+  for (let i = 0; i < bodies.length; i++) {
+    const rawBody = decodeHtmlEntities(bodies[i]);
+    if (!rawBody || rawBody.length < 5) continue;
 
-    // Saltar retweets y respuestas si son vacíos
-    if (!rawTitle || rawTitle.length < 5) continue;
-    // El handle del tweet suele venir como "Account: texto" — limpiar
-    const title    = rawTitle.replace(new RegExp(`^${account.handle}:\\s*`, 'i'), '').trim() || rawTitle;
+    const tweetPath = links[i] || '';
+    const tweetUrl  = tweetPath ? `https://x.com${tweetPath.split('#')[0]}` : `https://x.com/${account.handle}`;
+    const idMatch   = tweetPath.match(/\/status\/(\d+)/);
+    const tweetId   = idMatch ? idMatch[1] : '';
 
-    const full   = title + ' ' + rawBody;
-    const tags   = extractTags(full);
-    const cat    = 'squawk';
-    const nas    = analyzeNas(title, rawBody, cat, tags);
+    let ts = Date.now();
+    if (dates[i]) {
+      try { ts = new Date(dates[i]).getTime() || Date.now(); } catch {}
+    }
+
+    const title = rawBody.split('\n')[0].slice(0, 200);
+    const body  = rawBody;
+    const full  = title + ' ' + body;
+    const tags  = extractTags(full);
+    const nas   = analyzeNas(title, body, 'squawk', tags);
 
     items.push({
-      id:          Buffer.from(title).toString('base64').slice(0, 18),
-      src:         account.src,
-      cls:         account.cls,
-      imp:         scoreImpact(full),
-      cat:         'squawk',
-      squawk:      true,
-      squawkMeta:  { handle: account.handle, color: account.color, label: account.label },
+      id: tweetId || Buffer.from(title).toString('base64').slice(0, 18),
+      src: account.src,
+      cls: account.cls,
+      imp: scoreImpact(full),
+      cat: 'squawk',
+      squawk: true,
+      squawkMeta: { handle: account.handle, color: account.color, label: account.label },
       ts,
       title,
-      body:        rawBody,
+      body,
       tags,
-      trump:       false,
+      trump: false,
       trumpDirect: false,
-      url:         url.startsWith('http') ? url : `https://x.com/${account.handle}`,
-      nasDir:      nas.dir,
-      nasKey:      nas.key,
-      nasMag:      nas.mag,
-      conf:        nas.conf,
-      nasEs:       nas.es,
-      nasEn:       nas.en,
+      url: tweetUrl,
+      nasDir: nas.dir,
+      nasKey: nas.key,
+      nasMag: nas.mag,
+      conf: nas.conf,
+      nasEs: nas.es,
+      nasEn: nas.en,
     });
   }
   return items;
-}
-
-// Fuente alternativa: LiveSquawk.com tiene su propio feed
-async function fetchLiveSquawkDirect() {
-  const urls = [
-    'https://www.livesquawk.com/feed/',
-    'https://www.livesquawk.com/rss.xml',
-    'https://livesquawk.com/feed/',
-  ];
-  for (const url of urls) {
-    try {
-      const res = await fetch(url, {
-        timeout: 7000,
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/rss+xml,*/*' }
-      });
-      if (!res.ok) continue;
-      const parsed = await parser.parseURL(url);
-      return (parsed.items || []).slice(0, 15).map(item => {
-        const title = (item.title || '').trim();
-        const body  = (item.contentSnippet || '').slice(0, 300);
-        const full  = title + ' ' + body;
-        const tags  = extractTags(full);
-        const nas   = analyzeNas(title, body, 'squawk', tags);
-        return {
-          id: Buffer.from(title).toString('base64').slice(0,18),
-          src: '@LiveSquawk', cls: 'sq-live',
-          imp: scoreImpact(full), cat: 'squawk', squawk: true,
-          squawkMeta: { handle:'LiveSquawk', color:'#10b981', label:'LIVE SQUAWK' },
-          ts: item.pubDate ? new Date(item.pubDate).getTime() : Date.now(),
-          title, body, tags, trump:false, trumpDirect:false,
-          url: item.link || 'https://x.com/LiveSquawk',
-          nasDir:nas.dir, nasKey:nas.key, nasMag:nas.mag, conf:nas.conf,
-          nasEs:nas.es, nasEn:nas.en,
-        };
-      });
-    } catch { continue; }
-  }
-  return [];
 }
 
 // Fetch principal de todas las cuentas Squawk
 async function fetchAllSquawk() {
   const all = [];
 
-  // Intentar LiveSquawk.com directo primero (sin Nitter)
-  try {
-    const ls = await fetchLiveSquawkDirect();
-    if (ls.length) {
-      all.push(...ls);
-      console.log(`[SQUAWK] LiveSquawk.com directo: ${ls.length} posts`);
-    }
-  } catch {}
-
-  // Fetch de cada cuenta via Nitter
   for (const account of SQUAWK_ACCOUNTS) {
-    // LiveSquawk ya se obtuvo arriba si hubo feed directo
-    if (account.handle === 'LiveSquawk' && all.some(n => n.src === '@LiveSquawk')) continue;
     try {
-      const { xml } = await findWorkingNitter(account.handle);
-      const items   = parseNitterXML(xml, account);
+      const html = await scrapeXcancelProfile(account.handle);
+      const items = parseXcancelHtml(html, account);
       all.push(...items);
-      console.log(`[SQUAWK] ${account.src}: ${items.length} posts via Nitter`);
+      console.log(`[SQUAWK] ${account.src}: ${items.length} posts via xcancel`);
     } catch (e) {
       console.warn(`[SQUAWK] ${account.src} falló: ${e.message}`);
     }
@@ -493,7 +428,7 @@ app.get('/api/squawk', async (req, res) => {
     ok:         true,
     count:      squawkCache.length,
     lastFetch:  lastSquawkFetch,
-    nitter:     workingNitter || 'sin instancia activa',
+    nitter:     workingNitter || 'xcancel.com',
     items:      squawkCache,
   });
 });
@@ -531,7 +466,7 @@ app.get('/api/status', (req, res) => {
     squawk:      squawkCache.length,
     sources:     [...new Set(newsCache.map(n => n.src))].length,
     feedCount:   RSS_FEEDS.length,
-    nitter:      workingNitter || 'sin instancia activa',
+    nitter:      workingNitter || 'xcancel.com',
     lastNews:    new Date(lastNewsFetch).toISOString(),
     lastSquawk:  lastSquawkFetch ? new Date(lastSquawkFetch).toISOString() : 'nunca',
     lastMarket:  new Date(lastMktFetch).toISOString(),

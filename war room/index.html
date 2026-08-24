@@ -7,9 +7,9 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#060a14;--bg2:#0d1526;--bg3:#111827;
-  --bd:#1e2d4a;--bd2:#243456;--bd3:#2d3d5a;
-  --tx:#e2e8f0;--tx2:#94a3b8;--tx3:#475569;--tx4:#334155;
+  --bg:#0a0a0a;--bg2:#111111;--bg3:#1a1a1a;
+  --bd:#2a2a2a;--bd2:#333333;--bd3:#3d3d3d;
+  --tx:#e0e0e0;--tx2:#999999;--tx3:#666666;--tx4:#444444;
   --gn:#22c55e;--rd:#ef4444;--am:#f59e0b;
   --bl:#3b82f6;--pu:#8b5cf6;--or:#f97316
 }
@@ -32,7 +32,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .src-info{font-size:9px;color:var(--tx4)}
 
 /* BANNER */
-.banner{background:#1a0500;border-bottom:1px solid #7c2d12;padding:6px 14px;display:none;align-items:center;gap:8px;font-size:11px;color:#fed7aa;flex-shrink:0}
+.banner{background:#1a1a1a;border-bottom:1px solid #333333;padding:6px 14px;display:none;align-items:center;gap:8px;font-size:11px;color:#cccccc;flex-shrink:0}
 .banner.show{display:flex}
 .bdot{width:6px;height:6px;border-radius:50%;background:var(--or);animation:pulse .7s infinite;flex-shrink:0}
 
@@ -84,8 +84,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .nc.m{border-left:3px solid var(--bl)}.nc.l{border-left:3px solid var(--bd)}
 .nc-top{display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap}
 .src{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px}
-.sr{background:#7f1d1d;color:#fca5a5}.st{background:#7c2d12;color:#fdba74}
-.sf{background:#1e3a8a;color:#93c5fd}.sb{background:#78350f;color:#fcd34d}
+.sr{background:#333333;color:#cccccc}.st{background:#333333;color:#cccccc}
+.sf{background:#222222;color:#cccccc}.sb{background:#333333;color:#cccccc}
 .sa{background:#7f1d1d;color:#fca5a5}.sc{background:#1a1a2e;color:#a0a8c0}
 .sy{background:#0a1628;color:#93c5fd}.si{background:#0d2010;color:#86efac}
 .ss{background:#1a0040;color:#c4b5fd}.sbl{background:#0d1626;color:#93c5fd}
@@ -105,7 +105,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* TRUMP CARD — base */
 .tc{border-radius:6px;padding:8px 9px;margin-bottom:5px;animation:si .2s ease;border:1px solid}
 /* Posts DIRECTOS de @realDonaldTrump — azul patriótico */
-.tc.direct{background:#00061a;border-color:#1e3a8a;box-shadow:inset 3px 0 0 #2563eb}
+.tc.direct{background:#111111;border-color:#333333;box-shadow:inset 3px 0 0 #555555}
 /* Posts de otras fuentes citando a Trump — naranja original */
 .tc.indirect{background:#0a0500;border-color:#431407;box-shadow:inset 3px 0 0 #c2410c}
 .tc-h{display:flex;align-items:center;gap:6px;margin-bottom:5px}
@@ -117,20 +117,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .tc-name.direct{font-size:11px;font-weight:700;color:#60a5fa}
 .tc-name.indirect{font-size:11px;font-weight:600;color:var(--am)}
 .tc-handle.direct{font-size:9px;color:#1e40af}
-.tc-handle.indirect{font-size:9px;color:#7c2d12}
+.tc-handle.indirect{font-size:9px;color:#555555}
 /* Badge "DIRECTO" */
 .tc-official{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;display:flex;align-items:center;gap:3px;white-space:nowrap}
-.tc-official.direct{background:#1e3a8a;color:#93c5fd;border:1px solid #2563eb}
+.tc-official.direct{background:#333333;color:#cccccc;border:1px solid #555555}
 .tc-official.indirect{background:#431407;color:#fb923c}
 .tc-body.direct{font-size:11px;color:#bfdbfe;line-height:1.55;margin-bottom:5px}
 .tc-body.indirect{font-size:11px;color:#fed7aa;line-height:1.55;margin-bottom:5px}
 .tc-foot{display:flex;gap:8px;font-size:9px;align-items:center}
-.tc-foot.direct{color:#1e3a8a}
+.tc-foot.direct{color:#555555}
 .tc-foot.indirect{color:#78350f}
 /* Barra superior de color en cards directas */
 .tc-topbar{height:3px;border-radius:3px 3px 0 0;margin:-8px -9px 8px;display:block}
 .tc-topbar.direct{background:linear-gradient(90deg,#b91c1c 33%,#fff 33% 66%,#1d4ed8 66%)}
-.tc-topbar.indirect{background:#7c2d12}
+.tc-topbar.indirect{background:#333333}
 
 /* SQUAWK CARDS — @DeItaone @FirstSquawk @LiveSquawk */
 .sq{border-radius:6px;padding:8px 9px;margin-bottom:5px;animation:si .2s ease;border:1px solid}
@@ -156,22 +156,22 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .sblk.gr{flex:1;overflow-y:auto}.sblk.gr::-webkit-scrollbar{width:3px}.sblk.gr::-webkit-scrollbar-thumb{background:var(--bd)}
 .sb-title{font-size:9px;color:var(--tx4);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:5px}
 .live-pill{font-size:8px;background:#052e16;color:var(--gn);padding:1px 4px;border-radius:2px}
-.mr{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #0d1526;gap:4px}
+.mr{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #222222;gap:4px}
 .ms{font-size:10px;color:var(--tx2)}.mv{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}.mc{font-size:9px;font-variant-numeric:tabular-nums}
-.ci{display:flex;gap:6px;padding:4px 0;border-bottom:1px solid #0d1526;align-items:flex-start}
+.ci{display:flex;gap:6px;padding:4px 0;border-bottom:1px solid #222222;align-items:flex-start}
 .ct{font-size:9px;min-width:34px;padding-top:2px;flex-shrink:0;font-variant-numeric:tabular-nums}
 .cd{width:5px;height:5px;border-radius:50%;margin-top:4px;flex-shrink:0}
 .cl{font-size:10px;color:#cbd5e1;line-height:1.3}.cs{font-size:9px;color:var(--tx3)}
-.ali{display:flex;align-items:flex-start;gap:5px;padding:4px 0;border-bottom:1px solid #0d1526}
+.ali{display:flex;align-items:flex-start;gap:5px;padding:4px 0;border-bottom:1px solid #222222}
 .al-i{font-size:12px;flex-shrink:0;margin-top:1px}.al-t{font-size:10px;color:var(--tx2);line-height:1.3;flex:1}.al-a{font-size:9px;color:var(--tx4);white-space:nowrap}
 
 /* TICKER */
-.ticker{background:#060a14;border-top:1px solid var(--bd);padding:5px 9px;display:flex;gap:14px;overflow-x:auto;white-space:nowrap;flex-shrink:0}
+.ticker{background:#0a0a0a;border-top:1px solid var(--bd);padding:5px 9px;display:flex;gap:14px;overflow-x:auto;white-space:nowrap;flex-shrink:0}
 .ticker::-webkit-scrollbar{display:none}
 .tk{display:flex;gap:4px;align-items:center;font-size:10px}.tks{color:var(--tx3);font-weight:600}
 
 /* ERROR STATE */
-.err-box{background:#1a0500;border:1px solid #7c2d12;border-radius:6px;padding:16px;margin:12px;color:#fed7aa;font-size:11px;line-height:1.7}
+.err-box{background:#1a1a1a;border:1px solid #333333;border-radius:6px;padding:16px;margin:12px;color:#cccccc;font-size:11px;line-height:1.7}
 .err-box code{background:#0d0300;padding:2px 6px;border-radius:3px;font-family:monospace;font-size:10px;color:#fb923c}
 </style>
 </head>
@@ -197,7 +197,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="banner" id="banner">
   <div class="bdot"></div>
   <span id="bannerTxt"></span>
-  <button onclick="this.parentElement.classList.remove('show')" style="margin-left:auto;background:none;border:none;color:#7c2d12;cursor:pointer;font-size:14px">✕</button>
+  <button onclick="this.parentElement.classList.remove('show')" style="margin-left:auto;background:none;border:none;color:#555555;cursor:pointer;font-size:14px">✕</button>
 </div>
 
 <!-- NAS100 IMPACT -->
@@ -293,6 +293,33 @@ const TL = {
 let lang = 'es', activeTab = 0, allNews = [], mktData = {}, serverOk = false;
 const t = k => TL[lang][k] || k;
 
+// ── TRADUCCIÓN GRATUITA vía Google Translate ────────────────
+const translationCache = new Map();
+async function translateText(text, from, to) {
+  if (!text || !text.trim()) return text;
+  const key = `${to}:${text}`;
+  if (translationCache.has(key)) return translationCache.get(key);
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url);
+    if (!res.ok) return text;
+    const data = await res.json();
+    const translated = data[0].map(s => s[0]).join('');
+    translationCache.set(key, translated);
+    return translated;
+  } catch { return text; }
+}
+async function translateNews(items) {
+  if (lang !== 'es') return;
+  const batch = items.slice(0, 40);
+  await Promise.allSettled(batch.map(async (n) => {
+    if (n._translatedEs) return;
+    if (n.title && !n._origTitle) { n._origTitle = n.title; n.title = await translateText(n.title, 'en', 'es'); }
+    if (n.body && !n._origBody)  { n._origBody = n.body;   n.body = await translateText(n.body, 'en', 'es'); }
+    n._translatedEs = true;
+  }));
+}
+
 // ── API ────────────────────────────────────────────────────
 async function api(ep, qs=''){
   const r = await fetch(`${API}${ep}${qs}`, { signal: AbortSignal.timeout(10000) });
@@ -308,6 +335,7 @@ async function loadNews(){
     serverOk = true;
     setDot('live');
     document.getElementById('srcInfo').textContent = allNews.length + (lang==='es'?' artículos · ':' articles · ') + [...new Set(allNews.map(n=>n.src))].length + (lang==='es'?' fuentes':' sources');
+    if(lang==='es') await translateNews(allNews);
     renderFeed();
     loadImpact();
     buildAlerts();
@@ -345,6 +373,7 @@ async function loadSquawk(){
     // Merge into allNews for the "Todo" tab (avoid dupes)
     const ids = new Set(allNews.map(n=>n.id));
     squawkData.forEach(n=>{ if(!ids.has(n.id)) allNews.unshift(n); });
+    if(lang==='es' && squawkData.length) await translateNews(squawkData);
     if(activeTab===5) renderFeed();
     // Update nitter status in header
     const si = document.getElementById('srcInfo');
@@ -656,6 +685,8 @@ function setLang(l){
   buildCal();
   buildAlerts();
   renderImpact(lastImpactData);
+  // Traducir noticias al español si es necesario
+  if(l==='es' && allNews.length) translateNews(allNews).then(()=>renderFeed());
 }
 
 // ── MARKETS ──────────────────────────────────────────────
@@ -712,7 +743,7 @@ function buildCal(){
   document.getElementById('calP').innerHTML=CAL.map(c=>`
     <div class="ci">
       <span class="ct" style="color:${c.done?'#334155':c.active?'#22c55e':'#f59e0b'}">${c.t}</span>
-      <div class="cd" style="background:${c.done?'#1e2d4a':c.dot}"></div>
+      <div class="cd" style="background:${c.done?'#333333':c.dot}"></div>
       <div><div class="cl" style="color:${c.done?'#334155':'#cbd5e1'}">${c.l}</div>
       <div class="cs">${c.s}</div></div>
     </div>`).join('');
@@ -730,9 +761,9 @@ function buildAlerts(){
     const icon = n.trumpDirect ? '🇺🇸' : n.trump ? '🎙' : n.imp==='c' ? '⚡' : n.imp==='h' ? '⚠' : '📰';
     const arrow = n.nasDir&&n.nasDir!=='neu' ? ' → '+(bull?'▲':'▼')+' NAS100' : '';
     const nameLabel = n.trumpDirect ? '[TRUMP DIRECTO] ' : '';
-    return `<div class="ali" style="${n.trumpDirect?'background:#00061a;border-radius:4px;padding:4px 6px;border-left:2px solid #2563eb':''}">
-      <span class="al-i" style="color:${n.trumpDirect?'#3b82f6':col}">${icon}</span>
-      <span class="al-t" style="color:${n.trumpDirect?'#93c5fd':'var(--tx2)'}">${nameLabel}${(n.title||'').slice(0,68)}${arrow}</span>
+    return `<div class="ali" style="${n.trumpDirect?'background:#111111;border-radius:4px;padding:4px 6px;border-left:2px solid #555555':''}">
+      <span class="al-i" style="color:${n.trumpDirect?'#999999':col}">${icon}</span>
+      <span class="al-t" style="color:${n.trumpDirect?'#cccccc':'var(--tx2)'}">${nameLabel}${(n.title||'').slice(0,68)}${arrow}</span>
       <span class="al-a">${ago(n.ts)}</span>
     </div>`;
   }).join('') || `<div style="font-size:10px;color:var(--tx4);padding:6px 0">${lang==='es'?'Sin alertas recientes':'No recent alerts'}</div>`;
@@ -748,7 +779,7 @@ function checkBreaking(){
     const eb=document.getElementById('evtBadge');
     eb.style.display='inline';
     eb.textContent='🇺🇸 TRUMP LIVE';
-    eb.style.background='#1e3a8a';
+    eb.style.background='#333333';
     eb.style.color='#93c5fd';
   } else {
     showBanner('🔴 '+(top.trump?'TRUMP: ':'')+top.title.slice(0,100), false);
@@ -760,8 +791,8 @@ function showBanner(txt, isDirect=false){
   const b=document.getElementById('banner'),t2=document.getElementById('bannerTxt');
   if(!b||!t2) return;
   t2.textContent=txt;
-  b.style.background = isDirect ? '#00061a' : '#1a0500';
-  b.style.borderColor = isDirect ? '#1e3a8a' : '#7c2d12';
+  b.style.background = isDirect ? '#111111' : '#1a1a1a';
+  b.style.borderColor = isDirect ? '#333333' : '#333333';
   t2.style.color = isDirect ? '#93c5fd' : '#fed7aa';
   b.classList.add('show');
   setTimeout(()=>b.classList.remove('show'),18000);
