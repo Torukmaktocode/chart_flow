@@ -41,7 +41,7 @@ function Stop-PortProcess($port) {
 
 # Detener procesos existentes en los puertos
 Write-Host "1. Limpiando puertos..." -ForegroundColor Magenta
-foreach ($port in 8765, 8770, 8780, 5173) {
+foreach ($port in 8765, 8770, 8780) {
     Stop-PortProcess $port
 }
 

@@ -12,8 +12,7 @@ Write-Host ""
 $ports = @(
     @{Port=8765; Name="Dashboard Acciones"},
     @{Port=8770; Name="Dashboard Macro"},
-    @{Port=8780; Name="Dashboard NAS100"},
-    @{Port=5173; Name="Dashboard Principal (Vite)"}
+    @{Port=8780; Name="Dashboard NAS100"}
 )
 
 Write-Host "Deteniendo servicios..." -ForegroundColor Yellow
