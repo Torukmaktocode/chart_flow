@@ -1,60 +1,59 @@
 # 📊 Quant Free Dashboard - Sistema de Trading
 
-Sistema completo de dashboards y herramientas de trading en tiempo real.
+Sistema completo de dashboards y herramientas de trading en tiempo real. 100% gratuito, sin API keys.
 
-## 🎯 Características Principales
+## 🎯 Dashboards Disponibles
 
-- **Dashboard Principal**: Interfaz React con gráficos interactivos
-- **Dashboard de Acciones**: Monitoreo de acciones tecnológicas (NVDA, AAPL, MSFT, etc.)
-- **Dashboard NAS100**: Seguimiento del índice NASDAQ-100
-- **Dashboard Macro**: Monitoreo del Dólar, VIX y Bonos
-- **Bot de Telegram**: Alertas y consultas de precios en tiempo real
-- **Generador de Gráficos**: Creación de gráficos de velas personalizados
+| Dashboard | Puerto | URL | Descripción |
+|-----------|--------|-----|-------------|
+| **API Server** | 8787 | http://localhost:8787 | Backend Express + Yahoo Finance |
+| **Stock Dashboard** | 8765 | http://localhost:8765/dashboard.html | Acciones tech (NVDA, AAPL, MSFT, etc.) |
+| **Dollar/VIX/Bonds** | 8770 | http://localhost:8770/dashboard.html | DXY, VIX, Bonos del Tesoro |
+| **ChartFlow NAS100** | 8780 | http://localhost:8780/dashboard.html | Estrategia NASDAQ-100 |
+| **ChartFlow Backtest** | 8790 | http://localhost:8790 | Backtesting con datos históricos |
+| **War Room** | 3001 | http://localhost:3001 | Noticias live, Squawk X, análisis NAS100 |
 
 ## 📁 Estructura del Proyecto
 
 ```
-CODIGO PARA FOREX/
-├── src/                    # Código fuente React
-│   ├── components/         # Componentes React
-│   ├── utils/             # Utilidades y helpers
-│   ├── main.jsx           # Punto de entrada principal
-│   ├── backtesting.jsx    # Módulo de backtesting
-│   └── styles.css         # Estilos globales
-├── server/                # Servidor backend
-│   ├── index.js           # Servidor principal Express
-│   └── free-data-server.mjs # Servidor de datos gratuitos
-├── stock-dashboard/       # Dashboard de acciones
-├── nas100-dashboard/      # Dashboard NAS100
+chart_flow/
+├── server/                    # Backend API (Express)
+│   ├── index.js               # Servidor principal (puerto 8787)
+│   ├── alert-manager.mjs      # Gestión de alertas de precio
+│   ├── price-monitor.mjs      # Monitoreo de precios cada 30s
+│   ├── telegram-alerts.mjs    # Notificaciones Telegram
+│   ├── free-data-server.mjs   # Servidor de datos gratuitos
+│   ├── routes/alerts.mjs      # API REST de alertas
+│   └── lib/utils.mjs          # Utilidades compartidas
+├── stock-dashboard/           # Dashboard de acciones
 ├── dollar-vix-bonds-dashboard/ # Dashboard Macro
-├── scripts/               # Scripts de utilidad
-│   ├── start-all.ps1      # Iniciar todos los dashboards
-│   ├── stop-all.ps1       # Detener todos los dashboards
-│   ├── fetch_rates.py     # Obtener tipos de cambio
-│   └── trading/           # Scripts de trading
-├── assets/                # Recursos estáticos
-│   ├── screenshots/       # Capturas de pantalla
-│   └── charts/           # Gráficos generados
-├── docs/                  # Documentación
-├── telegram-bot.mjs       # Bot de Telegram
-├── chart-generator.mjs    # Generador de gráficos
-├── package.json           # Configuración del proyecto
-└── opencode.json          # Configuración de OpenCode
+├── chartflow/                 # Dashboard NAS100 + estrategia
+├── chartflow-backtest/        # Backtesting histórico
+├── war room/                  # War Room - Noticias y Squawk
+├── dashboards/                # Dashboards adicionales
+├── scripts/                   # Scripts de utilidad
+│   ├── start-unified.ps1      # Iniciar dashboards
+│   ├── stop-unified.ps1       # Detener dashboards
+│   ├── send-chart.py          # Enviar gráficos a Telegram
+│   └── trading/               # Scripts de gráficos
+├── data/                      # Datos persistidos (alertas, configs)
+├── telegram-bot.mjs           # Bot de Telegram
+├── chart-generator.mjs        # Generador de gráficos de velas
+└── package.json
 ```
 
 ## 🚀 Instalación
 
 ### Prerrequisitos
-- Node.js 18+ 
-- npm o yarn
-- Python 3.8+ (para scripts auxiliares)
+- Node.js 18+
+- npm
 
 ### Pasos
 
 1. **Clonar el repositorio**
    ```bash
-   git clone <repository-url>
-   cd "CODIGO PARA FOREX"
+   git clone https://github.com/Torukmaktocode/chart_flow.git
+   cd chart_flow
    ```
 
 2. **Instalar dependencias**
@@ -62,50 +61,25 @@ CODIGO PARA FOREX/
    npm install
    ```
 
-3. **Configurar variables de entorno**
+3. **Configurar variables de entorno** (opcional)
    ```bash
-   # Para el bot de Telegram (opcional)
-   export TELEGRAM_BOT_TOKEN="tu-token-aqui"
-   export TELEGRAM_CHAT_ID="tu-chat-id"
-   
-   # Para datos de Polygon (opcional)
-   export POLYGON_API_KEY="tu-api-key"
+   # Copiar .env.example a .env y configurar
+   cp .env.example .env
    ```
 
-4. **Iniciar el sistema completo**
+4. **Iniciar todos los dashboards**
    ```bash
-   # Windows
-   .\scripts\start-all.ps1
-   
-   # O manualmente
+   .\scripts\start-unified.ps1
+   ```
+
+5. **O iniciar manualmente**
+   ```bash
+   # API Server
    npm run dev
+
+   # Bot de Telegram
+   npm run bot
    ```
-
-## 📊 Dashboards Disponibles
-
-### 1. Dashboard Principal (Puerto 5173)
-- **URL**: http://localhost:5173
-- **Tecnología**: React + Vite
-- **Características**: 
-  - Gráficos interactivos
-  - Datos en tiempo real
-  - Responsive design
-
-### 2. Dashboard de Acciones (Puerto 8765)
-- **URL**: http://localhost:8765/dashboard.html
-- **Acciones monitoreadas**: NVDA, AAPL, MSFT, AMZN, GOOGL, META, TSLA
-- **Datos**: Precios en tiempo real via Finnhub
-
-### 3. Dashboard NAS100 (Puerto 8780)
-- **URL**: http://localhost:8780/dashboard.html
-- **Características**:
-  - Datos de NASDAQ-100
-  - Estrategia de trading incluida
-  - Gráficos en tiempo real
-
-### 4. Dashboard Macro (Puerto 8770)
-- **URL**: http://localhost:8770/dashboard.html
-- **Instrumentos**: DXY (Índice Dólar), VIX, Bonos del Tesoro
 
 ## 🤖 Bot de Telegram
 
@@ -122,22 +96,13 @@ CODIGO PARA FOREX/
 
 ### 🔔 Sistema de Alertas
 
-El sistema de alertas te notifica por Telegram cuando un precio alcanza un nivel específico.
-
-#### Crear Alertas
 ```
 /alerta NAS100 21500 above    # Alerta cuando NAS100 suba de 21500
 /alerta BTC 100000 below     # Alerta cuando BTC baje de 100000
 /alerta XAUUSD 3500          # Alerta cuando Oro suba de 3500
 ```
 
-#### Gestionar Alertas
-```
-/alertas                      # Ver todas tus alertas
-/cancelar ID                  # Eliminar una alerta específica
-```
-
-#### API REST para Alertas
+### API REST para Alertas
 ```bash
 # Obtener todas las alertas
 curl http://localhost:8787/api/alerts
@@ -157,111 +122,96 @@ curl -X DELETE http://localhost:8787/api/alerts/ID
 - **Forex**: EURUSD, GBPUSD, USDJPY, USDCLP
 - **Macro**: XAUUSD (Oro), DXY, VIX
 
+## 📰 War Room
+
+Dashboard de noticias en tiempo real con análisis de impacto en NAS100.
+
+### Fuentes de Noticias (22 feeds RSS gratuitos)
+- Reuters, AP News, MarketWatch, CNBC
+- Yahoo Finance, Bloomberg, Barron's
+- Federal Reserve (comunicados y discursos)
+- Truth Social (posts de Trump)
+
+### ⚡ Squawk X
+Cuentas de trading en tiempo real:
+- @DeItaone (Walter Bloomberg)
+- @FirstSquawk
+- @LiveSquawk
+
+### Funcionalidades
+- Análisis de impacto NAS100 (alcista/bajista/neutro)
+- Categorías: Trump, Fed, Tech, Mercados
+- Traducción automática al español
+- Tema dark profesional
+
+## 📈 Backtesting
+
+El módulo de backtesting permite:
+- Probar estrategias de trading
+- Analizar rendimiento histórico
+- Optimizar parámetros
+- Replay de velas históricas
+
 ## 🛠️ Scripts de Utilidad
 
-### Iniciar/Detener Dashboards
 ```bash
-# Iniciar todos los dashboards
-.\scripts\start-all.ps1
+# Iniciar/detener dashboards
+.\scripts\start-unified.ps1
+.\scripts\stop-unified.ps1
 
-# Detener todos los dashboards
-.\scripts\stop-all.ps1
+# Enviar gráfico a Telegram
+python scripts/send-chart.py BTC 15m
+python scripts/send-chart.py NAS100 1d
+
+# Obtener tipos de cambio
+python scripts/fetch_rates.py
 ```
-
-### Obtener Tipos de Cambio
-```bash
-python .\scripts\fetch_rates.py
-```
-
-### Generar Gráficos de Trading
-```bash
-# Gráfico BTC 15 minutos
-python .\scripts\trading\btc_15m_chart.py
-
-# Gráfico NAS100
-python .\scripts\trading\nas100_chart.py
-```
-
-## 📦 Dependencias Principales
-
-### Frontend
-- React 19
-- Vite 6
-- Lucide React (iconos)
-
-### Backend
-- Express 4
-- Yahoo Finance 2
-- Node Telegram Bot API
-
-### Utilidades
-- Canvas (generación de gráficos)
-- Concurrently (ejecución paralela)
 
 ## 🔧 Configuración
 
 ### Variables de Entorno
 ```bash
-# Telegram Bot
+# Telegram Bot (opcional)
 TELEGRAM_BOT_TOKEN=tu-token
 TELEGRAM_CHAT_ID=tu-chat-id
 
-# APIs de Datos
+# APIs de Datos (opcionales)
 POLYGON_API_KEY=tu-api-key
-FINNHUB_TOKEN=tu-token (incluido en dashboard de acciones)
+FINNHUB_TOKEN=tu-token
 ```
 
 ### Puertos
-- **5173**: Dashboard principal (Vite)
-- **8765**: Dashboard de acciones
-- **8770**: Dashboard macro
-- **8780**: Dashboard NAS100
-
-## 📈 Funcionalidades Avanzadas
-
-### Backtesting
-El módulo de backtesting permite:
-- Probar estrategias de trading
-- Analizar rendimiento histórico
-- Optimizar parámetros
-
-### Gráficos Personalizados
-- Múltiples timeframes (1m, 5m, 15m, 1h, 4h, 1d)
-- Diseño profesional con tema oscuro
-- Volumen integrado
-- Indicadores de cambios
+| Puerto | Servicio |
+|--------|----------|
+| 8787 | API Server (Express) |
+| 8765 | Stock Dashboard |
+| 8770 | Dollar/VIX/Bonds |
+| 8780 | ChartFlow NAS100 |
+| 8790 | ChartFlow Backtest |
+| 3001 | War Room |
 
 ## 🐛 Solución de Problemas
 
-### Errores Comunes
+### "Puerto ya en uso"
+```bash
+.\scripts\stop-unified.ps1
+```
 
-1. **"Puerto ya en uso"**
-   ```bash
-   # Detener todos los servicios
-   .\scripts\stop-all.ps1
-   ```
+### "Token de Telegram no definido"
+```bash
+$env:TELEGRAM_BOT_TOKEN="tu-token"
+```
 
-2. **"Token de Telegram no definido"**
-   ```bash
-   # Configurar variable de entorno
-   $env:TELEGRAM_BOT_TOKEN="tu-token"
-   ```
-
-3. **"Error de dependencias"**
-   ```bash
-   # Reinstalar dependencias
-   rm -rf node_modules
-   npm install
-   ```
+### "Error de dependencias"
+```bash
+Remove-Item -Recurse -Force node_modules
+npm install
+```
 
 ## 📝 Licencia
 
 Proyecto privado - Uso personal
 
-## 👨‍💻 Autor
-
-Desarrollado para trading y análisis de mercados financieros
-
 ---
 
-**Última actualización**: Junio 2026
+**Última actualización**: Agosto 2026
