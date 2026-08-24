@@ -831,7 +831,8 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="setting-row"><label>Threshold</label><input class="field" id="jrEqualThreshold" type="number" min="0" max="0.5" step="0.1" value="0.1"><span class="info-dot">i</span></div>
         <div class="setting-row"><label>Label Size</label><select class="select" id="jrEqualLabelSize"><option>tiny</option><option>small</option><option>normal</option></select><span></span></div>
 
-        <div class="settings-section">Fair Value Gaps</div>
+        <div class="settings-section">Zonas & Fair Value Gaps</div>
+        <div class="option-line"><input class="check" id="jrShowZones" type="checkbox" checked><label>Zonas del indicador</label><span class="info-dot">i</span></div>
         <div class="option-line"><input class="check" id="jrShowFvg" type="checkbox"><label>Fair Value Gaps</label><span class="info-dot">i</span></div>
         <div class="option-line"><input class="check" id="jrFvgAutoThreshold" type="checkbox" checked><label>Auto Threshold</label><span class="info-dot">i</span></div>
         <div class="setting-row"><label>Intervalo de tiempo</label><select class="select" id="jrFvgTimeframe"><option value="">Gráfico</option><option value="1m">1 minuto</option><option value="5m">5 minutos</option><option value="15m">15 minutos</option><option value="1h">1 hora</option></select><span class="info-dot">i</span></div>
@@ -1404,7 +1405,7 @@ const strategyJrSettings = {
   showStrongWeak: true,
   internalOrderBlocks: true,
   internalOrderBlocksSize: 5,
-  swingOrderBlocks: true,
+  swingOrderBlocks: false,
   swingOrderBlocksSize: 5,
   orderBlockFilter: "Atr",
   orderBlockMitigation: "High/Low",
@@ -2977,10 +2978,10 @@ function computeStrategyJr(data, settings = strategyJrSettings){
     overBought: clamp(Number(settings.overBought) || 80, 1, 100),
     overSold: clamp(Number(settings.overSold) || 20, 0, 99),
   });
+  const swingLength = clamp(Number(settings.swingsLength) || 50, 10, 500);
   const pivots = findPivots(data, 4);
   const pivotHighByIndex = new Map(pivots.highs.map(p => [p.index, p]));
   const pivotLowByIndex = new Map(pivots.lows.map(p => [p.index, p]));
-  const swingLength = clamp(Number(settings.swingsLength) || 50, 10, 500);
   const swingPivots = findPivots(data, swingLength);
   const swingHighByIndex = new Map(swingPivots.highs.map(p => [p.index, p]));
   const swingLowByIndex = new Map(swingPivots.lows.map(p => [p.index, p]));
@@ -2989,36 +2990,46 @@ function computeStrategyJr(data, settings = strategyJrSettings){
     return fast[i] >= slow[i] ? 1 : -1;
   });
   const events = [];
-  const zones = [];
-  let orderBlocks = [];
+  let zones = [];
+  let internalObs = [];
+  let swingObs = [];
   const structure = [];
-  const addOrderBlock = zone => {
-    if(!zone || !Number.isFinite(zone.lo) || !Number.isFinite(zone.hi) || zone.hi <= zone.lo) return;
-    const existing = orderBlocks.findIndex(ob => Math.abs(ob.index - zone.index) < 5 && ob.dir === zone.dir);
-    if(existing >= 0) { orderBlocks[existing] = zone; return; }
-    orderBlocks.push(zone);
+  const MAX_INTERNAL_OBS = clamp(Number(settings.internalOrderBlocksSize) || 5, 1, 20);
+  const MAX_SWING_OBS = clamp(Number(settings.swingOrderBlocksSize) || 5, 1, 20);
+  const MAX_FVGS = 4;
+  const atrVal = averageTrueRange(data, 14);
+  const parsedHighs = data.map(bar => {
+    return (bar.h - bar.l) >= (2 * atrVal) ? bar.l : bar.h;
+  });
+  const parsedLows = data.map(bar => {
+    return (bar.h - bar.l) >= (2 * atrVal) ? bar.h : bar.l;
+  });
+  const storeOrderBlock = (pivotBarIndex, dir, isSwing, currentBar) => {
+    if(pivotBarIndex == null || pivotBarIndex < 0) return null;
+    let parsedIndex = pivotBarIndex;
+    if(dir < 0) {
+      let maxVal = -Infinity;
+      for(let j = pivotBarIndex; j <= currentBar; j++) {
+        if(parsedHighs[j] > maxVal) { maxVal = parsedHighs[j]; parsedIndex = j; }
+      }
+    } else {
+      let minVal = Infinity;
+      for(let j = pivotBarIndex; j <= currentBar; j++) {
+        if(parsedLows[j] < minVal) { minVal = parsedLows[j]; parsedIndex = j; }
+      }
+    }
+    return {
+      index: parsedIndex,
+      end: data.length - 1,
+      lo: data[parsedIndex].l,
+      hi: data[parsedIndex].h,
+      dir: dir,
+      label: dir > 0 ? "Bull OB" : "Bear OB",
+      kind: isSwing ? "pivot-ob" : "ob"
+    };
   };
   let lastSignal = -9999;
   let lastHigh = null, lastLow = null, swingLastHigh = null, swingLastLow = null, bias = 0;
-  const findOrderBlock = (breakIndex, dir, pivotIndex) => {
-    if(pivotIndex == null) return null;
-    let best = pivotIndex;
-    if(dir > 0) {
-      for(let j = pivotIndex; j <= breakIndex; j++) {
-        if(data[j].l < data[best].l) best = j;
-      }
-    } else {
-      for(let j = pivotIndex; j <= breakIndex; j++) {
-        if(data[j].h > data[best].h) best = j;
-      }
-    }
-    let end = data.length - 1;
-    for(let k = breakIndex + 1; k < data.length; k++) {
-      const mitigated = dir > 0 ? data[k].c < data[best].l : data[k].c > data[best].h;
-      if(mitigated) { end = k; break; }
-    }
-    return {index:best, end, lo:data[best].l, hi:data[best].h, dir, label:dir > 0 ? "Bull OB" : "Bear OB", kind:"ob"};
-  };
   for(let i = 0; i < data.length; i++){
     if(pivotHighByIndex.has(i)) { lastHigh = pivotHighByIndex.get(i); lastHigh.crossed = false; }
     if(pivotLowByIndex.has(i)) { lastLow = pivotLowByIndex.get(i); lastLow.crossed = false; }
@@ -3026,29 +3037,33 @@ function computeStrategyJr(data, settings = strategyJrSettings){
     if(swingLowByIndex.has(i)) { swingLastLow = swingLowByIndex.get(i); swingLastLow.crossed = false; }
     if(lastHigh && !lastHigh.crossed && data[i].c > lastHigh.price) {
       structure.push({from:lastHigh.index, index:i, price:lastHigh.price, dir:1, label:bias < 0 ? "CHoCH" : "BOS"});
-      const ob = findOrderBlock(i, 1, lastHigh.index);
-      addOrderBlock(ob);
+      if(settings.internalOrderBlocks !== false) {
+        const ob = storeOrderBlock(lastHigh.index, -1, false, i);
+        if(ob) internalObs.push(ob);
+      }
       bias = 1;
       lastHigh.crossed = true;
     }
     if(lastLow && !lastLow.crossed && data[i].c < lastLow.price) {
       structure.push({from:lastLow.index, index:i, price:lastLow.price, dir:-1, label:bias > 0 ? "CHoCH" : "BOS"});
-      const ob = findOrderBlock(i, -1, lastLow.index);
-      addOrderBlock(ob);
+      if(settings.internalOrderBlocks !== false) {
+        const ob = storeOrderBlock(lastLow.index, 1, false, i);
+        if(ob) internalObs.push(ob);
+      }
       bias = -1;
       lastLow.crossed = true;
     }
-    if(settings.swingOrderBlocks && swingLastHigh && !swingLastHigh.crossed && data[i].c > swingLastHigh.price) {
+    if(settings.swingOrderBlocks !== false && swingLastHigh && !swingLastHigh.crossed && data[i].c > swingLastHigh.price) {
       structure.push({from:swingLastHigh.index, index:i, price:swingLastHigh.price, dir:1, label:bias < 0 ? "CHoCH" : "BOS", swing:true});
-      const ob = findOrderBlock(i, 1, swingLastHigh.index);
-      if(ob) addOrderBlock({...ob, kind:"pivot-ob"});
+      const ob = storeOrderBlock(swingLastHigh.index, -1, true, i);
+      if(ob) swingObs.push(ob);
       bias = 1;
       swingLastHigh.crossed = true;
     }
-    if(settings.swingOrderBlocks && swingLastLow && !swingLastLow.crossed && data[i].c < swingLastLow.price) {
+    if(settings.swingOrderBlocks !== false && swingLastLow && !swingLastLow.crossed && data[i].c < swingLastLow.price) {
       structure.push({from:swingLastLow.index, index:i, price:swingLastLow.price, dir:-1, label:bias > 0 ? "CHoCH" : "BOS", swing:true});
-      const ob = findOrderBlock(i, -1, swingLastLow.index);
-      if(ob) addOrderBlock({...ob, kind:"pivot-ob"});
+      const ob = storeOrderBlock(swingLastLow.index, 1, true, i);
+      if(ob) swingObs.push(ob);
       bias = -1;
       swingLastLow.crossed = true;
     }
@@ -3080,62 +3095,28 @@ function computeStrategyJr(data, settings = strategyJrSettings){
     if(i >= 2 && data[i].l > data[i - 2].h) zones.push({index:i - 2, end:i + 18, lo:data[i - 2].h, hi:data[i].l, dir:1, label:"FVG", kind:"fvg"});
     if(i >= 2 && data[i].h < data[i - 2].l) zones.push({index:i - 2, end:i + 18, lo:data[i].h, hi:data[i - 2].l, dir:-1, label:"FVG", kind:"fvg"});
   }
-  {
-    const atrVal = averageTrueRange(data, 14);
-    const mitigated = ob => ob.end < data.length - 1;
-    const overlap = (a, b) => {
-      const top = Math.min(a.hi, b.hi);
-      const bottom = Math.max(a.lo, b.lo);
-      const overlapSize = top - bottom;
-      if(overlapSize <= 0) return false;
-      const aSize = Math.abs(a.hi - a.lo), bSize = Math.abs(b.hi - b.lo);
-      const minSize = Math.min(aSize, bSize);
-      if(minSize <= 0) return false;
-      const priceDist = Math.abs((a.hi + a.lo) / 2 - (b.hi + b.lo) / 2);
-      return overlapSize / minSize > 0.20 || priceDist < atrVal * 0.15;
-    };
-    const merge = (a, b) => ({
-      index: Math.min(a.index, b.index),
-      end: Math.max(a.end, b.end),
-      lo: Math.min(a.lo, b.lo),
-      hi: Math.max(a.hi, b.hi),
-      dir: b.dir || a.dir,
-      label: a.label,
-      kind: a.kind === "pivot-ob" || b.kind === "pivot-ob" ? "pivot-ob" : "ob"
-    });
-    const lastClose = data[data.length - 1].c;
-    const minOBSize = atrVal * 0.25;
-    let clean = orderBlocks.filter(ob => {
-      if(mitigated(ob)) return false;
-      const obSize = Math.abs(ob.hi - ob.lo);
-      if(obSize < minOBSize) return false;
-      return true;
-    });
-    let changed = true;
-    while(changed) {
-      changed = false;
-      const next = [];
-      for(let i = 0; i < clean.length; i++) {
-        let m = clean[i];
-        for(let j = i + 1; j < clean.length; j++) {
-          if(overlap(m, clean[j])) {
-            m = merge(m, clean[j]);
-            clean.splice(j, 1);
-            j--;
-            changed = true;
-          }
-        }
-        next.push(m);
-      }
-      clean = next;
-    }
-    clean.sort((a, b) => Math.abs((a.hi + a.lo) / 2 - lastClose) - Math.abs((b.hi + b.lo) / 2 - lastClose));
-    const swing = clean.filter(ob => ob.kind === "pivot-ob").slice(0, 6);
-    const internal = clean.filter(ob => ob.kind !== "pivot-ob");
-    orderBlocks = [...swing, ...internal].slice(0, 6);
-  }
+  const lastLow2 = data[data.length - 1].l;
+  const lastHigh2 = data[data.length - 1].h;
+  internalObs = internalObs.filter(ob => {
+    if(ob.dir > 0 && lastLow2 < ob.lo) return false;
+    if(ob.dir < 0 && lastHigh2 > ob.hi) return false;
+    return true;
+  });
+  swingObs = swingObs.filter(ob => {
+    if(ob.dir > 0 && lastLow2 < ob.lo) return false;
+    if(ob.dir < 0 && lastHigh2 > ob.hi) return false;
+    return true;
+  });
+  internalObs = internalObs.slice(-MAX_INTERNAL_OBS);
+  swingObs = swingObs.slice(-MAX_SWING_OBS);
+  const orderBlocks = [...swingObs, ...internalObs];
+  zones = zones.filter(z => {
+    if(z.dir > 0 && data[data.length - 1].l < z.lo) return false;
+    if(z.dir < 0 && data[data.length - 1].h > z.hi) return false;
+    return true;
+  }).slice(-MAX_FVGS);
   const equals = [];
-  const tol = Math.max(0.000001, averageTrueRange(data, 14) * 0.14);
+  const tol = Math.max(0.000001, atrVal * 0.14);
   pivots.highs.slice(-42).forEach((p, idx, arr) => {
     const prev = arr[idx - 1];
     if(prev && Math.abs(prev.price - p.price) <= tol) equals.push({index:p.index, from:prev.index, price:p.price, label:"EQH"});
@@ -3144,7 +3125,7 @@ function computeStrategyJr(data, settings = strategyJrSettings){
     const prev = arr[idx - 1];
     if(prev && Math.abs(prev.price - p.price) <= tol) equals.push({index:p.index, from:prev.index, price:p.price, label:"EQL"});
   });
-  return {fast, slow, candleState, events:events.slice(-36), zones:zones.slice(-32), orderBlocks, structure:structure.slice(-36), equals:equals.slice(-20), stoch};
+  return {fast, slow, candleState, events:events.slice(-36), zones, orderBlocks, structure:structure.slice(-36), equals:equals.slice(-20), stoch};
 }
 function recentRtcExtreme(series, index, bars, dir){
   const start = Math.max(0, index - bars + 1);
@@ -4072,10 +4053,12 @@ class ChartPanel {
       const mainH = this.lastScale?.mainH || this.el.clientHeight;
       ctx.save();
       if(settings.showOrderBlocks !== false) result.orderBlocks.forEach(zone => {
+        const isSwing = zone.kind === "pivot-ob";
+        if(isSwing && settings.swingOrderBlocks === false) return;
+        if(!isSwing && settings.internalOrderBlocks === false) return;
         const x1 = x(clamp(zone.index, 0, data.length - 1));
         const x2 = zone.end >= data.length - 1 ? mainW : Math.min(mainW, x(clamp(zone.end, 0, data.length - 1)));
         const top = y(zone.hi), h = Math.max(2, y(zone.lo) - top);
-        const isSwing = zone.kind === "pivot-ob";
         const base = zone.dir > 0
           ? (isSwing ? settings.swingBullObColor : settings.internalBullObColor)
           : (isSwing ? settings.swingBearObColor : settings.internalBearObColor);
@@ -5923,7 +5906,7 @@ function hydrateStrategyJrSettingsPanel(){
   setChecked("jrShowSwings", s.showSwings);
   setValue("jrSwingsLength", s.swingsLength || 50);
   setChecked("jrShowStrongWeak", s.showStrongWeak);
-  setChecked("jrInternalOrderBlocks", s.internalOrderBlocks !== false && s.showOrderBlocks !== false);
+  setChecked("jrInternalOrderBlocks", s.internalOrderBlocks !== false);
   setValue("jrInternalOrderBlocksSize", s.internalOrderBlocksSize || 5);
   setChecked("jrSwingOrderBlocks", s.swingOrderBlocks);
   setValue("jrSwingOrderBlocksSize", s.swingOrderBlocksSize || 5);
@@ -5938,6 +5921,7 @@ function hydrateStrategyJrSettingsPanel(){
   setValue("jrEqualBars", s.equalBars || 3);
   setValue("jrEqualThreshold", s.equalThreshold ?? 0.1);
   setValue("jrEqualLabelSize", s.equalLabelSize || "tiny");
+  setChecked("jrShowZones", s.showZones !== false);
   setChecked("jrShowFvg", !!s.showFairValueGaps);
   setChecked("jrFvgAutoThreshold", s.fvgAutoThreshold !== false);
   setValue("jrFvgTimeframe", s.fvgTimeframe || "");
@@ -6003,9 +5987,9 @@ function readStrategyJrSettingsPanel(){
   s.swingsLength = clamp(Number(document.getElementById("jrSwingsLength").value) || 50, 10, 500);
   s.showStrongWeak = document.getElementById("jrShowStrongWeak").checked;
   s.internalOrderBlocks = document.getElementById("jrInternalOrderBlocks").checked;
-  s.showOrderBlocks = s.internalOrderBlocks;
-  s.internalOrderBlocksSize = clamp(Number(document.getElementById("jrInternalOrderBlocksSize").value) || 5, 1, 20);
   s.swingOrderBlocks = document.getElementById("jrSwingOrderBlocks").checked;
+  s.showOrderBlocks = s.internalOrderBlocks || s.swingOrderBlocks;
+  s.internalOrderBlocksSize = clamp(Number(document.getElementById("jrInternalOrderBlocksSize").value) || 5, 1, 20);
   s.swingOrderBlocksSize = clamp(Number(document.getElementById("jrSwingOrderBlocksSize").value) || 5, 1, 20);
   s.orderBlockFilter = document.getElementById("jrOrderBlockFilter").value;
   s.orderBlockMitigation = document.getElementById("jrOrderBlockMitigation").value;
@@ -6018,6 +6002,7 @@ function readStrategyJrSettingsPanel(){
   s.equalBars = clamp(Number(document.getElementById("jrEqualBars").value) || 3, 1, 20);
   s.equalThreshold = clamp(Number(document.getElementById("jrEqualThreshold").value) || 0.1, 0, 0.5);
   s.equalLabelSize = document.getElementById("jrEqualLabelSize").value;
+  s.showZones = document.getElementById("jrShowZones").checked;
   s.showFairValueGaps = document.getElementById("jrShowFvg").checked;
   s.fvgAutoThreshold = document.getElementById("jrFvgAutoThreshold").checked;
   s.fvgTimeframe = document.getElementById("jrFvgTimeframe").value;
@@ -6123,6 +6108,10 @@ function readRtcSettingsPanel(){
   settings.showStructure = document.getElementById("strategyJrShowStructure").checked;
   settings.showAllTexts = document.getElementById("strategyJrShowAllTexts").checked;
   settings.showOrderBlocks = document.getElementById("strategyJrShowOrderBlocks").checked;
+  if(item.type === "strategyJrV8") {
+    settings.internalOrderBlocks = settings.showOrderBlocks;
+    settings.swingOrderBlocks = settings.showOrderBlocks;
+  }
   settings.showFairValueGaps = document.getElementById("strategyJrShowFvg").checked;
   settings.kPeriod = clamp(Number(document.getElementById("rtcStoch6KPeriod").value) || 14, 1, 100);
   settings.overBought = clamp(Number(document.getElementById("rtcStoch6OB").value) || 80, 1, 99);
