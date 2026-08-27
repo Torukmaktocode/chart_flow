@@ -23,7 +23,7 @@ function requestJson(targetUrl) {
       targetUrl,
       {
         headers: {
-          "User-Agent": "Mozilla/5.0 QuantFreeDashboard/1.0",
+          "User-Agent": "Mozilla/5.0 ChartFlow/1.0",
           "Accept": "application/json"
         },
         rejectUnauthorized: false,
@@ -191,5 +191,5 @@ createServer(async (req, res) => {
   await routeStatic(req, res, url);
 }).listen(port, "127.0.0.1", async () => {
   const packageInfo = JSON.parse(await readFile(join(root, "package.json"), "utf8").catch(() => "{}"));
-  console.log(`${packageInfo.name || "quant-free-dashboard"} running at http://127.0.0.1:${port}`);
+  console.log(`${packageInfo.name || "chart-flow"} running at http://127.0.0.1:${port}`);
 });

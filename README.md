@@ -1,4 +1,4 @@
-# 📊 Free Dashboard - Sistema de Trading
+# 📊 Chart Flow - Sistema de Trading
 
 Sistema completo de dashboards y herramientas de trading en tiempo real. 100% gratuito, sin API keys.
 
@@ -10,8 +10,43 @@ Sistema completo de dashboards y herramientas de trading en tiempo real. 100% gr
 | **Stock Dashboard** | 8765 | http://localhost:8765/dashboard.html | Acciones tech (NVDA, AAPL, MSFT, etc.) |
 | **Dollar/VIX/Bonds** | 8770 | http://localhost:8770/dashboard.html | DXY, VIX, Bonos del Tesoro |
 | **ChartFlow NAS100** | 8780 | http://localhost:8780/dashboard.html | Estrategia NASDAQ-100 |
-| **ChartFlow Backtest** | 8790 | http://localhost:8790 | Backtesting con datos históricos |
-| **War Room** | 3001 | http://localhost:3001 | Noticias live, Squawk X, análisis NAS100 |
+| **ChartFlow Backtest** | 8790 | http://localhost:8790/dashboard.html | Backtesting con datos históricos |
+| **War Room** | 3001 | http://localhost:3001/ | Noticias live, Squawk X, análisis NAS100 |
+
+## 🚀 Iniciar Localhost
+
+### Opción 1: Iniciar todos los dashboards (recomendado)
+```bash
+.\scripts\start-unified.ps1
+```
+
+### Opción 2: Iniciar solo el API Server
+```bash
+npm run dev
+```
+
+### Opción 3: Iniciar dashboards individualmente
+```bash
+# Stock Dashboard (puerto 8765)
+cd stock-dashboard && node server.js
+
+# Dollar/VIX/Bonds (puerto 8770)
+cd dollar-vix-bonds-dashboard && node server.js
+
+# ChartFlow NAS100 (puerto 8780)
+cd chartflow && node server.js
+
+# ChartFlow Backtest (puerto 8790)
+cd chartflow-backtest && node server.js
+
+# War Room (puerto 3001)
+cd "war room" && node server.js
+```
+
+### Detener todos los dashboards
+```bash
+.\scripts\stop-unified.ps1
+```
 
 ## 📁 Estructura del Proyecto
 
@@ -42,7 +77,7 @@ chart_flow/
 └── package.json
 ```
 
-## 🚀 Instalación
+## 📊 Instalación
 
 ### Prerrequisitos
 - Node.js 18+
@@ -70,15 +105,6 @@ chart_flow/
 4. **Iniciar todos los dashboards**
    ```bash
    .\scripts\start-unified.ps1
-   ```
-
-5. **O iniciar manualmente**
-   ```bash
-   # API Server
-   npm run dev
-
-   # Bot de Telegram
-   npm run bot
    ```
 
 ## 🤖 Bot de Telegram
@@ -207,6 +233,11 @@ $env:TELEGRAM_BOT_TOKEN="tu-token"
 Remove-Item -Recurse -Force node_modules
 npm install
 ```
+
+### "Dashboard no carga"
+1. Verificar que el servidor esté corriendo: `netstat -ano | findstr :PUERTO`
+2. Revisar logs en la consola donde se ejecutó el script
+3. Reiniciar con: `.\scripts\stop-unified.ps1` y luego `.\scripts\start-unified.ps1`
 
 ## 📝 Licencia
 

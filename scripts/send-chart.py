@@ -104,7 +104,7 @@ def generate_chart(symbol_key, tf="1d"):
     fig = plt.figure(figsize=(14, 8))
     
     # Grid para los gráficos
-    gs = fig.add_gridspec(2, 1, height_ratios=[4, 1], hspace=0.2)
+    gs = fig.add_gridspec(2, 1, height_ratios=[4, 1], hspace=0.05)
     
     # Gráfico de velas japonesas
     ax1 = fig.add_subplot(gs[0])
@@ -154,9 +154,13 @@ def generate_chart(symbol_key, tf="1d"):
     ax2.set_ylabel("Volumen")
     ax2.grid(True, alpha=0.3)
     
-    # Configurar eje X
-    ax2.xaxis.set_major_formatter(mdates.DateFormatter("%d %b\n%H:%M"))
-    plt.xticks(rotation=45)
+    # Configurar eje X en ax2 (barra de volumen) y ocultar en ax1
+    ax1.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+    ax2.xaxis.set_major_formatter(mdates.DateFormatter("%d %b %H:%M"))
+    ax2.tick_params(axis='x', rotation=45, which='both')
+    
+    # Formatear eje Y de precio con separador de miles
+    ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, p: f"{x:,.2f}"))
     
     # Guardar gráfico
     output_dir = os.path.dirname(os.path.abspath(__file__))

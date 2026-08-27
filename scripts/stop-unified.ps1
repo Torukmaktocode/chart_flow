@@ -1,10 +1,10 @@
-# 🛑 Script de Parada Unificado - Quant Free Dashboard
+# 🛑 Script de Parada Unificado - Chart Flow
 # Ejecutar desde la carpeta raíz del proyecto
 
 $ErrorActionPreference = "SilentlyContinue"
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  Quant Free Dashboard - Parada Unificada" -ForegroundColor Cyan
+Write-Host "  Chart Flow - Parada Unificada" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -12,7 +12,9 @@ Write-Host ""
 $ports = @(
     @{Port=8765; Name="Dashboard Acciones"},
     @{Port=8770; Name="Dashboard Macro"},
-    @{Port=8780; Name="Dashboard NAS100"}
+    @{Port=8780; Name="Dashboard NAS100"},
+    @{Port=8790; Name="ChartFlow Backtest"},
+    @{Port=3001; Name="War Room"}
 )
 
 Write-Host "Deteniendo servicios..." -ForegroundColor Yellow

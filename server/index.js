@@ -112,7 +112,7 @@ app.post("/api/telegram", express.json(), async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Quant API listening on http://127.0.0.1:${port}`);
+  console.log(`ChartFlow API listening on http://127.0.0.1:${port}`);
   setupAlertNotifications();
   startPriceMonitor(30000);
 });

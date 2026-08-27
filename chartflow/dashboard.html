@@ -12,23 +12,23 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#06090f;--surface-1:#0b1018;--surface-2:#0f1520;--surface-3:#141c28;
-  --border:#1a2435;--border-bright:#243348;--text:#e8ecf4;--text-dim:#5a6a80;
-  --accent:#00d4ff;--accent-dim:rgba(0,212,255,.15);--accent-glow:rgba(0,212,255,.35);
-  --bull:#00e5a0;--bull-dim:rgba(0,229,160,.12);--bear:#ff3355;--bear-dim:rgba(255,51,85,.12);
-  --alert:#ffaa00;--font-mono:'JetBrains Mono',monospace;--font-ui:'Inter',system-ui,sans-serif;
+  --bg:#0e0f11;--surface-1:#141519;--surface-2:#1b1d21;--surface-3:#24262b;
+  --border:rgba(255,255,255,.08);--border-bright:rgba(255,255,255,.16);--text:#f4f4f5;--text-dim:#92939a;
+  --accent:#f4f4f5;--accent-dim:rgba(244,244,245,.12);--accent-glow:rgba(244,244,245,.22);
+  --bull:#f4f4f5;--bull-dim:rgba(244,244,245,.12);--bear:#7a7b82;--bear-dim:rgba(122,123,130,.14);
+  --alert:#c9c9cf;--font-mono:'JetBrains Mono',monospace;--font-ui:'Inter',system-ui,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-ui)}
 .app{height:100vh;display:flex;flex-direction:column;background:var(--bg)}
 .topbar{height:38px;display:flex;align-items:center;gap:12px;padding:0 10px;background:var(--surface-1);border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap}
 .pill{height:28px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:16px;background:var(--surface-2);border:1px solid var(--border);font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:.3px}
-.pill-tag{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#06090f;font-family:var(--font-mono);font-size:10px;display:inline-flex;align-items:center;justify-content:center;font-weight:800}
+.pill-tag{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#111214;font-family:var(--font-mono);font-size:10px;display:inline-flex;align-items:center;justify-content:center;font-weight:800}
 .diamond{width:15px;height:15px;border:1px solid var(--text-dim);border-radius:50%;display:inline-block;position:relative}
 .diamond:after{content:"";position:absolute;left:4px;top:4px;width:5px;height:5px;border:1px solid var(--text-dim);transform:rotate(45deg)}
 .tfbar{display:flex;align-items:center;gap:2px;height:100%}
 .tf{height:30px;min-width:34px;padding:0 8px;border:0;background:transparent;color:var(--text);font:500 13px var(--font-mono);cursor:pointer;border-radius:5px;letter-spacing:.2px}
-.tf:hover{background:var(--surface-3)}.tf.active{background:rgba(235,240,248,.16);color:#f8fafc}
+.tf:hover{background:var(--surface-3)}.tf.active{background:rgba(244,244,245,.16);color:#f4f4f5}
 .sep{width:1px;height:22px;background:var(--border);margin:0 5px}.tool{color:var(--text-dim);font-size:13px;font-family:var(--font-ui)}.spacer{flex:1}
 .indicator-wrap{position:relative;height:32px;display:flex;align-items:center}
 .indicator-btn{height:30px;border:0;background:transparent;color:var(--text-dim);border-radius:5px;padding:0 8px;font-size:13px;font-family:var(--font-ui);cursor:pointer;transition:color .15s}
@@ -39,11 +39,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .indicator-row:hover{background:var(--surface-3)}
 .indicator-check{display:none}
 .btn{height:28px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:14px;padding:0 12px;font-weight:700;font-family:var(--font-ui);font-size:12px;letter-spacing:.2px;transition:all .15s}
-.btn:hover{border-color:#5a6a80;color:#f8fafc}
+.btn:hover{border-color:#92939a;color:#f4f4f5}
 .icon-btn{width:34px;height:30px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all .15s}
-.icon-btn:hover{background:var(--surface-3);border-color:#5a6a80;color:#f8fafc}
+.icon-btn:hover{background:var(--surface-3);border-color:#92939a;color:#f4f4f5}
 .alerts-toggle{font-size:14px}
-.alerts-toggle-badge{position:absolute;top:-4px;right:-4px;background:var(--alert);color:#06090f;font-family:var(--font-mono);font-size:9px;font-weight:800;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center;line-height:14px;display:none}
+.alerts-toggle-badge{position:absolute;top:-4px;right:-4px;background:var(--alert);color:#111214;font-family:var(--font-mono);font-size:9px;font-weight:800;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center;line-height:14px;display:none}
 .alerts-toggle-badge.visible{display:block}
 .alerts-toggle:hover .alerts-toggle-badge{background:var(--bear);color:#fff}
 .fullscreen-icon{width:16px;height:16px;position:relative;display:block}
@@ -68,7 +68,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .layout-row:last-child{border-bottom:0}
 .layout-choice-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0}
 .layout-grid-btn{width:28px;height:30px;border:0;background:transparent;color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:4px;transition:all .12s}
-.layout-grid-btn:hover,.layout-grid-btn.active{background:rgba(235,240,248,.16);color:#f8fafc}
+.layout-grid-btn:hover,.layout-grid-btn.active{background:rgba(244,244,245,.16);color:#f4f4f5}
 .grid-icon{width:22px;height:17px;border:1px solid currentColor;border-radius:2px;display:grid;gap:1px;padding:1px}
 .grid-icon.cols-1{grid-template-columns:1fr}.grid-icon.cols-2{grid-template-columns:1fr 1fr}.grid-icon.cols-3{grid-template-columns:1fr 1fr 1fr}.grid-icon.cols-4{grid-template-columns:1fr 1fr 1fr 1fr}
 .grid-icon span{border:1px solid currentColor;border-radius:1px}
@@ -84,21 +84,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .bottom-bar .time-ranges{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--text);cursor:pointer;font-family:var(--font-mono)}
 .bottom-bar .time-ranges span{opacity:.6;transition:opacity .15s}
 .bottom-bar .time-ranges span:hover{opacity:1}
-.bottom-bar .time-ranges span.active{opacity:1;font-weight:700;color:#f8fafc}
+.bottom-bar .time-ranges span.active{opacity:1;font-weight:700;color:#f4f4f5}
 .bottom-bar .vsep{width:1px;height:18px;background:var(--border);margin:0 12px}
 .bottom-bar .bottom-icon{font-size:14px;color:var(--text)}
 .bottom-bar .utc-clock{position:absolute;right:48px;bottom:0;font-size:12px;color:var(--text);font-family:var(--font-mono);white-space:nowrap;line-height:28px;font-weight:600}
 .charts{position:relative;flex:1;display:flex;background:var(--bg);overflow:hidden;padding-bottom:28px;min-width:0}
 .charts.grid-layout{display:grid;padding:0 0 28px 0;background:rgba(255,255,255,.12);margin-right:33px}
 .charts.two{display:grid;padding:0 0 28px 0}
-.charts.grid-layout .chart-wrap,.charts.two .chart-wrap{width:100%;height:100%;min-width:0;min-height:0;border:0;border-radius:0;flex:none;overflow:hidden;background:#efefee}
+.charts.grid-layout .chart-wrap,.charts.two .chart-wrap{width:100%;height:100%;min-width:0;min-height:0;border:0;border-radius:0;flex:none;overflow:hidden;background:#141519}
 .charts.grid-layout canvas,.charts.two canvas{right:auto}
 .chart-wrap.layout-hidden{display:none!important}
 .app.watchlist-open .charts{margin-right:360px}
-.chart-wrap{position:relative;flex:1 1 100%;min-width:0;background:var(--bg);overflow:hidden;border-right:0}
+.app.fullscreen .rightbar{display:none!important}
+.app.fullscreen .charts{margin-right:0!important}
+.chart-wrap{position:relative;flex:1 1 100%;min-width:0;background:#141519;overflow:hidden;border-right:0}
 .chart-wrap:last-child{border-right:0}.chart-wrap.active{outline:0}
 .charts.single .chart-wrap:nth-child(2){display:none}
-canvas{position:absolute;left:0;right:0;top:0}
+canvas{position:absolute;top:0}
 .leftbar-btn{width:28px;height:28px;border:1px solid var(--border);background:var(--surface-2);color:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;font-weight:800;font-family:var(--font-mono);transition:all .15s ease;text-decoration:none;letter-spacing:-.3px}
 .leftbar-btn:hover{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 .leftbar-btn .btn-label{font-size:8px;margin-top:1px}
@@ -111,25 +113,25 @@ canvas{position:absolute;left:0;right:0;top:0}
 .watchlist-head{height:46px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:2px solid var(--border);background:var(--bg)}
 .watchlist-title{font-size:12px;font-weight:800;flex:1;color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;font-family:var(--font-mono)}
 .watchlist-action{width:32px;height:32px;border:2px solid var(--border);background:var(--surface-2);color:var(--text-dim);border-radius:8px;cursor:pointer;transition:all .18s ease;font-size:14px}
-.watchlist-action:hover{background:var(--surface-3);border-color:#5a6a80;color:#f8fafc}
+.watchlist-action:hover{background:var(--surface-3);border-color:#92939a;color:#f4f4f5}
 .watchlist-tabs{display:flex;align-items:center;gap:6px;padding:10px 10px;border-bottom:2px solid var(--border);color:var(--text-dim);flex-wrap:nowrap;background:var(--bg)}
 .watchlist-tab{height:34px;border-radius:8px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;cursor:pointer;padding:0 14px;transition:all .18s ease;white-space:nowrap;background:var(--surface-2);color:var(--text-dim);gap:4px;letter-spacing:.3px;font-family:var(--font-mono)}
 .watchlist-tab:hover{background:var(--surface-3);border-color:var(--border-bright);color:var(--text)}
-.watchlist-tab.active{background:rgba(235,240,248,.16);color:#f8fafc;border-color:rgba(235,240,248,.30);box-shadow:none}
+.watchlist-tab.active{background:rgba(244,244,245,.16);color:#f4f4f5;border-color:rgba(244,244,245,.30);box-shadow:none}
 .watchlist-tab-name{outline:none;min-width:20px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px 4px;border-radius:3px;line-height:1;color:inherit}
 .watchlist-tab-name:focus{background:rgba(0,0,0,.3)}
 .watchlist-tab-add{width:34px;height:34px;border-radius:8px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--text-dim);cursor:pointer;transition:all .18s ease;background:var(--surface-2)}
-.watchlist-tab-add:hover{background:var(--surface-3);border-color:#5a6a80;color:#f8fafc;box-shadow:none}
+.watchlist-tab-add:hover{background:var(--surface-3);border-color:#92939a;color:#f4f4f5;box-shadow:none}
 .watchlist-tab-remove{width:16px;height:16px;border-radius:50%;border:none;background:var(--surface-3);color:var(--text-dim);font-size:11px;font-weight:700;cursor:pointer;display:none;align-items:center;justify-content:center;margin-left:6px;padding:0;line-height:1;flex-shrink:0;transition:all .12s ease}
 .watchlist-tab:hover .watchlist-tab-remove{display:flex}
 .watchlist-tab-remove:hover{background:var(--bear);color:#fff}
 .watchlist-search{display:grid;grid-template-columns:1fr 32px;gap:7px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surface-2)}
 .watchlist-input{height:32px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:0 9px;font-size:13px;font-family:var(--font-mono);transition:border-color .15s ease}
-.watchlist-input:focus{outline:none;border-color:#5a6a80}
+.watchlist-input:focus{outline:none;border-color:#92939a}
 .watchlist-list{overflow:auto;padding:5px 0;flex:1}
 .watchlist-row{height:40px;display:grid;grid-template-columns:18px 22px minmax(70px,1fr) auto 60px 20px;align-items:center;gap:8px;padding:0 10px;border-left:3px solid transparent;color:var(--text);cursor:pointer;font-size:13px;font-family:var(--font-mono);transition:all .12s ease;position:relative}
 .watchlist-row:hover{background:var(--surface-3)}
-.watchlist-row.active{background:rgba(235,240,248,.10);border-left-color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
+.watchlist-row.active{background:rgba(244,244,245,.10);border-left-color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
 .watchlist-row.dragging{opacity:.35;transform:scale(.97)}
 .watchlist-row.drag-over{background:var(--bg);border-top:2px solid var(--accent)}
 .watchlist-row .change-bar{position:absolute;bottom:2px;left:46px;right:28px;height:2px;border-radius:1px;opacity:.6}
@@ -141,7 +143,7 @@ canvas{position:absolute;left:0;right:0;top:0}
 .watchlist-section{padding:8px 14px 4px;color:var(--text-dim);font-size:11px;text-transform:uppercase;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;letter-spacing:.5px;font-weight:600;font-family:var(--font-mono)}
 .watchlist-section-name{cursor:text;border-bottom:1px dashed transparent;transition:border-color .15s ease;padding:2px 4px;border-radius:3px}
 .watchlist-section-name:hover{border-bottom-color:var(--text-dim)}
-.watchlist-section-name:focus{outline:none;border-bottom-color:#5a6a80;color:var(--text);background:rgba(255,255,255,.05)}
+.watchlist-section-name:focus{outline:none;border-bottom-color:#92939a;color:var(--text);background:rgba(255,255,255,.05)}
 .watchlist-icon{width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0}
 .watchlist-symbol{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);font-size:13px}
 .watchlist-price{font-variant-numeric:tabular-nums;color:var(--text);font-weight:600;font-size:12px;text-align:right}
@@ -191,7 +193,7 @@ canvas{position:absolute;left:0;right:0;top:0}
 .alert-item-message{font-size:11px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .alert-item-actions{display:flex;gap:4px;flex-shrink:0}
 .alert-item-btn{width:28px;height:28px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .12s ease}
-.alert-item-btn:hover{border-color:#5a6a80;color:#f8fafc}
+.alert-item-btn:hover{border-color:#92939a;color:#f4f4f5}
 .alert-item-btn.delete:hover{border-color:var(--bear);color:var(--bear);background:var(--bear-dim)}
 .alert-item-btn.disable{color:var(--alert)}
 .alert-item-btn.disable:hover{border-color:var(--alert)}
@@ -208,7 +210,7 @@ canvas{position:absolute;left:0;right:0;top:0}
 .ctx-menu-item-check{margin-left:auto;font-size:13px;color:var(--accent);display:none}
 .ctx-menu-item.in-list .ctx-menu-item-check{display:inline}
 .ctx-menu-sep{height:1px;background:var(--border);margin:4px 10px}
-.ctx-menu-item.ctx-menu-action{color:#f8fafc;font-weight:700}
+.ctx-menu-item.ctx-menu-action{color:#f4f4f5;font-weight:700}
 .charts.grid-layout .rightbar,.charts.two .rightbar{display:none!important}
 .charts.grid-layout, .charts.two{--sidebar-width:0}
 .grid-sidebar{display:none;position:fixed;right:0;top:38px;bottom:0;width:33px;background:var(--surface-1);border-left:1px solid var(--border);z-index:96;flex-direction:column;align-items:center;gap:16px;padding-top:12px}
@@ -226,10 +228,10 @@ canvas{position:absolute;left:0;right:0;top:0}
 .charts.grid-layout .loading,.charts.two .loading{inset:0}
 .charts.grid-layout .indicator-collapse,.charts.two .indicator-collapse{left:8px}
 .charts.grid-layout .indicator-strip,.charts.two .indicator-strip{left:8px}
-.main-title{position:absolute;top:11px;left:8px;right:72px;z-index:7;color:#333;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;overflow:hidden;white-space:nowrap;font-family:var(--font-mono)}
-.indicator-title{position:absolute;top:35px;left:8px;right:72px;z-index:7;color:#666;font-size:13px;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.main-title{position:absolute;top:11px;left:8px;right:72px;z-index:7;color:var(--title-color,#1a1a22);font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;overflow:hidden;white-space:nowrap;font-family:var(--font-mono)}
+.indicator-title{position:absolute;top:35px;left:8px;right:72px;z-index:7;color:var(--strategy-color,#1a1a22);font-size:13px;display:flex;align-items:center;gap:8px;white-space:nowrap}
 .indicator-stack{position:absolute;top:35px;left:8px;right:72px;z-index:9;display:grid;gap:2px;justify-items:start}
-.indicator-chip{height:22px;display:flex;align-items:center;gap:6px;color:#666;font-size:13px;white-space:nowrap}
+.indicator-chip{height:22px;display:flex;align-items:center;gap:6px;color:var(--strategy-color,#1a1a22);font-size:13px;white-space:nowrap}
 .indicator-chip.hidden{opacity:.45}
 .indicator-chip .indicator-eye,.indicator-chip .indicator-gear,.indicator-chip .indicator-remove{opacity:.9}
 .indicator-eye{width:22px;height:20px;border:0;background:transparent;color:var(--text-dim);border-radius:4px;font-size:14px;line-height:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s}
@@ -239,14 +241,14 @@ canvas{position:absolute;left:0;right:0;top:0}
 .eye-icon.closed:after{content:"";position:absolute;left:-2px;right:-2px;top:3px;border-top:1.5px solid currentColor;transform:rotate(-28deg)}
 .indicator-remove{width:20px;height:20px;border:0;background:transparent;color:var(--text-dim);border-radius:4px;font-size:13px;line-height:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s}
 .indicator-remove:hover{background:var(--surface-3);color:var(--bear)}
-.indicator-code{width:20px;height:20px;border-radius:50%;border:1px solid rgba(0,229,160,.5);color:var(--bull);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900}
+.indicator-code{width:20px;height:20px;border-radius:50%;border:1px solid rgba(242,242,245,.5);color:var(--bull);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900}
 .indicator-gear{width:20px;height:20px;border:0;background:transparent;color:var(--text-dim);border-radius:4px;font-size:13px;line-height:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s}
 .indicator-gear:hover{background:var(--surface-3);color:var(--text)}
 .indicator-collapse{display:none}
 .indicator-strip{position:absolute;top:35px;left:8px;z-index:8;height:24px;display:none;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--accent);border-radius:3px;color:var(--text);font-size:13px;padding:0 6px}
 .indicator-strip.active{display:flex}
 .strip-btn{width:20px;height:20px;border:0;background:transparent;color:var(--text);border-radius:3px;font-size:13px;line-height:20px;cursor:pointer}
-.strip-btn:hover{background:var(--surface-3);color:#f8fafc}
+.strip-btn:hover{background:var(--surface-3);color:#f4f4f5}
 .tag100{width:19px;height:19px;border-radius:50%;background:var(--accent);color:var(--bg);font-family:var(--font-mono);font-size:10px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;font-weight:800}
 .ohlc{font-weight:700;color:var(--text);font-family:var(--font-mono);font-size:13px}.change{color:var(--text);font-weight:700;font-family:var(--font-mono)}.change.dn{color:var(--text-dim)}
 .wm{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;opacity:.07;z-index:1}
@@ -259,11 +261,11 @@ canvas{position:absolute;left:0;right:0;top:0}
 .mini{width:27px;height:24px;border-radius:5px;background:var(--surface-3);color:var(--text);border:0;font-weight:800;font-family:var(--font-mono);font-size:11px;transition:background .12s}
 .mini:hover{background:var(--accent);color:var(--bg)}
 .mini.profile-color-btn.active{background:var(--accent);color:var(--bg);box-shadow:0 0 0 1px var(--text)}
-.price-line{position:absolute;left:44px;right:120px;height:1px;background:repeating-linear-gradient(90deg,rgba(0,212,255,.55) 0,rgba(0,212,255,.55) 1px,transparent 1px,transparent 4px);z-index:4;box-shadow:0 0 8px rgba(0,212,255,.25);animation:pricePulse 2s ease-in-out infinite}
+.price-line{position:absolute;left:44px;right:120px;height:1px;background:repeating-linear-gradient(90deg,rgba(137,137,137,.55) 0,rgba(137,137,137,.55) 1px,transparent 1px,transparent 4px);z-index:4;box-shadow:0 0 8px rgba(137,137,137,.25);animation:pricePulse 2s ease-in-out infinite}
 @keyframes pricePulse{0%,100%{opacity:.7}50%{opacity:1}}
-.price-badge{position:absolute;right:44px;transform:translateY(-50%);min-width:62px;background:var(--accent);color:var(--bg);border-radius:2px;padding:3px 5px;text-align:center;font-size:11px;font-weight:700;line-height:12px;z-index:9;font-family:var(--font-mono);box-shadow:0 0 12px rgba(0,212,255,.4)}
+.price-badge{position:absolute;right:44px;transform:translateY(-50%);min-width:62px;background:var(--accent);color:var(--bg);border-radius:2px;padding:3px 5px;text-align:center;font-size:11px;font-weight:700;line-height:12px;z-index:9;font-family:var(--font-mono);box-shadow:0 0 12px rgba(137,137,137,.4)}
 .price-badge .cd{display:block;font-size:10px;font-weight:400;margin-top:1px;opacity:.8}
-.crosshair-v,.crosshair-h{position:absolute;display:none;pointer-events:none;z-index:11}.crosshair-v{top:0;bottom:30px;width:1px;border-left:1px dashed rgba(0,212,255,.6)}.crosshair-h{left:44px;right:120px;height:1px;border-top:1px dashed rgba(0,212,255,.6)}.crosshair-price,.crosshair-time{position:absolute;display:none;pointer-events:none;z-index:12;background:var(--surface-3);color:var(--text);border:1px solid var(--border);border-radius:2px;font-size:12px;font-weight:700;line-height:14px;padding:4px 7px;white-space:nowrap;font-family:var(--font-mono)}.crosshair-price{right:44px;transform:translateY(-50%);text-align:center}.crosshair-time{bottom:1px;transform:translateX(-50%)}.chart-wrap.crosshair-active{cursor:crosshair}
+.crosshair-v,.crosshair-h{position:absolute;display:none;pointer-events:none;z-index:11}.crosshair-v{top:0;bottom:30px;width:1px;border-left:1px dashed rgba(137,137,137,.6)}.crosshair-h{left:44px;right:120px;height:1px;border-top:1px dashed rgba(137,137,137,.6)}.crosshair-price,.crosshair-time{position:absolute;display:none;pointer-events:none;z-index:12;border-radius:2px;font-size:12px;font-weight:700;line-height:14px;padding:4px 7px;white-space:nowrap;font-family:var(--font-mono)}.crosshair-price{right:44px;transform:translateY(-50%);text-align:center;min-width:auto;padding:2px 5px;background:#1b1d21;color:#f4f4f5;border:1px solid rgba(255,255,255,.12)}.crosshair-time{transform:translateX(-50%);background:#1b1d21;color:#f4f4f5;border:1px solid rgba(255,255,255,.12)}.chart-wrap.crosshair-active{cursor:crosshair}
 .unit{position:absolute;top:8px;right:43px;z-index:10;height:25px;min-width:50px;border:1px solid var(--border);background:var(--surface-1);color:var(--text);border-radius:4px;font-size:12px;font-weight:700;font-family:var(--font-mono)}
 .loading{position:absolute;inset:38px 38px 0 44px;z-index:20;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;font-family:var(--font-ui)}
 .clock{position:absolute;right:8px;bottom:6px;z-index:9;color:var(--text-dim);font-size:14px;font-weight:700;font-family:var(--font-mono);display:none}
@@ -275,13 +277,13 @@ canvas{position:absolute;left:0;right:0;top:0}
 .settings-close:hover{color:var(--bear)}
 .tabs{display:flex;gap:24px;padding:0 14px;border-bottom:3px solid var(--border)}
 .tab{height:38px;border:0;background:transparent;color:var(--text-dim);font-weight:700;font-size:15px;border-bottom:3px solid transparent;margin-bottom:-3px;font-family:var(--font-ui);transition:color .15s}
-.tab.active{border-bottom-color:#5a6a80;color:var(--text)}
+.tab.active{border-bottom-color:#92939a;color:var(--text)}
 .settings-body{padding:26px 14px 16px;overflow:auto;display:grid;gap:14px}
 .settings-section{margin:8px 0 6px;color:var(--text-dim);font-size:11px;text-transform:uppercase;font-family:var(--font-mono);letter-spacing:.5px}
 .setting-row{display:grid;grid-template-columns:156px 1fr 22px;align-items:center;gap:8px;min-height:36px;font-size:14px}
 .setting-row.compact{grid-template-columns:auto 1fr}
 .field,.select,.time-field{height:34px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:0 9px;font-size:14px;font-family:var(--font-ui);transition:border-color .15s}
-.field:focus,.select:focus,.time-field:focus{outline:none;border-color:#5a6a80}
+.field:focus,.select:focus,.time-field:focus{outline:none;border-color:#92939a}
 .select{appearance:auto}
 .info-dot{width:16px;height:16px;border-radius:50%;background:var(--surface-3);color:var(--text-dim);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900}
 .check{width:18px;height:18px;accent-color:var(--accent)}
@@ -297,9 +299,9 @@ canvas{position:absolute;left:0;right:0;top:0}
 .ts-grid{display:grid;grid-template-columns:24px 102px 10px 102px 36px;align-items:center;gap:8px}
 .settings-foot{height:58px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:0 14px}
 .modal-btn{height:34px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);padding:0 14px;font-size:15px;font-family:var(--font-ui);transition:all .15s}
-.modal-btn:hover{border-color:#5a6a80;color:#f8fafc}
+.modal-btn:hover{border-color:#92939a;color:#f4f4f5}
 .modal-btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
-.modal-btn.primary:hover{box-shadow:0 0 12px rgba(0,212,255,.3)}
+.modal-btn.primary:hover{box-shadow:0 0 12px rgba(137,137,137,.3)}
 .design-settings .settings-panel{width:618px}
 .design-shell{display:grid;grid-template-columns:208px 1fr;min-height:0;flex:1;overflow:hidden}
 .design-nav{border-right:1px solid var(--border);padding:10px 5px;background:var(--surface-1)}
@@ -316,7 +318,7 @@ canvas{position:absolute;left:0;right:0;top:0}
 .template-item{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px}
 .template-item span{font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .template-chip{height:28px;border:1px solid var(--border);border-radius:5px;background:var(--surface-2);color:var(--text);padding:0 9px;cursor:pointer;transition:all .12s}
-.template-chip:hover{border-color:#5a6a80;color:#f8fafc}
+.template-chip:hover{border-color:#92939a;color:#f4f4f5}
 .layout-palette{display:grid;grid-template-columns:repeat(6,34px);gap:9px}
 .layout-palette .layout-grid-btn{border:1px solid var(--border);height:32px}
 .context-menu{position:absolute;z-index:120;min-width:395px;background:var(--surface-2);border:1px solid var(--border);border-radius:7px;box-shadow:0 12px 28px rgba(0,0,0,.55);padding:7px 0;display:none;color:var(--text);font-size:14px}
@@ -331,7 +333,7 @@ canvas{position:absolute;left:0;right:0;top:0}
 .alert-close:hover{color:var(--bear)}
 .alert-body{padding:16px 20px;display:grid;grid-template-columns:116px 1fr;gap:10px 14px;align-items:center}
 .alert-body label{color:var(--text-dim)}.alert-full{grid-column:2}.alert-field,.alert-select{height:34px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:0 9px;font-size:14px;font-family:var(--font-ui)}
-.alert-field:focus,.alert-select:focus{outline:none;border-color:#5a6a80}
+.alert-field:focus,.alert-select:focus{outline:none;border-color:#92939a}
 .alert-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.alert-actions{height:58px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:0 18px}
 .alert-line{position:absolute;left:0;right:72px;height:9px;border-top:1px dashed var(--accent);z-index:5;cursor:ns-resize;pointer-events:auto;opacity:.7}.alert-label{position:absolute;right:76px;transform:translateY(-50%);z-index:10;background:var(--accent);color:var(--bg);border-radius:3px;padding:2px 6px;font-size:11px;font-weight:700;cursor:ns-resize;pointer-events:auto;user-select:none;font-family:var(--font-mono)}.alert-control{position:absolute;left:50%;transform:translate(-50%,-50%);z-index:14;display:none;align-items:center;gap:7px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 5px 3px 8px;font-size:12px;line-height:16px;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.45);pointer-events:auto;font-family:var(--font-mono)}.alert-control.visible{display:flex}.alert-delete{width:22px;height:21px;border:0;background:transparent;color:var(--text);border-left:1px solid var(--border);cursor:pointer;font-size:14px;line-height:18px;transition:color .12s}.alert-delete:hover{color:var(--bear)}
 .toast{position:absolute;right:18px;bottom:56px;z-index:160;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:12px 14px;min-width:260px;box-shadow:0 10px 24px rgba(0,0,0,.55);display:none;font-family:var(--font-ui)}.toast.show{display:block}
@@ -339,11 +341,11 @@ canvas{position:absolute;left:0;right:0;top:0}
 .profile-bar{display:flex;align-items:center;gap:4px;margin-left:8px}
 .profile-btn{height:28px;min-width:32px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim);border-radius:6px;padding:0 8px;font:700 11px var(--font-mono);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px}
 .profile-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
-.profile-btn.active{background:var(--accent);color:#06090f;border-color:var(--accent)}
+.profile-btn.active{background:var(--accent);color:#111214;border-color:var(--accent)}
 .profile-btn .pf-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5}
-.profile-btn.active .pf-dot{background:#06090f;opacity:1}
+.profile-btn.active .pf-dot{background:#111214;opacity:1}
 .profile-save{height:28px;border:1px solid var(--bull);background:transparent;color:var(--bull);border-radius:6px;padding:0 8px;font:700 10px var(--font-mono);cursor:pointer;transition:all .15s}
-.profile-save:hover{background:var(--bull);color:#06090f}
+.profile-save:hover{background:var(--bull);color:#111214}
 .profile-sep{width:1px;height:18px;background:var(--border);margin:0 4px}
 /* Transitions & Animations */
 .settings-backdrop{transition:opacity .25s ease}
@@ -368,6 +370,117 @@ canvas{position:absolute;left:0;right:0;top:0}
 .scrollbar-thin::-webkit-scrollbar-thumb:hover{background:var(--text-dim)}
 
 @media(max-width:900px){.tool,.sep,.btn{display:none}.tf{min-width:30px;padding:0 6px}.wm .sym{font-size:52px}.wm .name{font-size:22px}.charts.two{flex-direction:column}.charts.two .chart-wrap{flex:0 0 50%;width:100%}.chart-wrap{border-right:0;border-bottom:1px solid var(--border)}}
+
+/* ===== Antigravity — superficies, hairlines y monocromo ===== */
+*{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+/* Barras y shell: superficies sólidas --surface-1, flat by policy */
+.topbar,.bottom-bar,.rightbar,.grid-sidebar,.settings-panel,.design-nav{background:var(--surface-1) !important;border-color:var(--border) !important;box-shadow:none !important;backdrop-filter:none}
+/* backdrop-filter crea stacking context: elevar topbar para sus desplegables */
+.topbar{position:relative;z-index:97}
+/* Paneles flotantes: glass moderado */
+.watchlist-panel,.alerts-panel{background:rgba(20,21,24,.85) !important;-webkit-backdrop-filter:blur(24px) saturate(1.5);backdrop-filter:blur(24px) saturate(1.5);border-color:var(--border) !important;box-shadow:none !important}
+.indicator-menu,.layout-menu,.shortcut-tip,.ctx-menu,.context-menu,.alert-modal,.toast{background:rgba(20,21,24,.80) !important;-webkit-backdrop-filter:blur(28px) saturate(1.5);backdrop-filter:blur(28px) saturate(1.5);border-color:var(--border-bright) !important;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+
+/* Línea de precio #898989 */
+.price-line{background:repeating-linear-gradient(90deg,rgba(137,137,137,.60) 0,rgba(137,137,137,.60) 1px,transparent 1px,transparent 4px) !important;box-shadow:0 0 5px rgba(137,137,137,.28) !important}
+/* Crosshair: fondo oscuro consistente con el tema */
+.crosshair-price{background:#1b1d21 !important;color:#f4f4f5 !important;border-color:rgba(255,255,255,.12) !important}
+.crosshair-time{background:#1b1d21 !important;color:#f4f4f5 !important;border-color:rgba(255,255,255,.12) !important}
+.indicator-code{border-color:rgba(244,244,245,.45) !important}
+.ctx-menu-item:hover{background:#f4f4f5 !important;color:#0e0f11 !important;transition:background .1s ease}
+.modal-btn.primary{background:#f4f4f5 !important;color:#0e0f11 !important;border-color:#f4f4f5 !important}
+.modal-btn.primary:hover{box-shadow:0 0 14px rgba(244,244,245,.25) !important}
+.loading::before{border-top-color:#f4f4f5 !important}
+.pill-tag,.tag100{background:#f4f4f5 !important;color:#0e0f11 !important}
+
+/* Foco accesible (anillo sutil) */
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid rgba(244,244,245,.55) !important;outline-offset:1px}
+/* ===== Antigravity — Sistema de controles plano y uniforme ===== */
+/* Calma: sin micro-salto de hover; el hover solo aclara sutilmente */
+.btn,.icon-btn,.tf,.indicator-btn,.indicator-row,.modal-btn,.layout-option,.template-chip,
+.layout-grid-btn,.watchlist-action,.watchlist-tab,.alerts-panel-action,.alert-item-btn,.profile-btn,
+.watchlist-tab-add,.watchlist-remove,.mini{transform:none !important;transition:background .15s ease,color .15s ease,border-color .15s ease}
+
+/* Superficies planas uniformes: hairline + relleno translúcido, sin sombras */
+.btn,.icon-btn,.watchlist-tab,.watchlist-action,.alerts-panel-action,.alert-item-btn,.profile-btn,
+.template-chip,.layout-grid-btn,.watchlist-tab-add,.mini,.topbar .pill,.topbar .tf,.topbar .indicator-btn,.topbar .btn,.topbar .profile-btn,
+.grid-sidebar .leftbar-btn,.rightbar .leftbar-btn,.grid-sidebar .icon-btn,.rightbar .icon-btn{
+  background:rgba(255,255,255,.06) !important;
+  border:1px solid var(--border) !important;
+  color:var(--text) !important;
+  box-shadow:none !important;
+  font-weight:600;
+  text-shadow:none !important;
+}
+.btn:hover,.icon-btn:hover,.tf:hover,.watchlist-tab:hover,.watchlist-action:hover,.alerts-panel-action:hover,
+.alert-item-btn:hover,.profile-btn:hover,.template-chip:hover,.indicator-row:hover,.layout-option:hover,
+.layout-grid-btn:hover,.watchlist-tab-add:hover,.mini:hover,
+.grid-sidebar .leftbar-btn:hover,.rightbar .leftbar-btn:hover,.grid-sidebar .icon-btn:hover,.rightbar .icon-btn:hover{
+  background:rgba(255,255,255,.12) !important;
+  border-color:var(--border-bright) !important;
+  color:var(--text) !important;
+}
+
+/* Controles activos: blanco sólido con texto oscuro */
+.tf.active,.layout-grid-btn.active,.watchlist-tab.active{background:#f4f4f5 !important;color:#0e0f11 !important;border-color:#f4f4f5 !important}
+
+/* Radios calibrados y consistentes */
+.btn,.icon-btn{border-radius:7px}
+.tf,.watchlist-action,.watchlist-tab,.alerts-panel-action,.profile-btn,.alert-item-btn,.indicator-row,.layout-option,.layout-menu .layout-grid-btn{border-radius:6px}
+.pill{border-radius:9px}
+.watchlist-input,.field,.select,.time-field,.alert-field,.alert-select{border-radius:8px}
+.color-box,.color-mini,.swatch{border-radius:6px}
+.ctx-menu,.context-menu,.alert-modal,.toast,.indicator-menu,.layout-menu{border-radius:12px}
+.watchlist-panel,.alerts-panel,.chart-wrap{border-radius:0}
+
+/* Inputs: fondo profundo, hairline, placeholder tenue */
+.watchlist-input,.field,.select,.time-field,.alert-field,.alert-select{background:rgba(255,255,255,.04) !important;border-color:var(--border) !important;color:var(--text) !important}
+.watchlist-input:focus,.field:focus,.select:focus,.time-field:focus,.alert-field:focus,.alert-select:focus{border-color:rgba(244,244,245,.55) !important;background:rgba(255,255,255,.06) !important}
+::placeholder{color:#6b6b72 !important;opacity:1}
+
+/* Emojis y pictogramas planos (escala de grises, sin color) */
+.leftbar-btn,.icon-btn,.bottom-icon,.grid-sidebar .ico,.tool,.pill-tag,.tag100,.alerts-toggle-badge{filter:grayscale(1) contrast(1.05);-webkit-filter:grayscale(1) contrast(1.05)}
+
+/* Accesos laterales: compactos, apilados y alineados */
+.leftbar-btn{flex-direction:column;gap:0;line-height:1;width:30px;height:30px;border-radius:9px;font-size:13px;margin:0 !important}
+.leftbar-btn .btn-label{font-size:7px;margin-top:1px;font-weight:700;letter-spacing:.2px}
+.grid-sidebar,.rightbar{gap:10px;padding-top:10px}
+
+/* Ritmo horizontal de la topbar */
+.topbar{gap:8px;padding:0 12px;position:relative;z-index:97}
+.topbar .sep{margin:0 4px;background:rgba(255,255,255,.10)}
+.topbar .spacer{min-width:4px}
+.tfbar{gap:3px}
+.indicator-wrap{margin-left:2px}
+.icon-btn{width:34px;height:30px;display:inline-flex;align-items:center;justify-content:center;gap:2px}
+.grid-sidebar .icon-btn,.rightbar .icon-btn{margin:0}
+
+/* Barra inferior */
+.bottom-bar .left-section{padding-left:14px}
+.bottom-bar .time-ranges{gap:12px;font-size:11px;letter-spacing:.5px}
+.bottom-bar .time-ranges span{color:var(--text-dim)}
+.bottom-bar .time-ranges span.active{color:var(--text)}
+.bottom-bar .utc-clock{color:var(--text-dim)}
+.bottom-bar .vsep{background:rgba(255,255,255,.10)}
+
+/* Fondo del app: superficie sólida */
+body{background:var(--bg)}
+.app,.charts{background:var(--bg) !important;backdrop-filter:none}
+
+/* Datos en mono con números tabulares */
+.watchlist-symbol,.watchlist-price,.pill,.tf,.watchlist-card-price,.alert-item-value{font-variant-numeric:tabular-nums}
+
+/* Ícono disquete plano (SVG inline) para botones guardar */
+.ico-save{display:inline-flex;width:12px;height:12px;vertical-align:-1px}
+.ico-save svg{width:100%;height:100%;display:block;fill:none;stroke:currentColor;stroke-width:1.6}
+
+/* Menú Vista: opciones 1/2 paneles como chips translúcidos, grid con hover más claro */
+.layout-menu .layout-option{border-radius:6px;gap:8px}
+.layout-menu .layout-option:hover,.layout-menu .layout-option.active{background:rgba(255,255,255,.12) !important;color:var(--text) !important;border-color:var(--border-bright) !important}
+.layout-menu .layout-sync-title{margin-top:4px}
+.layout-menu .layout-sync-title:first-child{margin-top:0}
+.layout-menu .layout-grid-btn{border-radius:6px;transition:background .15s ease,color .15s ease}
 
 </style>
 </head>
@@ -424,8 +537,12 @@ canvas{position:absolute;left:0;right:0;top:0}
     <div class="layout" id="layout">
       <button class="layout-main" id="layoutButton" title="Vista"></button>
       <div class="layout-menu">
-        <button class="layout-option active" data-layout="1"><span>1</span><span class="icon-one"></span></button>
-        <button class="layout-option" data-layout="2"><span>2</span><span class="icon-two"></span></button>
+        <div class="layout-sync-title">PANELES</div>
+        <div class="layout-row" style="grid-template-columns:1fr 1fr;gap:8px;border-bottom:none;margin-bottom:2px">
+          <button class="layout-option active" data-layout="1"><span class="icon-one"></span><span>1 panel</span></button>
+          <button class="layout-option" data-layout="2"><span class="icon-two"></span><span>2 paneles</span></button>
+        </div>
+        <div class="layout-sync-title">REJILLA</div>
         <div class="layout-group" id="layoutGridMenu"></div>
         <div class="layout-sync">
           <div class="layout-sync-title">Sincronizar en el diseño</div>
@@ -438,22 +555,22 @@ canvas{position:absolute;left:0;right:0;top:0}
       </div>
     </div>
     <div class="profile-bar" style="gap:2px" title="Templates de paneles — guardan símbolos, temporalidades y layout">
-      <span class="lbl" style="font-size:9px;font-weight:700;color:var(--accent);margin-right:1px;letter-spacing:0">📊</span>
+      <span class="lbl" style="font-size:9px;font-weight:700;color:var(--accent);margin-right:1px;letter-spacing:0">▥</span>
       <button class="profile-btn active" data-panel-template="1" onclick="loadPanelTemplate(1)" title="Panel template 1">1</button>
       <button class="profile-btn" data-panel-template="2" onclick="loadPanelTemplate(2)" title="Panel template 2">2</button>
       <button class="profile-btn" data-panel-template="3" onclick="loadPanelTemplate(3)" title="Panel template 3">3</button>
       <div class="profile-sep"></div>
-      <button class="profile-save" onclick="saveCurrentPanelTemplate()" title="Guardar en template activo">💾</button>
-      <button class="profile-save" onclick="savePanelTemplateAs()" title="Guardar como...">✏️</button>
+      <button class="profile-save" onclick="saveCurrentPanelTemplate()" title="Guardar en template activo"><span class="ico-save"><svg viewBox="0 0 16 16"><path d="M2 2h10l2 2v10H2z"/><path d="M4.5 2v4h5V2"/><rect x="4.5" y="9" width="5" height="5"/></svg></span></button>
+      <button class="profile-save" onclick="savePanelTemplateAs()" title="Guardar como...">✎</button>
     </div>
     <div class="profile-bar" style="gap:2px;margin-left:4px" title="Modos de color — guardan solo colores y estilo visual">
-      <span class="lbl" style="font-size:9px;font-weight:700;color:var(--accent);margin-right:1px;letter-spacing:0">🎨</span>
+      <span class="lbl" style="font-size:9px;font-weight:700;color:var(--accent);margin-right:1px;letter-spacing:0">◐</span>
       <button class="profile-btn active" data-color-template="1" onclick="loadColorTemplate(1)">M1</button>
       <button class="profile-btn" data-color-template="2" onclick="loadColorTemplate(2)">M2</button>
       <button class="profile-btn" data-color-template="3" onclick="loadColorTemplate(3)">M3</button>
       <div class="profile-sep"></div>
-      <button class="profile-save" onclick="saveCurrentColorTemplate()" title="Guardar en modo activo">💾</button>
-      <button class="profile-save" onclick="saveColorTemplateAs()" title="Guardar como...">✏️</button>
+      <button class="profile-save" onclick="saveCurrentColorTemplate()" title="Guardar en modo activo"><span class="ico-save"><svg viewBox="0 0 16 16"><path d="M2 2h10l2 2v10H2z"/><path d="M4.5 2v4h5V2"/><rect x="4.5" y="9" width="5" height="5"/></svg></span></button>
+      <button class="profile-save" onclick="saveColorTemplateAs()" title="Guardar como...">✎</button>
     </div>
     <button class="icon-btn" id="fullscreenButton" title="Modo pantalla completa">
       <span class="fullscreen-icon"></span>
@@ -463,7 +580,7 @@ canvas{position:absolute;left:0;right:0;top:0}
     <button class="btn" id="publishButton" title="Exportar panel como imagen PNG">Publicar</button>
   </div>
   <div class="charts single" id="charts"></div>
-  <div class="grid-sidebar" id="gridSidebar"><a href="http://127.0.0.1:8765/dashboard.html" target="_blank" class="leftbar-btn" title="Stocks Dashboard" style="margin-bottom:4px">📈<span class="btn-label">STK</span></a><a href="http://127.0.0.1:8770/dashboard.html" target="_blank" class="leftbar-btn" title="Dollar, VIX & Bonds Dashboard" style="margin-bottom:4px;background:var(--surface-3);border-color:var(--bull)">💹<span class="btn-label">DVB</span></a><a href="http://127.0.0.1:3001/" target="_blank" class="leftbar-btn" title="War Room 1 — News & Calendar" style="margin-bottom:4px;background:var(--surface-3);border-color:#ff4444">🔥<span class="btn-label">WR1</span></a><a href="http://127.0.0.1:3001/wr2" target="_blank" class="leftbar-btn" title="War Room 2 — Intelligence Dashboard" style="margin-bottom:4px;background:var(--surface-3);border-color:#ffaa00">🧠<span class="btn-label">WR2</span></a><button class="icon-btn watchlist-toggle" data-role="watchlist-button" title="Lista de seguimiento">☰</button><button class="icon-btn alerts-toggle" data-role="alerts-button" title="Alertas"><span class="alerts-toggle-badge" data-role="alerts-badge">0</span>⏱</button></div>
+  <div class="grid-sidebar" id="gridSidebar"><a href="http://127.0.0.1:8765/dashboard.html" target="_blank" class="leftbar-btn" title="Stocks Dashboard" style="margin-bottom:4px">▲<span class="btn-label">STK</span></a><a href="http://127.0.0.1:8770/dashboard.html" target="_blank" class="leftbar-btn" title="Dollar, VIX & Bonds Dashboard" style="margin-bottom:4px;background:var(--surface-3);border-color:var(--bull)">⇅<span class="btn-label">DVB</span></a><a href="http://127.0.0.1:3001/" target="_blank" class="leftbar-btn" title="War Room 1 — News & Calendar" style="margin-bottom:4px;background:var(--surface-3);border-color:#8a8a92">✦<span class="btn-label">WR1</span></a><a href="http://127.0.0.1:3001/wr2" target="_blank" class="leftbar-btn" title="War Room 2 — Intelligence Dashboard" style="margin-bottom:4px;background:var(--surface-3);border-color:#c9c9cf">◈<span class="btn-label">WR2</span></a><button class="icon-btn watchlist-toggle" data-role="watchlist-button" title="Lista de seguimiento">☰</button><button class="icon-btn alerts-toggle" data-role="alerts-button" title="Alertas"><span class="alerts-toggle-badge" data-role="alerts-badge">0</span>⏱</button></div>
   <div class="bottom-bar" id="bottomBar">
     <div class="left-section">
       <div class="time-ranges" id="timeRanges">
@@ -498,14 +615,14 @@ canvas{position:absolute;left:0;right:0;top:0}
     </div>
     <div class="alerts-panel-list" id="alertsPanelList"></div>
     <div class="alerts-panel-foot">
-      <button class="alerts-panel-action" id="alertsTelegramConfig" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent)">📱 Telegram</button>
+      <button class="alerts-panel-action" id="alertsTelegramConfig" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent)">☏ Telegram</button>
       <button class="alerts-panel-action" id="alertsDeleteAll">Eliminar todas</button>
       <button class="alerts-panel-action" id="alertsDisableAll">Desactivar todas</button>
     </div>
   </div>
   <div class="alert-modal-backdrop" id="telegramConfigBackdrop">
     <div class="alert-modal">
-      <div class="alert-head">📱 Configurar Telegram <button class="alert-close" id="telegramConfigClose">×</button></div>
+      <div class="alert-head">☏ Configurar Telegram <button class="alert-close" id="telegramConfigClose">×</button></div>
       <div class="alert-body">
         <label>Bot Token</label><input class="alert-field" id="telegramBotToken" type="text" placeholder="Tu token de BotFather">
         <label>Chat ID</label><input class="alert-field" id="telegramChatId" type="text" placeholder="Tu chat ID">
@@ -544,11 +661,11 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="setting-row compact"><input class="check" id="setCutoff" type="checkbox"><label>Drawing Cutoff Time</label><input class="time-field" value="18:00"><span>-</span><input class="time-field" value="18:01"><span class="info-dot">i</span></div>
         <div class="settings-section">Killzones</div>
         <div class="setting-row compact"><input class="check" id="setShowBoxes" type="checkbox" checked><label>Show Killzone Boxes</label><input class="check" id="setShowText" type="checkbox"><label>Display Text</label></div>
-        <div class="kz-grid" data-kz="asia"><input class="check kz-on" type="checkbox" checked><input class="field kz-label" value="Asia"><input class="time-field kz-start" value="20:00"><span>-</span><input class="time-field kz-end" value="00:00"><input class="color-box kz-color" type="color" value="#686868"></div>
-        <div class="kz-grid" data-kz="london"><input class="check kz-on" type="checkbox" checked><input class="field kz-label" value="London"><input class="time-field kz-start" value="04:00"><span>-</span><input class="time-field kz-end" value="08:00"><input class="color-box kz-color" type="color" value="#686868"></div>
-        <div class="kz-grid" data-kz="nyam"><input class="check kz-on" type="checkbox" checked><input class="field kz-label" value="NY AM"><input class="time-field kz-start" value="09:00"><span>-</span><input class="time-field kz-end" value="13:00"><input class="color-box kz-color" type="color" value="#9a6a00"></div>
-        <div class="kz-grid" data-kz="nylu"><input class="check kz-on" type="checkbox" checked><input class="field kz-label" value="NY Lunch"><input class="time-field kz-start" value="10:30"><span>-</span><input class="time-field kz-end" value="13:00"><input class="color-box kz-color" type="color" value="#8f8700"></div>
-        <div class="kz-grid" data-kz="nypm"><input class="check kz-on" type="checkbox"><input class="field kz-label" value="NY PM"><input class="time-field kz-start" value="13:30"><span>-</span><input class="time-field kz-end" value="16:00"><input class="color-box kz-color" type="color" value="#9b35c8"></div>
+        <div class="kz-grid" data-kz="asia"><input class="check kz-on" type="checkbox" checked><input class="field kz-label" value="Asia"><input class="time-field kz-start" value="20:00"><span>-</span><input class="time-field kz-end" value="00:00"><input class="color-box kz-color" type="color" value="#8a8a92"></div>
+        <div class="kz-grid" data-kz="london"><input class="check kz-on" type="checkbox" checked><input class="field kz-label" value="London"><input class="time-field kz-start" value="04:00"><span>-</span><input class="time-field kz-end" value="08:00"><input class="color-box kz-color" type="color" value="#8a8a92"></div>
+        <div class="kz-grid" data-kz="nyam"><input class="check kz-on" type="checkbox" checked><input class="field kz-label" value="NY AM"><input class="time-field kz-start" value="09:00"><span>-</span><input class="time-field kz-end" value="13:00"><input class="color-box kz-color" type="color" value="#c9c9cf"></div>
+        <div class="kz-grid" data-kz="nylu"><input class="check kz-on" type="checkbox" checked><input class="field kz-label" value="NY Lunch"><input class="time-field kz-start" value="10:30"><span>-</span><input class="time-field kz-end" value="13:00"><input class="color-box kz-color" type="color" value="#a5a5ac"></div>
+        <div class="kz-grid" data-kz="nypm"><input class="check kz-on" type="checkbox"><input class="field kz-label" value="NY PM"><input class="time-field kz-start" value="13:30"><span>-</span><input class="time-field kz-end" value="16:00"><input class="color-box kz-color" type="color" value="#6f6f76"></div>
         <div class="setting-row"><label>Box Transparency</label><input class="field" id="setBoxAlpha" type="number" min="0" max="100" value="80"><span></span></div>
         <div class="setting-row"><label>Text Transparency</label><input class="field" id="setTextAlpha" type="number" min="0" max="100" value="50"><span></span></div>
         <div class="settings-section">Killzone Pivots</div>
@@ -575,9 +692,9 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="settings-section">Day - Week - Month</div>
         <div class="option-line"><input class="check" id="setDwmUnlimited" type="checkbox"><label>Unlimited</label><span class="info-dot">i</span></div>
         <div class="option-line"><input class="check" id="setAlertHL" type="checkbox"><label>Alert High/Low Break</label><span class="info-dot">i</span></div>
-        <div class="dwm-row"><input class="check" id="setDOpen" type="checkbox"><label>D Open</label><input class="check" id="setDHighLow" type="checkbox"><label>High/Low</label><input class="check" id="setDSeparators" type="checkbox"><label>Separators</label><input class="color-box" type="color" value="#4658ff"><span class="info-dot">i</span></div>
-        <div class="dwm-row"><input class="check" id="setWOpen" type="checkbox"><label>W Open</label><input class="check" id="setWHighLow" type="checkbox"><label>High/Low</label><input class="check" id="setWSeparators" type="checkbox"><label>Separators</label><input class="color-box" type="color" value="#48a58f"><span class="info-dot">i</span></div>
-        <div class="dwm-row"><input class="check" id="setMOpen" type="checkbox"><label>M Open</label><input class="check" id="setMHighLow" type="checkbox"><label>High/Low</label><input class="check" id="setMSeparators" type="checkbox"><label>Separators</label><input class="color-box" type="color" value="#f15a52"><span class="info-dot">i</span></div>
+        <div class="dwm-row"><input class="check" id="setDOpen" type="checkbox"><label>D Open</label><input class="check" id="setDHighLow" type="checkbox"><label>High/Low</label><input class="check" id="setDSeparators" type="checkbox"><label>Separators</label><input class="color-box" type="color" value="#d4d4d9"><span class="info-dot">i</span></div>
+        <div class="dwm-row"><input class="check" id="setWOpen" type="checkbox"><label>W Open</label><input class="check" id="setWHighLow" type="checkbox"><label>High/Low</label><input class="check" id="setWSeparators" type="checkbox"><label>Separators</label><input class="color-box" type="color" value="#c9c9cf"><span class="info-dot">i</span></div>
+        <div class="dwm-row"><input class="check" id="setMOpen" type="checkbox"><label>M Open</label><input class="check" id="setMHighLow" type="checkbox"><label>High/Low</label><input class="check" id="setMSeparators" type="checkbox"><label>Separators</label><input class="color-box" type="color" value="#7a7b82"><span class="info-dot">i</span></div>
         <div class="style-row"><label>Estilo</label><select class="select" id="setDwmStyle"><option>Sólido</option><option>Línea d...</option><option>Punteado</option></select><input class="field" id="setDwmWidth" type="number" min="1" max="5" value="1"></div>
         <div class="option-line"><input class="check" id="setDowLabels" type="checkbox"><label>Day of Week Labels</label><select class="select" id="setDowY"><option>Bottom</option><option>Top</option></select><select class="select" id="setDowX"><option>Midnight</option><option>Midday</option></select></div>
         <div class="option-line"><input class="check" id="setHideWeekend" type="checkbox" checked><label>Hide Weekend Labels</label></div>
@@ -585,19 +702,19 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="settings-section">Opening Prices</div>
         <div class="option-line"><input class="check" id="setOpenUnlimited" type="checkbox"><label>Unlimited</label><span class="info-dot">i</span></div>
         <div class="open-grid"><input class="check" type="checkbox" checked><input class="field" value="True Day Ope"><input class="time-field" value="00:00"><span>-</span><input class="time-field" value="00:01"><input class="color-box" type="color" value="#ffffff"></div>
-        <div class="open-grid"><input class="check" type="checkbox"><input class="field" value="06:00"><input class="time-field" value="06:00"><span>-</span><input class="time-field" value="06:01"><input class="color-box" type="color" value="#3d4150"></div>
-        <div class="open-grid"><input class="check" type="checkbox"><input class="field" value="10:00"><input class="time-field" value="10:00"><span>-</span><input class="time-field" value="10:01"><input class="color-box" type="color" value="#3d4150"></div>
-        <div class="open-grid"><input class="check" type="checkbox"><input class="field" value="14:00"><input class="time-field" value="14:00"><span>-</span><input class="time-field" value="14:01"><input class="color-box" type="color" value="#3d4150"></div>
-        <div class="open-grid"><input class="check" type="checkbox"><input class="field" value="00:00"><input class="time-field" value="00:00"><span>-</span><input class="time-field" value="00:01"><input class="color-box" type="color" value="#3d4150"></div>
-        <div class="open-grid"><input class="check" type="checkbox"><input class="field" value="00:00"><input class="time-field" value="00:00"><span>-</span><input class="time-field" value="00:01"><input class="color-box" type="color" value="#3d4150"></div>
+        <div class="open-grid"><input class="check" type="checkbox"><input class="field" value="06:00"><input class="time-field" value="06:00"><span>-</span><input class="time-field" value="06:01"><input class="color-box" type="color" value="#3d3e45"></div>
+        <div class="open-grid"><input class="check" type="checkbox"><input class="field" value="10:00"><input class="time-field" value="10:00"><span>-</span><input class="time-field" value="10:01"><input class="color-box" type="color" value="#3d3e45"></div>
+        <div class="open-grid"><input class="check" type="checkbox"><input class="field" value="14:00"><input class="time-field" value="14:00"><span>-</span><input class="time-field" value="14:01"><input class="color-box" type="color" value="#3d3e45"></div>
+        <div class="open-grid"><input class="check" type="checkbox"><input class="field" value="00:00"><input class="time-field" value="00:00"><span>-</span><input class="time-field" value="00:01"><input class="color-box" type="color" value="#3d3e45"></div>
+        <div class="open-grid"><input class="check" type="checkbox"><input class="field" value="00:00"><input class="time-field" value="00:00"><span>-</span><input class="time-field" value="00:01"><input class="color-box" type="color" value="#3d3e45"></div>
         <div class="style-row"><label>Estilo</label><select class="select" id="setOpenStyle"><option>Línea d...</option><option>Sólido</option><option>Punteado</option></select><input class="field" id="setOpenWidth" type="number" min="1" max="5" value="1"></div>
 
         <div class="settings-section">Timestamps</div>
         <div class="option-line"><input class="check" id="setTsUnlimited" type="checkbox"><label>Unlimited</label><span class="info-dot">i</span></div>
-        <div class="ts-grid"><input class="check" type="checkbox"><input class="time-field" value="00:00"><span>-</span><input class="time-field" value="00:01"><input class="color-box" type="color" value="#3d4150"></div>
-        <div class="ts-grid"><input class="check" type="checkbox"><input class="time-field" value="08:00"><span>-</span><input class="time-field" value="08:01"><input class="color-box" type="color" value="#3d4150"></div>
-        <div class="ts-grid"><input class="check" type="checkbox"><input class="time-field" value="10:00"><span>-</span><input class="time-field" value="10:01"><input class="color-box" type="color" value="#3d4150"></div>
-        <div class="ts-grid"><input class="check" type="checkbox"><input class="time-field" value="12:00"><span>-</span><input class="time-field" value="12:01"><input class="color-box" type="color" value="#3d4150"></div>
+        <div class="ts-grid"><input class="check" type="checkbox"><input class="time-field" value="00:00"><span>-</span><input class="time-field" value="00:01"><input class="color-box" type="color" value="#3d3e45"></div>
+        <div class="ts-grid"><input class="check" type="checkbox"><input class="time-field" value="08:00"><span>-</span><input class="time-field" value="08:01"><input class="color-box" type="color" value="#3d3e45"></div>
+        <div class="ts-grid"><input class="check" type="checkbox"><input class="time-field" value="10:00"><span>-</span><input class="time-field" value="10:01"><input class="color-box" type="color" value="#3d3e45"></div>
+        <div class="ts-grid"><input class="check" type="checkbox"><input class="time-field" value="12:00"><span>-</span><input class="time-field" value="12:01"><input class="color-box" type="color" value="#3d3e45"></div>
         <div class="style-row"><label>Estilo</label><select class="select" id="setTsStyle"><option>Línea d...</option><option>Sólido</option><option>Punteado</option></select><input class="field" id="setTsWidth" type="number" min="1" max="5" value="1"></div>
       </div>
       <div class="settings-foot"><button class="modal-btn" id="settingsCancel">Cancelar</button><button class="modal-btn primary" id="settingsApply">Aceptar</button></div>
@@ -645,28 +762,28 @@ canvas{position:absolute;left:0;right:0;top:0}
       <div class="settings-body" id="bibiruSettingsBody">
         <div class="settings-section">SMA Rápida</div>
         <div class="setting-row"><label>Longitud</label><input class="field" id="bibiruSma1Length" type="number" min="1" max="5000" value="5"><span></span></div>
-        <div class="setting-row"><label>Color</label><input class="color-box" id="bibiruSma1Color" type="color" value="#00d4ff"><span></span></div>
+        <div class="setting-row"><label>Color</label><input class="color-box" id="bibiruSma1Color" type="color" value="#f5f5f7"><span></span></div>
         <div class="setting-row"><label>Grosor</label><select class="select" id="bibiruSma1Width" style="width:80px"><option value="0.5">0.5</option><option value="1">1</option><option value="1.5">1.5</option><option value="2" selected>2</option><option value="2.5">2.5</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select><span></span></div>
         <div class="option-line"><input class="check" id="bibiruShowSma1" type="checkbox" checked><label>Mostrar SMA Rápida</label></div>
 
         <div class="settings-section">SMA Lenta</div>
         <div class="setting-row"><label>Longitud</label><input class="field" id="bibiruSma2Length" type="number" min="1" max="5000" value="25"><span></span></div>
-        <div class="setting-row"><label>Color</label><input class="color-box" id="bibiruSma2Color" type="color" value="#ff9800"><span></span></div>
+        <div class="setting-row"><label>Color</label><input class="color-box" id="bibiruSma2Color" type="color" value="#c9c9cf"><span></span></div>
         <div class="setting-row"><label>Grosor</label><select class="select" id="bibiruSma2Width" style="width:80px"><option value="0.5">0.5</option><option value="1">1</option><option value="1.5">1.5</option><option value="2" selected>2</option><option value="2.5">2.5</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select><span></span></div>
         <div class="option-line"><input class="check" id="bibiruShowSma2" type="checkbox" checked><label>Mostrar SMA Lenta</label></div>
 
         <div class="settings-section">Bibiru Volume</div>
         <div class="option-line"><input class="check" id="bibiruShowVwap" type="checkbox" checked><label>Mostrar Bibiru Volume (panel inferior)</label></div>
         <div class="setting-row"><label>Altura del panel</label><input class="field" id="bibiruVwapHeight" type="range" min="30" max="200" value="80" style="width:100px" oninput="document.getElementById('bibiruVwapHeightValue').textContent=this.value"><span id="bibiruVwapHeightValue" style="min-width:30px;text-align:right;font-size:12px;font-family:var(--font-mono)">80</span><span style="font-size:10px;color:var(--text-dim)">px</span></div>
-        <div class="setting-row"><label>Color barras Alcista</label><input class="color-box" id="bibiruVwapBullColor" type="color" value="#00e5a0"><span></span></div>
-        <div class="setting-row"><label>Color barras Bajista</label><input class="color-box" id="bibiruVwapBearColor" type="color" value="#ff3355"><span></span></div>
+        <div class="setting-row"><label>Color barras Alcista</label><input class="color-box" id="bibiruVwapBullColor" type="color" value="#f5f5f7"><span></span></div>
+        <div class="setting-row"><label>Color barras Bajista</label><input class="color-box" id="bibiruVwapBearColor" type="color" value="#76777e"><span></span></div>
         <div class="settings-section" style="margin-top:12px">Perfiles de color Bibiru</div>
         <div style="display:flex;align-items:center;gap:4px;padding:2px 0">
           <button class="mini profile-color-btn active" data-bibiru-color-profile="A" onclick="loadBibiruColorProfile('A')" title="Perfil de color A" style="font-weight:700;width:28px">A</button>
           <button class="mini profile-color-btn" data-bibiru-color-profile="B" onclick="loadBibiruColorProfile('B')" title="Perfil de color B" style="font-weight:700;width:28px">B</button>
           <span style="flex:1"></span>
-          <button class="mini" onclick="saveBibiruColorProfile()" title="Guardar perfil de color actual" style="font-size:13px;line-height:18px">💾</button>
-          <button class="mini" onclick="saveBibiruColorProfileAs()" title="Guardar como..." style="font-size:13px;line-height:18px">✏️</button>
+          <button class="mini" onclick="saveBibiruColorProfile()" title="Guardar perfil de color actual" style="line-height:18px"><span class="ico-save"><svg viewBox="0 0 16 16"><path d="M2 2h10l2 2v10H2z"/><path d="M4.5 2v4h5V2"/><rect x="4.5" y="9" width="5" height="5"/></svg></span></button>
+          <button class="mini" onclick="saveBibiruColorProfileAs()" title="Guardar como..." style="font-size:13px;line-height:18px">✎</button>
         </div>
       </div>
       <div class="settings-foot"><button class="modal-btn" id="bibiruSettingsCancel">Cancelar</button><button class="modal-btn primary" id="bibiruSettingsApply">Aceptar</button></div>
@@ -691,10 +808,10 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="settings-section">Intrabar Volume Settings</div>
         <div class="setting-row"><label>Lower Timeframe for Vol</label><select class="select" id="dispLtf"><option value="1">1 minuto</option><option value="3">3 minutos</option><option value="5">5 minutos</option><option value="15">15 minutos</option></select><span class="info-dot">i</span></div>
         <div class="settings-section">Visual Settings</div>
-        <div class="setting-row"><label>Bullish Shift Color</label><input class="color-box" id="dispBullColor" type="color" value="#0077e6"><span></span></div>
-        <div class="setting-row"><label>Bearish Shift Color</label><input class="color-box" id="dispBearColor" type="color" value="#e91414"><span></span></div>
-        <div class="setting-row"><label>Inner Buy Block Color</label><input class="color-box" id="dispBuyColor" type="color" value="#0077e6"><span></span></div>
-        <div class="setting-row"><label>Inner Sell Block Color</label><input class="color-box" id="dispSellColor" type="color" value="#e91414"><span></span></div>
+        <div class="setting-row"><label>Bullish Shift Color</label><input class="color-box" id="dispBullColor" type="color" value="#f4f4f5"><span></span></div>
+        <div class="setting-row"><label>Bearish Shift Color</label><input class="color-box" id="dispBearColor" type="color" value="#7a7b82"><span></span></div>
+        <div class="setting-row"><label>Inner Buy Block Color</label><input class="color-box" id="dispBuyColor" type="color" value="#f4f4f5"><span></span></div>
+        <div class="setting-row"><label>Inner Sell Block Color</label><input class="color-box" id="dispSellColor" type="color" value="#7a7b82"><span></span></div>
         <div class="setting-row"><label>Muted Chop Color</label><input class="color-box" id="dispMuteColor" type="color" value="#575757"><span></span></div>
         <div class="option-line"><input class="check" id="dispShowMute" type="checkbox" checked><label>Mute Non-Shift Candles</label></div>
         <div class="settings-section">Dashboard Settings</div>
@@ -725,10 +842,10 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="setting-row"><label>Distancia zona ATR</label><input class="field" id="smartZoneAtr" type="number" min="0.1" max="3" step="0.1" value="0.45"><span></span></div>
         <div class="setting-row"><label>Confianza mínima</label><input class="field" id="smartMinConfidence" type="number" min="1" max="99" value="58"><span>%</span></div>
         <div class="settings-section">Estilo</div>
-        <div class="setting-row"><label>Color compra</label><input class="color-box" id="smartBullColor" type="color" value="#20d6b5"><span></span></div>
-        <div class="setting-row"><label>Color venta</label><input class="color-box" id="smartBearColor" type="color" value="#ff5364"><span></span></div>
-        <div class="setting-row"><label>Color zonas</label><input class="color-box" id="smartZoneColor" type="color" value="#f2c94c"><span></span></div>
-        <div class="setting-row"><label>Color falsa ruptura</label><input class="color-box" id="smartTrapColor" type="color" value="#ff9f1a"><span></span></div>
+        <div class="setting-row"><label>Color compra</label><input class="color-box" id="smartBullColor" type="color" value="#f4f4f5"><span></span></div>
+        <div class="setting-row"><label>Color venta</label><input class="color-box" id="smartBearColor" type="color" value="#7a7b82"><span></span></div>
+        <div class="setting-row"><label>Color zonas</label><input class="color-box" id="smartZoneColor" type="color" value="#c9c9cf"><span></span></div>
+        <div class="setting-row"><label>Color falsa ruptura</label><input class="color-box" id="smartTrapColor" type="color" value="#c9c9cf"><span></span></div>
         <div class="settings-section">Visibilidad</div>
         <div class="option-line"><input class="check" id="smartShowZones" type="checkbox" checked><label>Mostrar soporte/resistencia</label></div>
         <div class="option-line"><input class="check" id="smartShowConsolidation" type="checkbox" checked><label>Mostrar consolidación</label></div>
@@ -765,8 +882,8 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="setting-row"><label>Band Tightness</label><input class="field" id="smfMinMult" type="number" min="0.1" max="10" step="0.1" value="0.9"><span></span></div>
         <div class="setting-row"><label>Band Expansion</label><input class="field" id="smfMaxMult" type="number" min="0.1" max="20" step="0.1" value="2.2"><span></span></div>
         <div class="settings-section">Signals and Plotting</div>
-        <div class="setting-row"><label>Bullish Color</label><input class="color-box" id="smfBullColor" type="color" value="#00c8ff"><span></span></div>
-        <div class="setting-row"><label>Bearish Color</label><input class="color-box" id="smfBearColor" type="color" value="#ff005d"><span></span></div>
+        <div class="setting-row"><label>Bullish Color</label><input class="color-box" id="smfBullColor" type="color" value="#f4f4f5"><span></span></div>
+        <div class="setting-row"><label>Bearish Color</label><input class="color-box" id="smfBearColor" type="color" value="#7a7b82"><span></span></div>
         <div class="option-line"><input class="check" id="smfShowBands" type="checkbox" checked><label>Show Adaptive Bands</label></div>
         <div class="option-line"><input class="check" id="smfShowGauge" type="checkbox" checked><label>Show Trend Strength Gauge</label></div>
         <div class="setting-row"><label>Strength Gauge Size</label><select class="select" id="smfGaugeSize"><option value="Small">Small</option><option value="Normal" selected>Normal</option></select><span></span></div>
@@ -801,15 +918,15 @@ canvas{position:absolute;left:0;right:0;top:0}
 
         <div class="settings-section">Real Time Internal Structure</div>
         <div class="option-line"><input class="check" id="jrShowInternals" type="checkbox" checked><label>Show Internal Structure</label><span class="info-dot">i</span></div>
-        <div class="setting-row"><label>Bullish Structure</label><select class="select" id="jrInternalBullMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrInternalBullColor" type="color" value="#089981"></div>
-        <div class="setting-row"><label>Bearish Structure</label><select class="select" id="jrInternalBearMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrInternalBearColor" type="color" value="#F23645"></div>
+        <div class="setting-row"><label>Bullish Structure</label><select class="select" id="jrInternalBullMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrInternalBullColor" type="color" value="#f4f4f5"></div>
+        <div class="setting-row"><label>Bearish Structure</label><select class="select" id="jrInternalBearMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrInternalBearColor" type="color" value="#7a7b82"></div>
         <div class="option-line"><input class="check" id="jrConfluenceFilter" type="checkbox"><label>Confluence Filter</label><span class="info-dot">i</span></div>
         <div class="setting-row"><label>Internal Label Size</label><select class="select" id="jrInternalLabelSize"><option>tiny</option><option>small</option><option>normal</option></select><span></span></div>
 
         <div class="settings-section">Real Time Swing Structure</div>
         <div class="option-line"><input class="check" id="jrShowSwingStructure" type="checkbox" checked><label>Show Swing Structure</label><span class="info-dot">i</span></div>
-        <div class="setting-row"><label>Bullish Structure</label><select class="select" id="jrSwingBullMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrSwingBullColor" type="color" value="#089981"></div>
-        <div class="setting-row"><label>Bearish Structure</label><select class="select" id="jrSwingBearMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrSwingBearColor" type="color" value="#F23645"></div>
+        <div class="setting-row"><label>Bullish Structure</label><select class="select" id="jrSwingBullMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrSwingBullColor" type="color" value="#f4f4f5"></div>
+        <div class="setting-row"><label>Bearish Structure</label><select class="select" id="jrSwingBearMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrSwingBearColor" type="color" value="#7a7b82"></div>
         <div class="setting-row"><label>Swing Label Size</label><select class="select" id="jrSwingLabelSize"><option>small</option><option>tiny</option><option>normal</option></select><span></span></div>
         <div class="setting-row compact"><input class="check" id="jrShowSwings" type="checkbox"><label>Show Swings Points</label><input class="field" id="jrSwingsLength" type="number" min="10" max="500" value="50"><span class="info-dot">i</span></div>
         <div class="option-line"><input class="check" id="jrShowStrongWeak" type="checkbox" checked><label>Show Strong/Weak High/Low</label><span class="info-dot">i</span></div>
@@ -820,10 +937,10 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="setting-row"><label>Order Block Filter</label><select class="select" id="jrOrderBlockFilter"><option>Atr</option><option>Cumulative Mean Range</option></select><span class="info-dot">i</span></div>
         <div class="setting-row"><label>Order Block Mitigation</label><select class="select" id="jrOrderBlockMitigation"><option>High/Low</option><option>Close</option></select><span class="info-dot">i</span></div>
         <div class="option-line"><input class="check" id="jrGrayOrderBlocks" type="checkbox" checked><label>Order Blocks Grises</label></div>
-        <div class="setting-row"><label>Internal Bullish OB</label><input class="color-box" id="jrInternalBullObColor" type="color" value="#1848cc"><span></span></div>
-        <div class="setting-row"><label>Internal Bearish OB</label><input class="color-box" id="jrInternalBearObColor" type="color" value="#b22833"><span></span></div>
-        <div class="setting-row"><label>Bullish OB</label><input class="color-box" id="jrSwingBullObColor" type="color" value="#1848cc"><span></span></div>
-        <div class="setting-row"><label>Bearish OB</label><input class="color-box" id="jrSwingBearObColor" type="color" value="#b22833"><span></span></div>
+        <div class="setting-row"><label>Internal Bullish OB</label><input class="color-box" id="jrInternalBullObColor" type="color" value="#f4f4f5"><span></span></div>
+        <div class="setting-row"><label>Internal Bearish OB</label><input class="color-box" id="jrInternalBearObColor" type="color" value="#7a7b82"><span></span></div>
+        <div class="setting-row"><label>Bullish OB</label><input class="color-box" id="jrSwingBullObColor" type="color" value="#f4f4f5"><span></span></div>
+        <div class="setting-row"><label>Bearish OB</label><input class="color-box" id="jrSwingBearObColor" type="color" value="#7a7b82"><span></span></div>
 
         <div class="settings-section">EQH/EQL</div>
         <div class="option-line"><input class="check" id="jrShowEqualHighLow" type="checkbox" checked><label>Equal High/Low</label><span class="info-dot">i</span></div>
@@ -836,20 +953,20 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="option-line"><input class="check" id="jrShowFvg" type="checkbox"><label>Fair Value Gaps</label><span class="info-dot">i</span></div>
         <div class="option-line"><input class="check" id="jrFvgAutoThreshold" type="checkbox" checked><label>Auto Threshold</label><span class="info-dot">i</span></div>
         <div class="setting-row"><label>Intervalo de tiempo</label><select class="select" id="jrFvgTimeframe"><option value="">Gráfico</option><option value="1m">1 minuto</option><option value="5m">5 minutos</option><option value="15m">15 minutos</option><option value="1h">1 hora</option></select><span class="info-dot">i</span></div>
-        <div class="setting-row"><label>Bullish FVG</label><input class="color-box" id="jrFvgBull" type="color" value="#089981"><span></span></div>
-        <div class="setting-row"><label>Bearish FVG</label><input class="color-box" id="jrFvgBear" type="color" value="#F23645"><span></span></div>
+        <div class="setting-row"><label>Bullish FVG</label><input class="color-box" id="jrFvgBull" type="color" value="#f4f4f5"><span></span></div>
+        <div class="setting-row"><label>Bearish FVG</label><input class="color-box" id="jrFvgBear" type="color" value="#7a7b82"><span></span></div>
         <div class="setting-row"><label>Extend FVG</label><input class="field" id="jrFvgExtend" type="number" min="0" max="200" value="1"><span class="info-dot">i</span></div>
 
         <div class="settings-section">Highs & Lows MTF</div>
-        <div class="setting-row compact"><input class="check" id="jrShowDaily" type="checkbox"><label>Diario</label><select class="select"><option>——</option><option>----</option><option>····</option></select><input class="color-box" type="color" value="#2157f3"></div>
-        <div class="setting-row compact"><input class="check" id="jrShowWeekly" type="checkbox"><label>Semanal</label><select class="select"><option>——</option><option>----</option><option>····</option></select><input class="color-box" type="color" value="#2157f3"></div>
-        <div class="setting-row compact"><input class="check" id="jrShowMonthly" type="checkbox"><label>Mensual</label><select class="select"><option>——</option><option>----</option><option>····</option></select><input class="color-box" type="color" value="#2157f3"></div>
+        <div class="setting-row compact"><input class="check" id="jrShowDaily" type="checkbox"><label>Diario</label><select class="select"><option>——</option><option>----</option><option>····</option></select><input class="color-box" type="color" value="#f4f4f5"></div>
+        <div class="setting-row compact"><input class="check" id="jrShowWeekly" type="checkbox"><label>Semanal</label><select class="select"><option>——</option><option>----</option><option>····</option></select><input class="color-box" type="color" value="#f4f4f5"></div>
+        <div class="setting-row compact"><input class="check" id="jrShowMonthly" type="checkbox"><label>Mensual</label><select class="select"><option>——</option><option>----</option><option>····</option></select><input class="color-box" type="color" value="#f4f4f5"></div>
 
         <div class="settings-section">Premium & Discount Zones</div>
         <div class="option-line"><input class="check" id="jrShowPremiumDiscount" type="checkbox"><label>Premium/Discount Zones</label><span class="info-dot">i</span></div>
-        <div class="setting-row"><label>Premium Zone</label><input class="color-box" id="jrPremiumColor" type="color" value="#F23645"><span></span></div>
-        <div class="setting-row"><label>Equilibrium Zone</label><input class="color-box" id="jrEquilibriumColor" type="color" value="#878b94"><span></span></div>
-        <div class="setting-row"><label>Discount Zone</label><input class="color-box" id="jrDiscountColor" type="color" value="#089981"><span></span></div>
+        <div class="setting-row"><label>Premium Zone</label><input class="color-box" id="jrPremiumColor" type="color" value="#7a7b82"><span></span></div>
+        <div class="setting-row"><label>Equilibrium Zone</label><input class="color-box" id="jrEquilibriumColor" type="color" value="#a5a5ac"><span></span></div>
+        <div class="setting-row"><label>Discount Zone</label><input class="color-box" id="jrDiscountColor" type="color" value="#f4f4f5"><span></span></div>
 
         <div class="settings-section">RTC EMA</div>
         <div class="option-line"><input class="check" id="jrRtcColorCandles" type="checkbox" checked><label>Cambio Color Velas</label></div>
@@ -872,10 +989,10 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="setting-row"><label>Posición Panel</label><select class="select" id="jrPanelPosition"><option>Top Right</option><option>Top Left</option><option>Bottom Right</option><option>Bottom Left</option></select><span></span></div>
         <div class="setting-row"><label>Decimales</label><input class="field" id="jrDecimals" type="number" min="0" max="6" value="2"><span></span></div>
         <div class="setting-row"><label>Fondo Panel</label><input class="color-box" id="jrPanelBg" type="color" value="#1f2024"><span></span></div>
-        <div class="setting-row"><label>Fondo Header</label><input class="color-box" id="jrPanelHeaderBg" type="color" value="#2b2d34"><span></span></div>
+        <div class="setting-row"><label>Fondo Header</label><input class="color-box" id="jrPanelHeaderBg" type="color" value="#2b2c31"><span></span></div>
         <div class="setting-row"><label>Fondo TF</label><input class="color-box" id="jrPanelTfBg" type="color" value="#242424"><span></span></div>
-        <div class="setting-row"><label>Color Sobrecompra</label><input class="color-box" id="jrPanelOverColor" type="color" value="#F23645"><span></span></div>
-        <div class="setting-row"><label>Color Sobreventa</label><input class="color-box" id="jrPanelUnderColor" type="color" value="#089981"><span></span></div>
+        <div class="setting-row"><label>Color Sobrecompra</label><input class="color-box" id="jrPanelOverColor" type="color" value="#7a7b82"><span></span></div>
+        <div class="setting-row"><label>Color Sobreventa</label><input class="color-box" id="jrPanelUnderColor" type="color" value="#f4f4f5"><span></span></div>
         <div class="setting-row"><label>Color Neutral</label><input class="color-box" id="jrPanelNeutralColor" type="color" value="#666666"><span></span></div>
       </div>
       <div class="settings-foot"><button class="modal-btn" id="strategyJrSettingsCancel">Cancelar</button><button class="modal-btn primary" id="strategyJrSettingsApply">Aceptar</button></div>
@@ -907,12 +1024,12 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="setting-row"><label>Suavizado</label><select class="select" id="macdProHistType"><option value="OFF">OFF</option><option value="EMA">EMA</option><option value="WMA">WMA</option><option value="LMA">LMA</option><option value="SMA">SMA</option></select><span></span></div>
         <div class="setting-row"><label>Longitud</label><input class="field" id="macdProHistLength" type="number" min="1" max="50" value="5"><span></span></div>
         <div class="settings-section">Colores</div>
-        <div class="setting-row"><label>Línea MACD</label><input class="color-box" id="macdProMacdColor" type="color" value="#006ABA"><span></span></div>
-        <div class="setting-row"><label>Línea Señal</label><input class="color-box" id="macdProSignalColor" type="color" value="#BA0032"><span></span></div>
-        <div class="setting-row"><label>Hist. alcista creciente</label><input class="color-box" id="macdProGrowAbove" type="color" value="#208AFF"><span></span></div>
-        <div class="setting-row"><label>Hist. bajista creciente</label><input class="color-box" id="macdProGrowBelow" type="color" value="#FFC4D4"><span></span></div>
-        <div class="setting-row"><label>Hist. alcista decreciente</label><input class="color-box" id="macdProFallAbove" type="color" value="#C4D4FF"><span></span></div>
-        <div class="setting-row"><label>Hist. bajista decreciente</label><input class="color-box" id="macdProFallBelow" type="color" value="#FF206A"><span></span></div>
+        <div class="setting-row"><label>Línea MACD</label><input class="color-box" id="macdProMacdColor" type="color" value="#f4f4f5"><span></span></div>
+        <div class="setting-row"><label>Línea Señal</label><input class="color-box" id="macdProSignalColor" type="color" value="#7a7b82"><span></span></div>
+        <div class="setting-row"><label>Hist. alcista creciente</label><input class="color-box" id="macdProGrowAbove" type="color" value="#d4d4d9"><span></span></div>
+        <div class="setting-row"><label>Hist. bajista creciente</label><input class="color-box" id="macdProGrowBelow" type="color" value="#94949b"><span></span></div>
+        <div class="setting-row"><label>Hist. alcista decreciente</label><input class="color-box" id="macdProFallAbove" type="color" value="#b4b4ba"><span></span></div>
+        <div class="setting-row"><label>Hist. bajista decreciente</label><input class="color-box" id="macdProFallBelow" type="color" value="#63646b"><span></span></div>
       </div>
       <div class="settings-foot"><button class="modal-btn" id="macdProSettingsCancel">Cancelar</button><button class="modal-btn primary" id="macdProSettingsApply">Aceptar</button></div>
     </div>
@@ -955,10 +1072,10 @@ canvas{position:absolute;left:0;right:0;top:0}
         <div class="setting-row"><label>Sobrecompra</label><input class="field" id="rtcStoch6OB" type="number" min="1" max="99" value="80"><span></span></div>
         <div class="setting-row"><label>Sobreventa</label><input class="field" id="rtcStoch6OS" type="number" min="1" max="99" value="20"><span></span></div>
         <div class="settings-section">Estilo</div>
-        <div class="setting-row"><label>Color compra</label><input class="color-box" id="rtcBullColor" type="color" value="#00e0b8"><span></span></div>
-        <div class="setting-row"><label>Color venta</label><input class="color-box" id="rtcBearColor" type="color" value="#ff3b5c"><span></span></div>
-        <div class="setting-row"><label>Color trampa</label><input class="color-box" id="rtcTrapColor" type="color" value="#ffaa00"><span></span></div>
-        <div class="setting-row"><label>Color zona</label><input class="color-box" id="rtcZoneColor" type="color" value="#5b8cff"><span></span></div>
+        <div class="setting-row"><label>Color compra</label><input class="color-box" id="rtcBullColor" type="color" value="#f4f4f5"><span></span></div>
+        <div class="setting-row"><label>Color venta</label><input class="color-box" id="rtcBearColor" type="color" value="#7a7b82"><span></span></div>
+        <div class="setting-row"><label>Color trampa</label><input class="color-box" id="rtcTrapColor" type="color" value="#f5f5f7"><span></span></div>
+        <div class="setting-row"><label>Color zona</label><input class="color-box" id="rtcZoneColor" type="color" value="#d4d4d9"><span></span></div>
         <div class="settings-section">Visibilidad</div>
         <div class="option-line"><input class="check" id="rtcShowZones" type="checkbox" checked><label>Zonas de entrada/trampa</label></div>
         <div class="option-line"><input class="check" id="rtcShowLabels" type="checkbox" checked><label>Etiquetas Buy/Sell/Trap</label></div>
@@ -1025,9 +1142,13 @@ canvas{position:absolute;left:0;right:0;top:0}
             <div class="design-row"><label>Texto etiqueta</label><input class="color-mini" type="color" id="designPriceBadgeText"></div>
           </div>
           <div class="design-tab hidden" data-tab="2">
-            <div class="design-note">Escalas</div>
-            <div class="design-row"><label>Texto</label><div class="dual-colors"><input class="color-mini" type="color" id="designAxisText"><select class="select" id="designAxisSize"><option>10</option><option selected>12</option><option>14</option></select></div></div>
-            <div class="design-row"><label>Líneas</label><input class="color-mini" type="color" id="designAxisLine"></div>
+            <div class="design-note">Ejes de precio y tiempo</div>
+            <div class="design-row"><label>Texto de escala</label><div class="dual-colors"><input class="color-mini" type="color" id="designAxisText"><select class="select" id="designAxisSize"><option>10</option><option selected>12</option><option>14</option></select></div></div>
+            <div class="design-row"><label>Separador precio</label><input class="color-mini" type="color" id="designAxisLine"></div>
+            <div class="design-row"><label>Separador tiempo</label><input class="color-mini" type="color" id="designTimeSep"></div>
+            <div class="design-note">Títulos</div>
+            <div class="design-row"><label>Título del símbolo</label><input class="color-mini" type="color" id="designTitleColor"></div>
+            <div class="design-row"><label>Texto de estrategias</label><input class="color-mini" type="color" id="designStrategyColor"></div>
             <div class="design-note">Márgenes</div>
             <div class="design-row"><label>Parte superior</label><input class="field" id="designTopMargin" type="number" min="0" max="30"></div>
             <div class="design-row"><label>Parte inferior</label><input class="field" id="designBottomMargin" type="number" min="0" max="30"></div>
@@ -1098,17 +1219,17 @@ const TIMEFRAMES = ["1m","3m","5m","15m","30m","45m","1h","2h","4h","D","S","M"]
 const TF_LABELS = {"1m":"1","3m":"3","5m":"5","15m":"15","30m":"30","45m":"45","1h":"60","2h":"120","4h":"240",D:"D",S:"S",M:"M"};
 const TF_MINUTES = {"1m":1,"3m":3,"5m":5,"15m":15,"30m":30,"45m":45,"1h":60,"2h":120,"4h":240,D:1440,S:10080,M:43200};
 const INSTRUMENTS = {
-  XAUUSD: {key:"XAUUSD", label:"XAUUSD", title:"Gold Spot / U.S. Dollar", exchange:"Pepperstone", tag:"X", unit:"USD", color:"#f2c94c"},
-  NAS100: {key:"NAS100", label:"NAS100", title:"CFD US 100 Cash", exchange:"Pepperstone", tag:"100", unit:"USD", color:"#00d4ff"},
-  US30: {key:"US30", label:"US30", title:"Wall Street 30 Cash", exchange:"Pepperstone", tag:"30", unit:"USD", color:"#20a7ff"},
-  US500: {key:"US500", label:"US500", title:"US 500 Cash", exchange:"Pepperstone", tag:"500", unit:"USD", color:"#f4435a"},
-  BTC: {key:"BTC", label:"BTCUSD", title:"Bitcoin / U.S. Dollar", exchange:"Coinbase", tag:"BTC", unit:"USD", color:"#f7931a"},
-  BTCUSDT_P: {key:"BTCUSDT_P", label:"BTCUSDT.P", title:"Bitcoin / Tether Perpetual", exchange:"Binance", tag:"BTC", unit:"USD", color:"#f7931a"},
-  ETHUSDT_P: {key:"ETHUSDT_P", label:"ETHUSDT.P", title:"Ethereum / Tether Perpetual", exchange:"Binance", tag:"ETH", unit:"USD", color:"#627eea"},
-  SOLUSDT_P: {key:"SOLUSDT_P", label:"SOLUSDT.P", title:"Solana / Tether Perpetual", exchange:"Binance", tag:"SOL", unit:"USD", color:"#9945ff"},
-  EURUSD: {key:"EURUSD", label:"EURUSD", title:"Euro / U.S. Dollar", exchange:"Pepperstone", tag:"€", unit:"USD", color:"#1fbf75"},
-  DXY: {key:"DXY", label:"USDX", title:"US Dollar Index", exchange:"Pepperstone", tag:"$", unit:"USD", color:"#21b6a8"},
-  VIX: {key:"VIX", label:"VIX", title:"CBOE Volatility Index", exchange:"CBOE", tag:"VIX", unit:"USD", color:"#9b59b6"},
+  XAUUSD: {key:"XAUUSD", label:"XAUUSD", title:"Gold Spot / U.S. Dollar", exchange:"Pepperstone", tag:"X", unit:"USD", color:"#c9c9cf"},
+  NAS100: {key:"NAS100", label:"NAS100", title:"CFD US 100 Cash", exchange:"Pepperstone", tag:"100", unit:"USD", color:"#f5f5f7"},
+  US30: {key:"US30", label:"US30", title:"Wall Street 30 Cash", exchange:"Pepperstone", tag:"30", unit:"USD", color:"#f4f4f5"},
+  US500: {key:"US500", label:"US500", title:"US 500 Cash", exchange:"Pepperstone", tag:"500", unit:"USD", color:"#7a7b82"},
+  BTC: {key:"BTC", label:"BTCUSD", title:"Bitcoin / U.S. Dollar", exchange:"Coinbase", tag:"BTC", unit:"USD", color:"#c9c9cf"},
+  BTCUSDT_P: {key:"BTCUSDT_P", label:"BTCUSDT.P", title:"Bitcoin / Tether Perpetual", exchange:"Binance", tag:"BTC", unit:"USD", color:"#c9c9cf"},
+  ETHUSDT_P: {key:"ETHUSDT_P", label:"ETHUSDT.P", title:"Ethereum / Tether Perpetual", exchange:"Binance", tag:"ETH", unit:"USD", color:"#d4d4d9"},
+  SOLUSDT_P: {key:"SOLUSDT_P", label:"SOLUSDT.P", title:"Solana / Tether Perpetual", exchange:"Binance", tag:"SOL", unit:"USD", color:"#94949b"},
+  EURUSD: {key:"EURUSD", label:"EURUSD", title:"Euro / U.S. Dollar", exchange:"Pepperstone", tag:"€", unit:"USD", color:"#c9c9cf"},
+  DXY: {key:"DXY", label:"USDX", title:"US Dollar Index", exchange:"Pepperstone", tag:"$", unit:"USD", color:"#d4d4d9"},
+  VIX: {key:"VIX", label:"VIX", title:"CBOE Volatility Index", exchange:"CBOE", tag:"VIX", unit:"USD", color:"#94949b"},
 };
 const DEFAULT_WATCHLIST = ["XAUUSD", "NAS100", "US30", "US500", "BTC", "BTCUSDT_P", "ETHUSDT_P", "SOLUSDT_P", "EURUSD", "DXY", "VIX"];
 const LAYOUT_PRESETS = [
@@ -1136,7 +1257,7 @@ let draggedSymbol = null;
 let quoteCache = {};
 let showKillzones = true;
 let showEMA = false;
-let showBibiru = false;
+
 let showMACDPro = false;
 let indicatorCollapsed = false;
 let activeIndicators = [{id:"ict-default", type:"ict"}];
@@ -1150,31 +1271,34 @@ let editingRtcIndicatorId = null;
 let editingMacdProIndicatorId = null;
 const panels = [];
 let contextState = {panel:null, price:null, x:0, y:0};
-let lastAlertPrice = null;
+
 let alerts = [];
 let alertDrag = null;
 let editingAlertId = null;
 let sharedAudioContext = null;
 const lastAlertPriceBySymbol = {};
 const designSettings = {
-  bgColor: "#efefee",
-  gridColor: "#182538",
+  bgColor: "#141519",
+  gridColor: "#24262b",
   gridMode: "both",
-  panelBorder: "#ccc",
-  reticleColor: "#888",
+  panelBorder: "#2b2c31",
+  reticleColor: "#82838a",
   reticleStyle: "dashed",
   closeColor: false,
   bodyEnabled: true,
   borderEnabled: true,
   wickEnabled: true,
-  bullBody: "#00e5a0",
-  bearBody: "#ff3355",
-  bullBorder: "#00e5a0",
-  bearBorder: "#ff3355",
-  bullWick: "#00e5a0",
-  bearWick: "#ff3355",
-  axisText: "#333",
-  axisLine: "#1a2838",
+  bullBody: "#f4f4f5",
+  bearBody: "#7a7b82",
+  bullBorder: "#f4f4f5",
+  bearBorder: "#63646b",
+  bullWick: "#f4f4f5",
+  bearWick: "#7a7b82",
+  axisText: "#92939a",
+  axisLine: "#2b2c31",
+  timeSepColor: "#2b2c31",
+  titleColor: "#1a1a22",
+  strategyColor: "#1a1a22",
   axisSize: 12,
   navButtons: "hover",
   panelButtons: "hidden",
@@ -1188,12 +1312,12 @@ const designSettings = {
   syncGrid: true,
   syncTime: true,
   syncRange: false,
-  priceLineColor: "#00d4ff",
+  priceLineColor: "#898989",
   priceLineOpacity: 92,
-  priceBadgeBg: "#00d4ff",
-  priceBadgeText: "#06090f",
-  wmColor: "#00d4ff",
-  wmOpacity: 0.07,
+  priceBadgeBg: "#898989",
+  priceBadgeText: "#111214",
+  wmColor: "#24262b",
+  wmOpacity: 0.10,
   wmVisible: true,
 };
 let designTemplates = [];
@@ -1205,23 +1329,26 @@ const DARK_NEON_BLUE_TEMPLATE = {
   name: "Dark Trading / Neon Blue",
   settings: {
     bgColor: "#0D0E0E",
-    gridColor: "#091A42",
+    gridColor: "#24262b",
     gridMode: "both",
-    panelBorder: "#062357",
-    reticleColor: "#4FBDE2",
+    panelBorder: "#2b2c31",
+    reticleColor: "#f4f4f5",
     reticleStyle: "dashed",
     closeColor: false,
     bodyEnabled: true,
     borderEnabled: true,
     wickEnabled: true,
-    bullBody: "#4FBDE2",
-    bearBody: "#1D81B5",
-    bullBorder: "#A2DCEE",
-    bearBorder: "#0E5892",
-    bullWick: "#4FBDE2",
-    bearWick: "#1D81B5",
-    axisText: "#607B89",
-    axisLine: "#062357",
+    bullBody: "#f4f4f5",
+    bearBody: "#7a7b82",
+    bullBorder: "#f4f4f5",
+    bearBorder: "#63646b",
+    bullWick: "#f4f4f5",
+    bearWick: "#7a7b82",
+    axisText: "#92939a",
+    axisLine: "#2b2c31",
+    timeSepColor: "#2b2c31",
+    titleColor: "#1a1a22",
+    strategyColor: "#1a1a22",
     axisSize: 12,
     navButtons: "hover",
     panelButtons: "hidden",
@@ -1235,11 +1362,11 @@ const DARK_NEON_BLUE_TEMPLATE = {
     syncGrid: true,
     syncTime: true,
     syncRange: false,
-    priceLineColor: "#4FBDE2",
+    priceLineColor: "#898989",
     priceLineOpacity: 95,
-    priceBadgeBg: "#4FBDE2",
+    priceBadgeBg: "#898989",
     priceBadgeText: "#0D0E0E",
-    wmColor: "#1D81B5",
+    wmColor: "#7a7b82",
     wmOpacity: 0.06,
     wmVisible: true,
   }
@@ -1257,61 +1384,61 @@ const indicatorSettings = {
   labelRight: false,
   maxDays: 10,
   labelSize: "Pequeño",
-  textColor: "#e8ecf4",
-  boxAlpha: 0.20,
+  textColor: "#f4f4f5",
+  boxAlpha: 0.0,
   textAlpha: 0.50,
   stopOnceMitigated: true,
   pivotStyle: "solid",
   pivotWidth: 1,
   midStyle: "dashed",
   midWidth: 1,
-  dayOpen: {enabled:true, label:"True Day Open", color:"#f2f2f2", style:"dashed", width:1},
+  dayOpen: {enabled:true, label:"True Day Open", color:"#f4f4f5", style:"dashed", width:1},
   killzones: [
-    {key:"asia", enabled:true, label:"Asia", hi:"AS.H", lo:"AS.L", start:20*60, end:0, color:"#686868"},
-    {key:"london", enabled:true, label:"London", hi:"LO.H", lo:"LO.L", start:4*60, end:8*60, color:"#686868"},
-    {key:"nyam", enabled:true, label:"NY AM", hi:"NYAM.H", lo:"NYAM.L", start:9*60, end:13*60, color:"#9a6a00"},
-    {key:"nylu", enabled:true, label:"NY Lunch", hi:"NYL.H", lo:"NYL.L", start:10*60+30, end:13*60, color:"#8f8700"},
-    {key:"nypm", enabled:false, label:"NY PM", hi:"NYPM.H", lo:"NYPM.L", start:13*60+30, end:16*60, color:"#9b35c8"},
+    {key:"asia", enabled:true, label:"Asia", hi:"AS.H", lo:"AS.L", start:20*60, end:0, color:"#8a8a92"},
+    {key:"london", enabled:true, label:"London", hi:"LO.H", lo:"LO.L", start:4*60, end:8*60, color:"#8a8a92"},
+    {key:"nyam", enabled:true, label:"NY AM", hi:"NYAM.H", lo:"NYAM.L", start:9*60, end:13*60, color:"#c9c9cf"},
+    {key:"nylu", enabled:true, label:"NY Lunch", hi:"NYL.H", lo:"NYL.L", start:10*60+30, end:13*60, color:"#a5a5ac"},
+    {key:"nypm", enabled:false, label:"NY PM", hi:"NYPM.H", lo:"NYPM.L", start:13*60+30, end:16*60, color:"#6f6f76"},
   ],
 };
 const emaSettings = {
   length: 9,
   source: "close",
   offset: 0,
-  color: "#00d4ff",
+  color: "#f5f5f7",
   smoothingType: "None",
   smoothingLength: 14,
   bbMult: 2,
   timeframe: "",
   waitClose: true,
-  smoothingColor: "#fdd835",
-  bbColor: "#43a047",
+  smoothingColor: "#c9c9cf",
+  bbColor: "#f4f4f5",
   bbFillAlpha: 0.10,
 };
 const bibiruSettings = {
   sma1Length: 5,
   sma2Length: 25,
-  sma1Color: "#00d4ff",
-  sma2Color: "#ff9800",
+  sma1Color: "#f5f5f7",
+  sma2Color: "#c9c9cf",
   sma1Width: 2,
   sma2Width: 2,
   showSma1: true,
   showSma2: true,
   showVwap: true,
   vwapHeight: 80,
-  vwapBullColor: "#00e5a0",
-  vwapBearColor: "#ff3355",
+  vwapBullColor: "#f5f5f7",
+  vwapBearColor: "#76777e",
 };
-const EMA_COLORS = ["#2962ff", "#ff9800", "#ab47bc", "#00bcd4", "#fdd835", "#66bb6a", "#ef5350", "#26a69a"];
+const EMA_COLORS = ["#f4f4f5", "#c9c9cf", "#b4b4ba", "#f4f4f5", "#c9c9cf", "#f4f4f5", "#7a7b82", "#f4f4f5"];
 const displacementSettings = {
   volLen: 20,
   volMult: 1.45,
   bodyPct: 50,
   ltf: "1",
-  bullColor: "#0077e6",
-  bearColor: "#e91414",
-  buyColor: "#0077e6",
-  sellColor: "#e91414",
+  bullColor: "#f4f4f5",
+  bearColor: "#7a7b82",
+  buyColor: "#f4f4f5",
+  sellColor: "#7a7b82",
   muteColor: "#575757",
   showMute: true,
   showDash: true,
@@ -1325,18 +1452,18 @@ const smartSignalSettings = {
   rangeAtr: 2.2,
   zoneAtr: 0.45,
   minConfidence: 58,
-  bullColor: "#20d6b5",
-  bearColor: "#ff5364",
-  zoneColor: "#f2c94c",
-  trapColor: "#ff9f1a",
+  bullColor: "#f4f4f5",
+  bearColor: "#7a7b82",
+  zoneColor: "#c9c9cf",
+  trapColor: "#c9c9cf",
   showZones: true,
   showConsolidation: true,
   showPanel: true,
   showLabels: true,
 };
 const smfSettings = {
-  bullColor: "#00c8ff",
-  bearColor: "#ff005d",
+  bullColor: "#f4f4f5",
+  bearColor: "#7a7b82",
   len: 34,
   basisType: "EMA",
   almaOffset: 0.85,
@@ -1368,10 +1495,10 @@ const rtcSettings = {
   stochLen: 14,
   kSmooth: 3,
   dSmooth: 3,
-  bullColor: "#00e0b8",
-  bearColor: "#ff3b5c",
-  trapColor: "#ffaa00",
-  zoneColor: "#5b8cff",
+  bullColor: "#f4f4f5",
+  bearColor: "#7a7b82",
+  trapColor: "#c9c9cf",
+  zoneColor: "#d4d4d9",
   showZones: true,
   showLabels: true,
   showPanel: true,
@@ -1431,25 +1558,25 @@ const strategyJrSettings = {
   panelBg: "#232323",
   panelHeaderBg: "#000000",
   panelTfBg: "#2d2d2d",
-  bullColor: "#089981",
-  bearColor: "#F23645",
-  internalBullColor: "#089981",
-  internalBearColor: "#F23645",
-  swingBullColor: "#089981",
-  swingBearColor: "#F23645",
-  neutralColor: "#b2b5be",
-  zoneColor: "#f2c94c",
-  fvgBull: "#089981",
-  fvgBear: "#F23645",
-  internalBullObColor: "#3179f5",
-  internalBearObColor: "#f77c80",
-  swingBullObColor: "#1848cc",
-  swingBearObColor: "#b22833",
-  premiumColor: "#F23645",
-  equilibriumColor: "#878b94",
-  discountColor: "#089981",
-  panelOverColor: "#d23a41",
-  panelUnderColor: "#089981",
+  bullColor: "#f4f4f5",
+  bearColor: "#7a7b82",
+  internalBullColor: "#f4f4f5",
+  internalBearColor: "#7a7b82",
+  swingBullColor: "#f4f4f5",
+  swingBearColor: "#7a7b82",
+  neutralColor: "#b2b3b9",
+  zoneColor: "#c9c9cf",
+  fvgBull: "#f4f4f5",
+  fvgBear: "#7a7b82",
+  internalBullObColor: "#f4f4f5",
+  internalBearObColor: "#7a7b82",
+  swingBullObColor: "#f4f4f5",
+  swingBearObColor: "#7a7b82",
+  premiumColor: "#7a7b82",
+  equilibriumColor: "#a5a5ac",
+  discountColor: "#f4f4f5",
+  panelOverColor: "#7a7b82",
+  panelUnderColor: "#f4f4f5",
   panelNeutralColor: "#5a5a5a",
   overBought: 80,
   overSold: 20,
@@ -1460,9 +1587,9 @@ const rtcStoch6Settings = {
   slow: 3,
   overBought: 80,
   overSold: 20,
-  lineColor: "#00d4ff",
-  bullColor: "#00e5a0",
-  bearColor: "#ff3355",
+  lineColor: "#f5f5f7",
+  bullColor: "#f5f5f7",
+  bearColor: "#76777e",
   showPanel: true,
   showLabels: true,
 };
@@ -1477,15 +1604,15 @@ const macdProSettings = {
   histType: "OFF",
   histLength: 5,
   source: "close",
-  macdColor: "#006ABA",
-  signalColor: "#BA0032",
-  growAboveColor: "#208AFF",
-  growBelowColor: "#FFC4D4",
-  fallAboveColor: "#C4D4FF",
-  fallBelowColor: "#FF206A",
+  macdColor: "#f4f4f5",
+  signalColor: "#7a7b82",
+  growAboveColor: "#d4d4d9",
+  growBelowColor: "#94949b",
+  fallAboveColor: "#b4b4ba",
+  fallBelowColor: "#63646b",
   panelHeight: 130,
 };
-const MACD_PRO_COLORS = ["#006ABA", "#BA0032", "#208AFF", "#FFC4D4"];
+
 
 function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
 function normalizeSymbolKey(value){
@@ -1502,7 +1629,7 @@ function instrumentFor(key){
     exchange: normalized.includes(":") ? normalized.split(":")[0] : "Pepperstone",
     tag: short.slice(0, 3),
     unit: "USD",
-    color: "#8f96a8",
+    color: "#92939a",
   };
 }
 function activeInstrument(){
@@ -1583,7 +1710,6 @@ function setActiveSymbol(key){
   activeSymbolKey = next;
   const syms = watchlistTabs[activeWatchlistTab].symbols;
   if(!syms.includes(next)) syms.unshift(next);
-  lastAlertPrice = null;
   saveWatchlist();
   updateSymbolShell();
   if(designSettings.syncSymbol) {
@@ -1817,20 +1943,18 @@ function renderWatchlistList(){
     </div>
     <div class="watchlist-market">● Mercado abierto</div>`;
 }
-let ctxTargetSymbol = null;
 function showCtxMenu(x, y, symbolKey){
   const menu = document.getElementById("ctxMenu");
   const items = document.getElementById("ctxMenuItems");
   const title = document.getElementById("ctxMenuTitle");
   if(!menu || !items) return;
-  ctxTargetSymbol = symbolKey;
   const inst = instrumentFor(symbolKey);
   title.textContent = inst.label;
   let html = "";
   watchlistTabs.forEach((tab, idx) => {
     const hasSymbol = tab.symbols.includes(symbolKey);
     html += `<div class="ctx-menu-item ${hasSymbol ? "in-list" : ""}" data-tab-idx="${idx}">
-      <span class="ctx-menu-item-icon" style="background:${hasSymbol ? "#0b84ff" : "#3a3b42"}">${tab.name.charAt(0).toUpperCase()}</span>
+      <span class="ctx-menu-item-icon" style="background:${hasSymbol ? "#f4f4f5" : "#3a3b42"}">${tab.name.charAt(0).toUpperCase()}</span>
       <span>${tab.name}</span>
       <span class="ctx-menu-item-check">✓</span>
     </div>`;
@@ -1875,7 +1999,6 @@ function showCtxMenu(x, y, symbolKey){
 function hideCtxMenu(){
   const menu = document.getElementById("ctxMenu");
   if(menu) menu.style.display = "none";
-  ctxTargetSymbol = null;
 }
 function toggleSymbolInTab(symbolKey, tabIdx){
   const syms = watchlistTabs[tabIdx].symbols;
@@ -1889,7 +2012,13 @@ document.addEventListener("mousedown", event => {
   if(!event.target.closest(".ctx-menu")) hideCtxMenu();
 });
 document.addEventListener("keydown", event => {
-  if(event.key === "Escape") hideCtxMenu();
+  if(event.key === "Escape"){
+    if(document.querySelector(".app").classList.contains("fullscreen")){
+      exitFullscreen();
+    } else {
+      hideCtxMenu();
+    }
+  }
 });
 async function refreshWatchlistQuotes(){
   const symbols = [...watchlistTabs[activeWatchlistTab].symbols];
@@ -2094,7 +2223,6 @@ function indicatorName(item){
 function syncIndicatorState(){
   showKillzones = hasVisibleIndicator("ict");
   showEMA = hasVisibleIndicator("ema");
-  showBibiru = hasVisibleIndicator("bibiru");
   showMACDPro = hasVisibleIndicator("macdPro");
 }
 function addIndicator(type){
@@ -2208,7 +2336,7 @@ function setStrokePattern(ctx, style){
 }
 function selectStyle(selectId, fallback = "solid"){
   const index = document.getElementById(selectId)?.selectedIndex ?? 0;
-  if(selectId === "setMidStyle" || selectId === "setOpenStyle" || selectId === "setTsStyle") {
+  if(selectId === "setMidStyle" || selectId === "setOpenStyle") {
     return index === 0 ? "dashed" : index === 2 ? "dotted" : "solid";
   }
   return index === 1 ? "dashed" : index === 2 ? "dotted" : fallback;
@@ -2216,7 +2344,7 @@ function selectStyle(selectId, fallback = "solid"){
 function hydrateStyleSelect(selectId, style){
   const select = document.getElementById(selectId);
   if(!select) return;
-  if(selectId === "setMidStyle" || selectId === "setOpenStyle" || selectId === "setTsStyle") {
+  if(selectId === "setMidStyle" || selectId === "setOpenStyle") {
     select.selectedIndex = style === "solid" ? 1 : style === "dotted" ? 2 : 0;
     return;
   }
@@ -3235,7 +3363,7 @@ function computeRtcStrategy(data, settings = rtcSettings){
 function panelHtml(index){
   const inst = activeInstrument();
   return `
-    <div class="rightbar"><a href="http://127.0.0.1:8765/dashboard.html" target="_blank" class="leftbar-btn" title="Stocks Dashboard">📈<span class="btn-label">STK</span></a><a href="http://127.0.0.1:8770/dashboard.html" target="_blank" class="leftbar-btn" title="Dollar, VIX & Bonds Dashboard" style="background:var(--surface-3);border-color:var(--bull)">💹<span class="btn-label">DVB</span></a><a href="http://127.0.0.1:3001/" target="_blank" class="leftbar-btn" title="Trading War Room" style="background:var(--surface-3);border-color:var(--pu)">🔥<span class="btn-label">WAR</span></a><button class="icon-btn watchlist-toggle" data-role="watchlist-button" title="Lista de seguimiento">☰</button><button class="icon-btn alerts-toggle" data-role="alerts-button" title="Alertas"><span class="alerts-toggle-badge" data-role="alerts-badge">0</span>⏱</button></div>
+    <div class="rightbar"><a href="http://127.0.0.1:8765/dashboard.html" target="_blank" class="leftbar-btn" title="Stocks Dashboard">▲<span class="btn-label">STK</span></a><a href="http://127.0.0.1:8770/dashboard.html" target="_blank" class="leftbar-btn" title="Dollar, VIX & Bonds Dashboard" style="background:var(--surface-3);border-color:var(--bull)">⇅<span class="btn-label">DVB</span></a><a href="http://127.0.0.1:3001/" target="_blank" class="leftbar-btn" title="Trading War Room" style="background:var(--surface-3);border-color:var(--pu)">✦<span class="btn-label">WAR</span></a><button class="icon-btn watchlist-toggle" data-role="watchlist-button" title="Lista de seguimiento">☰</button><button class="icon-btn alerts-toggle" data-role="alerts-button" title="Alertas"><span class="alerts-toggle-badge" data-role="alerts-badge">0</span>⏱</button></div>
     <div class="main-title"><span class="tag100" data-role="symbol-tag" style="background:${inst.color}">${inst.tag}</span><span><span data-role="symbol-label">${inst.label}</span> · <span data-role="tf-title">5</span> · <span data-role="symbol-exchange">${inst.exchange}</span></span><span class="ohlc" data-role="ohlc" style="display:none">O -- H -- L -- C --</span><span class="change" data-role="chg" style="display:none">--</span></div>
     <div class="indicator-stack" data-role="indicator-stack"></div>
     <div class="indicator-title" data-role="indicator-title">ICT Killzones & Pivots [TFO] <button class="indicator-gear" data-role="ict-gear" title="Configuración">⚙</button><span class="indicator-code">{}</span></div>
@@ -3480,7 +3608,7 @@ class ChartPanel {
     const idx = clamp(Math.round(((mainX - plotLeftPad) / plotW) * xDenom), 0, data.length - 1);
     const xPos = left + plotLeftPad + (idx / xDenom) * plotW;
     const reticleStyle = designSettings.reticleStyle === "solid" ? "solid" : "dashed";
-    const reticleColor = rgba(designSettings.reticleColor || "#dfe4f0", .72);
+    const reticleColor = rgba(designSettings.reticleColor || "#d4d4d9", .72);
     this.el.classList.add("crosshair-active");
     this.$("cross-v").style.display = "block";
     this.$("cross-v").style.borderLeftStyle = reticleStyle;
@@ -3495,9 +3623,11 @@ class ChartPanel {
     this.$("cross-price").style.display = "block";
     this.$("cross-price").style.top = Math.round(mainY) + "px";
     this.$("cross-price").style.right = (this.lastChart.right + 6) + "px";
-    this.$("cross-price").innerHTML = `${fmtPrice(price)}<br><span style="font-weight:400">${countdownText(this.tf)}</span>`;
+    this.$("cross-price").textContent = fmtPrice(price);
     this.$("cross-time").style.display = "block";
     this.$("cross-time").style.left = Math.round(xPos) + "px";
+    this.$("cross-time").style.top = (this.lastChart.totalH + 15) + "px";
+    this.$("cross-time").style.bottom = "auto";
     this.$("cross-time").textContent = fmtCrosshairTime(data[idx].t);
   }
   hideCrosshair(){
@@ -3585,15 +3715,13 @@ class ChartPanel {
         const bottom = y(group.low);
         const height = Math.max(2, bottom - top);
 
-        ctx.fillStyle = indicatorSettings.showBoxes ? rgba(session.color, indicatorSettings.boxAlpha) : "transparent";
-        ctx.strokeStyle = rgba(session.color, 0.72);
-        ctx.lineWidth = 1;
-        ctx.fillRect(x1, top, x2 - x1, height);
-        ctx.strokeRect(x1 + .5, top + .5, Math.max(1, x2 - x1 - 1), Math.max(1, height - 1));
+        ctx.fillStyle = "transparent";
+        ctx.strokeStyle = "transparent";
+        ctx.lineWidth = 0;
 
         if(indicatorSettings.showPivots) {
           ctx.setLineDash([]);
-          ctx.strokeStyle = rgba(session.color, 0.86);
+          ctx.strokeStyle = rgba(session.color, 0.30);
           ctx.lineWidth = indicatorSettings.pivotWidth;
           setStrokePattern(ctx, indicatorSettings.pivotStyle);
           const highEnd = indicatorSettings.stopOnceMitigated ? this.pivotMitigationIndex(data, group, group.high, "high") : null;
@@ -3802,7 +3930,7 @@ class ChartPanel {
           const yy = y(bar.l) + 18;
           ctx.fillStyle = settings.bullColor;
           ctx.fillRect(xx - 17, yy - 18, 34, 18);
-          ctx.fillStyle = "#071014";
+          ctx.fillStyle = "#111214";
           ctx.fillText("Buy", xx, yy - 5);
         }
         if(result.switchDown[i]) {
@@ -3829,7 +3957,7 @@ class ChartPanel {
     const ev = result.lastEvent;
     const evType = (ev?.type || "").toLowerCase();
     const side = evType.includes("buy") ? "buy" : evType.includes("sell") ? "sell" : "neutral";
-    const color = side === "buy" ? settings.bullColor : side === "sell" ? settings.bearColor : "#8f96a8";
+    const color = side === "buy" ? settings.bullColor : side === "sell" ? settings.bearColor : "#92939a";
     const x0 = mainW - 286, y0 = 46, w = 268, h = 118;
     ctx.save();
     ctx.fillStyle = "rgba(16,17,20,.90)";
@@ -3939,7 +4067,7 @@ class ChartPanel {
           const isTrap = ev.type.includes("trap");
           const color = isTrap ? settings.trapColor : isBuy ? settings.bullColor : settings.bearColor;
           ctx.fillStyle = rgba(color, isTrap ? .82 : .95);
-          ctx.strokeStyle = rgba("#0b0d18", .9);
+          ctx.strokeStyle = rgba("#111214", .9);
           ctx.beginPath();
           if(isBuy) {
             ctx.moveTo(xx, yy - 9); ctx.lineTo(xx - 7, yy + 7); ctx.lineTo(xx + 7, yy + 7);
@@ -4009,7 +4137,7 @@ class ChartPanel {
         if(i === 0 || !Number.isFinite(st.k[i - 1])) ctx.moveTo(xx, yy);
         else ctx.lineTo(xx, yy);
       });
-      ctx.strokeStyle = "rgba(235,238,246,.58)";
+      ctx.strokeStyle = "rgba(244,244,245,.58)";
       ctx.lineWidth = 1.2;
       ctx.stroke();
       [["over", 80, 100, settings.bearColor], ["under", 0, 20, settings.bullColor]].forEach(([_, a, b, color]) => {
@@ -4062,10 +4190,10 @@ class ChartPanel {
         const base = zone.dir > 0
           ? (isSwing ? settings.swingBullObColor : settings.internalBullObColor)
           : (isSwing ? settings.swingBearObColor : settings.internalBearObColor);
-        ctx.fillStyle = settings.grayOrderBlocks ? rgba("#878b94", .28) : rgba(base, .16);
+        ctx.fillStyle = settings.grayOrderBlocks ? rgba("#a5a5ac", .28) : rgba(base, .16);
         ctx.fillRect(x1, top, Math.max(10, x2 - x1), h);
         if(isSwing) {
-          ctx.strokeStyle = settings.grayOrderBlocks ? "rgba(135,139,148,.70)" : rgba(base, .48);
+          ctx.strokeStyle = settings.grayOrderBlocks ? "rgba(146,147,154,.70)" : rgba(base, .48);
           ctx.strokeRect(x1 + .5, top + .5, Math.max(10, x2 - x1) - 1, h - 1);
         }
         if(settings.showAllTexts) {
@@ -4085,8 +4213,8 @@ class ChartPanel {
           ctx.fillRect(x1, top, Math.max(8, x2 - x1), h);
           ctx.strokeRect(x1 + .5, top + .5, Math.max(8, x2 - x1) - 1, h - 1);
         } else if(settings.showZones !== false) {
-          ctx.fillStyle = "rgba(135,139,148,.18)";
-          ctx.strokeStyle = "rgba(135,139,148,.40)";
+          ctx.fillStyle = "rgba(146,147,154,.18)";
+          ctx.strokeStyle = "rgba(146,147,154,.40)";
           ctx.fillRect(x1, top, Math.max(8, x2 - x1), h);
           ctx.strokeRect(x1 + .5, top + .5, Math.max(8, x2 - x1) - 1, h - 1);
         }
@@ -4125,11 +4253,11 @@ class ChartPanel {
         result.equals.forEach(eq => {
           const x1 = x(eq.from), x2 = x(eq.index), yy = y(eq.price);
           ctx.setLineDash([3,4]);
-          ctx.strokeStyle = "rgba(235,238,246,.38)";
+          ctx.strokeStyle = "rgba(244,244,245,.38)";
           ctx.beginPath(); ctx.moveTo(x1, yy); ctx.lineTo(x2, yy); ctx.stroke();
           ctx.setLineDash([]);
           if(settings.showAllTexts) {
-            ctx.fillStyle = "rgba(235,238,246,.75)";
+            ctx.fillStyle = "rgba(244,244,245,.75)";
             ctx.fillText(eq.label, x2 + 4, yy - 4);
           }
         });
@@ -4213,13 +4341,13 @@ class ChartPanel {
       const panelBg = rgba(designSettings.bgColor, .92);
       ctx.fillStyle = panelBg;
       ctx.fillRect(paneX, y0, paneW, h);
-      ctx.strokeStyle = "rgba(0,212,255,.12)";
+      ctx.strokeStyle = "rgba(137,137,137,.12)";
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(paneX, y0 + .5); ctx.lineTo(paneX + paneW, y0 + .5); ctx.stroke();
       [settings.overSold, 50, settings.overBought].forEach(level => {
         const isMid = level === 50;
         ctx.setLineDash(isMid ? [3,3] : []);
-        ctx.strokeStyle = isMid ? "rgba(90,106,128,.3)" : "rgba(0,212,255,.18)";
+        ctx.strokeStyle = isMid ? "rgba(146,147,154,.3)" : "rgba(137,137,137,.18)";
         ctx.lineWidth = isMid ? 1 : 1;
         ctx.beginPath(); ctx.moveTo(paneX, sy(level)); ctx.lineTo(paneX + paneW, sy(level)); ctx.stroke();
       });
@@ -4255,15 +4383,15 @@ class ChartPanel {
       });
       this.drawSeriesLine(ctx, data, st.k, mapX, sy, settings.lineColor, 1.6);
       ctx.font = "600 10px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "rgba(0,212,255,.55)";
+      ctx.fillStyle = "rgba(137,137,137,.55)";
       ctx.textAlign = "left";
       ctx.fillText("STOCH", x0 + 6, y0 + 13);
-      ctx.fillStyle = "rgba(90,106,128,.5)";
+      ctx.fillStyle = "rgba(146,147,154,.5)";
       ctx.font = "9px 'JetBrains Mono', monospace";
       ctx.fillText(`K(${settings.kPeriod})`, x0 + 40, y0 + 13);
       ctx.textAlign = "right";
       ctx.font = "10px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "rgba(90,106,128,.4)";
+      ctx.fillStyle = "rgba(146,147,154,.4)";
       ctx.fillText(`${settings.overBought}`, paneX + paneW - 6, sy(settings.overBought) - 3);
       ctx.fillText(`${settings.overSold}`, paneX + paneW - 6, sy(settings.overSold) + 11);
       const last = st.k.at(-1);
@@ -4274,14 +4402,14 @@ class ChartPanel {
         const tw = ctx.measureText(val).width;
         const bx = paneX + paneW - tw - 16;
         const bw = tw + 12, bh = 20, br = 4;
-        ctx.fillStyle = "rgba(0,212,255,.08)";
-        ctx.strokeStyle = "rgba(0,212,255,.25)";
+        ctx.fillStyle = "rgba(137,137,137,.08)";
+        ctx.strokeStyle = "rgba(137,137,137,.25)";
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.roundRect(bx, by - bh / 2, bw, bh, br);
         ctx.fill();
         ctx.stroke();
-        ctx.fillStyle = "#00d4ff";
+        ctx.fillStyle = "#f4f4f5";
         ctx.textAlign = "right";
         ctx.fillText(val, bx + bw - 6, by + 4);
       }
@@ -4341,9 +4469,9 @@ class ChartPanel {
     const w = 178, rowH = 22, h = rowH * 5 + 8;
     const x0 = settings.dashPos === "Bottom Left" ? 10 : mainW - w - 10;
     const y0 = settings.dashPos === "Top Right" ? 46 : mainH - h - 42;
-    const dirColor = stats.lastDir === "BULLISH" ? settings.bullColor : stats.lastDir === "BEARISH" ? settings.bearColor : "#8f96a8";
+    const dirColor = stats.lastDir === "BULLISH" ? settings.bullColor : stats.lastDir === "BEARISH" ? settings.bearColor : "#92939a";
     ctx.save();
-    ctx.fillStyle = "rgba(19,23,34,.88)";
+    ctx.fillStyle = "rgba(20,21,25,.88)";
     ctx.strokeStyle = "rgba(87,87,87,.55)";
     ctx.lineWidth = 1;
     ctx.fillRect(x0, y0, w, h);
@@ -4453,7 +4581,7 @@ class ChartPanel {
   drawSmartSignalPanel(ctx, result, settings, mainW, mainH){
     if(!settings.showPanel) return;
     const {signal, market, checklist, nextZones} = result;
-    const color = signal.side === "buy" ? settings.bullColor : signal.side === "sell" ? settings.bearColor : "#8f96a8";
+    const color = signal.side === "buy" ? settings.bullColor : signal.side === "sell" ? settings.bearColor : "#92939a";
     const w = 292, h = 178, x0 = 10, y0 = mainH - h - 42;
     ctx.save();
     ctx.fillStyle = "rgba(16,17,20,.88)";
@@ -4470,7 +4598,7 @@ class ChartPanel {
     ctx.font = "11px 'JetBrains Mono', monospace";
     ctx.fillStyle = "rgba(244,246,251,.72)";
     ctx.fillText("confianza técnica estimada", x0 + 78, y0 + 42);
-    ctx.fillStyle = "#dfe3ed";
+    ctx.fillStyle = "#d4d4d9";
     ctx.fillText(`Entrada: ${fmtPrice(signal.price)}`, x0 + 10, y0 + 70);
     if(Number.isFinite(signal.stop)) ctx.fillText(`Stop: ${fmtPrice(signal.stop)}`, x0 + 10, y0 + 87);
     if(Number.isFinite(signal.target)) ctx.fillText(`Objetivo: ${fmtPrice(signal.target)}`, x0 + 116, y0 + 87);
@@ -4507,7 +4635,7 @@ class ChartPanel {
       const settings = getSmartSignalSettingsFor(item);
       const result = computeSmartSignal(data, settings);
       const {signal, support, resistance, consolidation, events, alphaPoints, nextZones} = result;
-      const color = signal.side === "buy" ? settings.bullColor : signal.side === "sell" ? settings.bearColor : signal.setup.includes("FALSA") ? settings.trapColor : "#8f96a8";
+      const color = signal.side === "buy" ? settings.bullColor : signal.side === "sell" ? settings.bearColor : signal.setup.includes("FALSA") ? settings.trapColor : "#92939a";
       ctx.save();
       if(settings.showZones) {
         ctx.lineWidth = 1;
@@ -4707,7 +4835,7 @@ class ChartPanel {
       ctx.fillRect(paneX, y0, paneW, h);
       
       // Línea separadora superior
-      ctx.strokeStyle = "rgba(0,212,255,.2)";
+      ctx.strokeStyle = "rgba(137,137,137,.2)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(paneX, y0 + .5);
@@ -4735,12 +4863,12 @@ class ChartPanel {
       
       // ===== ETIQUETA =====
       ctx.font = "700 11px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "rgba(0,212,255,.7)";
+      ctx.fillStyle = "rgba(137,137,137,.7)";
       ctx.textAlign = "left";
       ctx.fillText("BIBIRU", x0 + 8, y0 + 14);
       
       ctx.font = "600 9px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "rgba(90,106,128,.5)";
+      ctx.fillStyle = "rgba(146,147,154,.5)";
       ctx.fillText("VOL", x0 + 56, y0 + 14);
       
       ctx.restore();
@@ -4774,11 +4902,11 @@ class ChartPanel {
       // Fondo del panel
       ctx.fillStyle = rgba(designSettings.bgColor, .97);
       ctx.fillRect(paneX, y0, paneW, h);
-      ctx.strokeStyle = "rgba(0,212,255,.2)";
+      ctx.strokeStyle = "rgba(137,137,137,.2)";
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(paneX, y0 + .5); ctx.lineTo(paneX + paneW, y0 + .5); ctx.stroke();
       // Línea cero
-      ctx.strokeStyle = "rgba(90,106,128,.3)";
+      ctx.strokeStyle = "rgba(146,147,154,.3)";
       ctx.setLineDash([3,3]);
       ctx.beginPath(); ctx.moveTo(paneX, sy(0)); ctx.lineTo(paneX + paneW, sy(0)); ctx.stroke();
       ctx.setLineDash([]);
@@ -4807,11 +4935,11 @@ class ChartPanel {
       this.drawSeriesLine(ctx, data, result.signal, mapX, sy, settings.signalColor, 1.2);
       // Etiqueta
       ctx.font = "700 11px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "rgba(0,212,255,.7)";
+      ctx.fillStyle = "rgba(137,137,137,.7)";
       ctx.textAlign = "left";
       ctx.fillText("MACD Pro", x0 + 8, y0 + 14);
       ctx.font = "600 9px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "rgba(90,106,128,.5)";
+      ctx.fillStyle = "rgba(146,147,154,.5)";
       ctx.fillText(`${settings.mode} (${settings.fastLength},${settings.slowLength},${settings.sigLength})`, x0 + 72, y0 + 14);
       // Valores actuales
       const lastMacd = result.macd.at(-1);
@@ -4863,7 +4991,11 @@ class ChartPanel {
     this.lastChart = {left, right, top, xH, yW, mainW, mainH, totalH, data, plotLeftPad, stochPane: stochPaneH ? {y0: mainH, h: stochPaneH, count: stochPaneCount} : null};
     const y = v => mainH - ((v - scale.lo) / scale.range) * mainH;
     const rightBars = clamp(Number(designSettings.rightBars) || 0, 0, 40);
-    const rightPad = clamp(Math.round(mainW / 8 * 2) + rightBars * 2, 110, Math.round(mainW * .36));
+    const maxRightPad = clamp(320 + rightBars * 2, 320, 360);
+    const visibleCount = Math.max(20, Math.floor(this.candles.length / Math.max(1, this.view.xZoom)));
+    const maxOffset = Math.max(0, this.candles.length - visibleCount);
+    const scrollRatio = maxOffset > 0 ? clamp((this.view.xOffset || 0) / maxOffset, 0, 1) : 0;
+    const rightPad = Math.round(maxRightPad * (1 - scrollRatio));
     const plotW = Math.max(1, mainW - rightPad - plotLeftPad);
     this.lastChart.plotW = plotW;
     const xDenom = Math.max(1, data.length - 1);
@@ -4941,11 +5073,11 @@ class ChartPanel {
     const pline = this.$("pline");
     pline.style.top = Math.round(lastY) + "px";
     pline.style.left = left + "px";
-    pline.style.right = (right + yW) + "px";
+    pline.style.right = (right + yW - 1) + "px";
     // Color dinámico según dirección de la vela (alcista=verde, bajista=rojo)
     const isBull = last.c >= last.o;
-    const dc = isBull ? "#00e5a0" : "#ff3355";
-    const dt = isBull ? "#06090f" : "#fff";
+    const dc = isBull ? "#26a69a" : "#ef5350";
+    const dt = "#ffffff";
     pline.style.background = `repeating-linear-gradient(90deg,${rgba(dc, .92)} 0,${rgba(dc, .92)} 2px,transparent 2px,transparent 4px)`;
     const pb = this.$("pb");
     pb.style.top = Math.round(lastY) + "px";
@@ -4958,16 +5090,16 @@ class ChartPanel {
     const yCanvas = this.$("yaxis");
     yCanvas.style.left = (left + mainW) + "px"; yCanvas.style.top = "0px";
     const yctx = fitCanvas(yCanvas, yW, totalH + xH);
-    yctx.clearRect(0,0,yW,totalH + xH); yctx.fillStyle = designSettings.bgColor; yctx.fillRect(0,0,yW,totalH + xH);
-    yctx.strokeStyle = designSettings.bgColor;
-    yctx.beginPath(); yctx.moveTo(.5,0); yctx.lineTo(.5,totalH); yctx.stroke();
+    yctx.clearRect(0,0,yW,totalH + xH); yctx.fillStyle = designSettings.bgColor; yctx.fillRect(0,0,yW,totalH);
+    yctx.strokeStyle = designSettings.axisLine;
+    yctx.beginPath(); yctx.moveTo(.5,0); yctx.lineTo(.5,totalH + xH); yctx.stroke();
     yctx.font = `${clamp(Number(designSettings.axisSize) || 12, 9, 18)}px 'JetBrains Mono', monospace`; yctx.textAlign = "right";
     for(let i=1;i<=8;i++){ const yy = Math.round(mainH / 8 * i); const val = scale.hi - scale.range / 8 * i; yctx.fillStyle = designSettings.axisText; yctx.fillText(fmtPrice(val), yW - 8, clamp(yy + 4, 12, mainH - 3)); }
     const xCanvas = this.$("xaxis");
     xCanvas.style.left = left + "px"; xCanvas.style.top = totalH + "px";
     const xctx = fitCanvas(xCanvas, mainW + yW, xH);
     xctx.clearRect(0,0,mainW + yW,xH); xctx.fillStyle = designSettings.bgColor; xctx.fillRect(0,0,mainW + yW,xH);
-    xctx.strokeStyle = designSettings.bgColor;
+    xctx.strokeStyle = designSettings.timeSepColor;
     xctx.beginPath(); xctx.moveTo(0,.5); xctx.lineTo(mainW,.5); xctx.stroke();
     xctx.font = `${clamp(Number(designSettings.axisSize) || 11, 9, 18)}px 'JetBrains Mono', monospace`; xctx.textAlign = "center"; xctx.fillStyle = designSettings.axisText;
     const seen = {};
@@ -4997,7 +5129,7 @@ class ChartPanel {
       control.className = "alert-control";
       control.dataset.alertId = alert.id;
       control.style.top = Math.round(yy) + "px";
-      control.innerHTML = `<span>${(alert.message || `NAS100 Cruce ${fmtPrice(alert.value)}`).replace(/</g,"&lt;")}</span><button class="alert-delete" title="Eliminar alerta">🗑</button>`;
+      control.innerHTML = `<span>${(alert.message || `NAS100 Cruce ${fmtPrice(alert.value)}`).replace(/</g,"&lt;")}</span><button class="alert-delete" title="Eliminar alerta">✕</button>`;
       let hideTimer = null;
       const showControl = () => {
         clearTimeout(hideTimer);
@@ -5315,6 +5447,9 @@ function hydrateDesignSettingsPanel(){
   set("designBearWick", designSettings.bearWick);
   set("designAxisText", designSettings.axisText);
   set("designAxisLine", designSettings.axisLine);
+  set("designTimeSep", designSettings.timeSepColor);
+  set("designTitleColor", designSettings.titleColor);
+  set("designStrategyColor", designSettings.strategyColor);
   set("designAxisSize", String(designSettings.axisSize));
   set("designNavButtons", designSettings.navButtons);
   set("designPanelButtons", designSettings.panelButtons);
@@ -5353,6 +5488,9 @@ function readDesignSettingsPanel(){
     bearWick: value("designBearWick") || designSettings.bearWick,
     axisText: value("designAxisText") || designSettings.axisText,
     axisLine: value("designAxisLine") || designSettings.axisLine,
+    timeSepColor: value("designTimeSep") || designSettings.timeSepColor,
+    titleColor: value("designTitleColor") || designSettings.titleColor,
+    strategyColor: value("designStrategyColor") || designSettings.strategyColor,
     axisSize: clamp(Number(value("designAxisSize")) || 12, 9, 18),
     navButtons: value("designNavButtons") || "hover",
     panelButtons: value("designPanelButtons") || "hidden",
@@ -5381,8 +5519,14 @@ function closeDesignSettings(){
 function applyDesignSettingsPanel(){
   readDesignSettingsPanel();
   saveDesignSettings();
+  applyTitleColors();
   closeDesignSettings();
   showToast("Configuración visual guardada");
+}
+function applyTitleColors(){
+  const root = document.documentElement.style;
+  root.setProperty("--title-color", designSettings.titleColor || "#f4f4f5");
+  root.setProperty("--strategy-color", designSettings.strategyColor || "#92939a");
 }
 function renderDesignTemplates(){
   const list = document.getElementById("designTemplateList");
@@ -5511,12 +5655,12 @@ function hydrateMacdProSettingsPanel(){
   document.getElementById("macdProSigOffset").value = settings.sigOffset || 0;
   document.getElementById("macdProHistType").value = settings.histType || "OFF";
   document.getElementById("macdProHistLength").value = settings.histLength || 5;
-  document.getElementById("macdProMacdColor").value = settings.macdColor || "#006ABA";
-  document.getElementById("macdProSignalColor").value = settings.signalColor || "#BA0032";
-  document.getElementById("macdProGrowAbove").value = settings.growAboveColor || "#208AFF";
-  document.getElementById("macdProGrowBelow").value = settings.growBelowColor || "#FFC4D4";
-  document.getElementById("macdProFallAbove").value = settings.fallAboveColor || "#C4D4FF";
-  document.getElementById("macdProFallBelow").value = settings.fallBelowColor || "#FF206A";
+  document.getElementById("macdProMacdColor").value = settings.macdColor || "#f4f4f5";
+  document.getElementById("macdProSignalColor").value = settings.signalColor || "#7a7b82";
+  document.getElementById("macdProGrowAbove").value = settings.growAboveColor || "#d4d4d9";
+  document.getElementById("macdProGrowBelow").value = settings.growBelowColor || "#94949b";
+  document.getElementById("macdProFallAbove").value = settings.fallAboveColor || "#b4b4ba";
+  document.getElementById("macdProFallBelow").value = settings.fallBelowColor || "#63646b";
 }
 function readMacdProSettingsPanel(){
   const settings = currentMacdProSettings();
@@ -5531,12 +5675,12 @@ function readMacdProSettingsPanel(){
   settings.sigOffset = clamp(Number(document.getElementById("macdProSigOffset").value) || 0, 0, 100);
   settings.histType = document.getElementById("macdProHistType").value || "OFF";
   settings.histLength = clamp(Number(document.getElementById("macdProHistLength").value) || 5, 1, 50);
-  settings.macdColor = document.getElementById("macdProMacdColor").value || "#006ABA";
-  settings.signalColor = document.getElementById("macdProSignalColor").value || "#BA0032";
-  settings.growAboveColor = document.getElementById("macdProGrowAbove").value || "#208AFF";
-  settings.growBelowColor = document.getElementById("macdProGrowBelow").value || "#FFC4D4";
-  settings.fallAboveColor = document.getElementById("macdProFallAbove").value || "#C4D4FF";
-  settings.fallBelowColor = document.getElementById("macdProFallBelow").value || "#FF206A";
+  settings.macdColor = document.getElementById("macdProMacdColor").value || "#f4f4f5";
+  settings.signalColor = document.getElementById("macdProSignalColor").value || "#7a7b82";
+  settings.growAboveColor = document.getElementById("macdProGrowAbove").value || "#d4d4d9";
+  settings.growBelowColor = document.getElementById("macdProGrowBelow").value || "#94949b";
+  settings.fallAboveColor = document.getElementById("macdProFallAbove").value || "#b4b4ba";
+  settings.fallBelowColor = document.getElementById("macdProFallBelow").value || "#63646b";
   saveIndicatorSettings();
   redrawAll();
 }
@@ -5576,18 +5720,18 @@ function hydrateBibiruSettingsPanel(){
 function readBibiruSettingsPanel(){
   const settings = currentBibiruSettings();
   settings.sma1Length = clamp(Number(document.getElementById("bibiruSma1Length").value) || 5, 1, 5000);
-  settings.sma1Color = document.getElementById("bibiruSma1Color").value || "#00d4ff";
+  settings.sma1Color = document.getElementById("bibiruSma1Color").value || "#f4f4f5";
   settings.sma1Width = Number(document.getElementById("bibiruSma1Width").value) || 2;
   settings.showSma1 = document.getElementById("bibiruShowSma1").checked;
   settings.sma2Length = clamp(Number(document.getElementById("bibiruSma2Length").value) || 25, 1, 5000);
-  settings.sma2Color = document.getElementById("bibiruSma2Color").value || "#ff9800";
+  settings.sma2Color = document.getElementById("bibiruSma2Color").value || "#c9c9cf";
   settings.sma2Width = Number(document.getElementById("bibiruSma2Width").value) || 2;
   settings.showSma2 = document.getElementById("bibiruShowSma2").checked;
   settings.showVwap = document.getElementById("bibiruShowVwap").checked;
   settings.vwapHeight = clamp(Number(document.getElementById("bibiruVwapHeight").value) || 80, 30, 200);
   document.getElementById("bibiruVwapHeightValue").textContent = settings.vwapHeight;
-  settings.vwapBullColor = document.getElementById("bibiruVwapBullColor").value || "#00e5a0";
-  settings.vwapBearColor = document.getElementById("bibiruVwapBearColor").value || "#ff3355";
+  settings.vwapBullColor = document.getElementById("bibiruVwapBullColor").value || "#f4f4f5";
+  settings.vwapBearColor = document.getElementById("bibiruVwapBearColor").value || "#7a7b82";
   saveIndicatorSettings();
   redrawAll();
 }
@@ -5650,7 +5794,7 @@ function loadBibiruColorProfile(profileId) {
   localStorage.setItem("bibiruActiveColorProfile", profileId);
   
   if (!profile || !profile.colors) {
-    showToast(`Bibiru perfil ${profileId} vacío — guarda con 💾`);
+    showToast(`Bibiru perfil ${profileId} vacío — guarda con ⇩`);
     return;
   }
   
@@ -5835,8 +5979,8 @@ function readSmfSettingsPanel(){
   settings.atrLen = clamp(Number(document.getElementById("smfAtrLen").value) || 14, 1, 500);
   settings.minMult = Math.max(0.1, Number(document.getElementById("smfMinMult").value) || 0.9);
   settings.maxMult = Math.max(settings.minMult, Number(document.getElementById("smfMaxMult").value) || 2.2);
-  settings.bullColor = document.getElementById("smfBullColor").value || "#00c8ff";
-  settings.bearColor = document.getElementById("smfBearColor").value || "#ff005d";
+  settings.bullColor = document.getElementById("smfBullColor").value || "#f4f4f5";
+  settings.bearColor = document.getElementById("smfBearColor").value || "#7a7b82";
   settings.showBands = document.getElementById("smfShowBands").checked;
   settings.showGauge = document.getElementById("smfShowGauge").checked;
   settings.gaugeSize = document.getElementById("smfGaugeSize").value || "Normal";
@@ -5965,7 +6109,6 @@ function readStrategyJrSettingsPanel(){
   const s = getStrategyJrSettingsFor(item);
   s.mode = document.getElementById("jrMode").value;
   s.style = document.getElementById("jrStyle").value;
-  s.colorCandles = document.getElementById("jrColorCandles").checked;
   s.showAllTexts = document.getElementById("jrShowTexts").checked;
   s.showStructure = document.getElementById("jrShowStructureLines").checked;
   s.showInternals = document.getElementById("jrShowInternals").checked;
@@ -6117,10 +6260,10 @@ function readRtcSettingsPanel(){
   settings.overBought = clamp(Number(document.getElementById("rtcStoch6OB").value) || 80, 1, 99);
   settings.overSold = clamp(Number(document.getElementById("rtcStoch6OS").value) || 20, 1, 99);
   if(item.type === "rtcStoch6") settings.slow = clamp(Number(document.getElementById("rtcStoch6Slow").value) || 3, 1, 50);
-  settings.bullColor = document.getElementById("rtcBullColor").value || "#00e0b8";
-  settings.bearColor = document.getElementById("rtcBearColor").value || "#ff3b5c";
-  settings.trapColor = document.getElementById("rtcTrapColor").value || "#ffaa00";
-  settings.zoneColor = document.getElementById("rtcZoneColor").value || "#5b8cff";
+  settings.bullColor = document.getElementById("rtcBullColor").value || "#f4f4f5";
+  settings.bearColor = document.getElementById("rtcBearColor").value || "#7a7b82";
+  settings.trapColor = document.getElementById("rtcTrapColor").value || "#c9c9cf";
+  settings.zoneColor = document.getElementById("rtcZoneColor").value || "#d4d4d9";
   settings.showZones = item.type === "strategyJrV8"
     ? document.getElementById("strategyJrShowZones").checked
     : document.getElementById("rtcShowZones").checked;
@@ -6222,12 +6365,10 @@ function applySettingsPanel(){
   closeSettings();
 }
 function toggleFullscreen(){
-  const target = document.documentElement;
-  if(document.fullscreenElement) {
-    document.exitFullscreen?.();
-  } else {
-    target.requestFullscreen?.();
-  }
+  document.querySelector(".app").classList.toggle("fullscreen");
+}
+function exitFullscreen(){
+  document.querySelector(".app").classList.remove("fullscreen");
 }
 async function loadAlertsFromServer() {
   try {
@@ -6245,7 +6386,6 @@ async function loadAlertsFromServer() {
       if (serverAlerts.length > 0) {
         alerts = [...alerts, ...serverAlerts];
         localStorage.setItem("nas100Alerts", JSON.stringify(alerts));
-        console.log(`📥 ${serverAlerts.length} alertas adicionales del servidor`);
       }
     }
     renderAlertsBtn();
@@ -6259,10 +6399,6 @@ async function loadAlertsFromServer() {
       catch { alerts = []; }
     }
   }
-}
-
-function loadAlerts() {
-  loadAlertsFromServer();
 }
 
 function saveAlerts() {
@@ -6288,7 +6424,6 @@ async function syncAlertsToServer() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ alerts: payload }),
     });
-    console.log(`📤 ${alerts.length} alertas sincronizadas al servidor`);
   } catch (e) {
     console.error('Error sincronizando alertas al servidor:', e);
   }
@@ -6381,7 +6516,6 @@ async function syncDeleteAlertToServer(alertId) {
     await fetch(`/api/alerts/${alertId}`, {
       method: 'DELETE',
     });
-    console.log(`🗑️ Alerta ${alertId} eliminada del servidor`);
   } catch (e) {
     console.error('Error eliminando del servidor:', e);
   }
@@ -6405,34 +6539,11 @@ async function syncUpdateAlertToServer(alert) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    console.log(`🔄 Alerta ${alert.id} actualizada en servidor`);
   } catch (e) {
     console.error('Error actualizando en servidor:', e);
   }
 }
 
-async function syncAlertsToServer() {
-  try {
-    // Enviar alertas al servidor en formato compatible
-    const payload = alerts.map(a => ({
-      id: a.id,
-      symbol: a.symbol,
-      targetPrice: a.value,
-      direction: a.operator === 'cross_up' ? 'above' : a.operator === 'cross_down' ? 'below' : 'cross',
-      message: a.message || `${a.symbol} alerta`,
-      active: a.active !== false,
-      createdAt: a.createdAt ? new Date(a.createdAt).toISOString() : new Date().toISOString(),
-    }));
-    await fetch('/api/alerts/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ alerts: payload }),
-    });
-    console.log(`📤 ${alerts.length} alertas sincronizadas al servidor`);
-  } catch (e) {
-    console.error('Error sincronizando alertas al servidor:', e);
-  }
-}
 function renderAlertsBtn(){
   document.querySelectorAll("[data-role='alerts-badge']").forEach(badge => {
     badge.textContent = alerts.length;
@@ -6658,17 +6769,13 @@ async function sendTelegramAlert(alert, price){
     const botToken = localStorage.getItem("telegram_bot_token") || "8798093524:AAGon-9SrOKqLefgncEfjL5f1K8H3ZGYmIU";
     const chatId = localStorage.getItem("telegram_chat_id") || "6954214949";
     if(!botToken || !chatId) {
-      console.log("⚠️ Telegram no configurado.");
       return;
     }
     const symbolLabel = instrumentFor(alert.symbol)?.label || alert.symbol;
-    const direction = alert.operator === "cross_up" ? "📈 SUBIENDO" : 
-                     alert.operator === "cross_down" ? "📉 BAJANDO" : "🔔 CRUCE";
+    const direction = alert.operator === "cross_up" ? "▲ SUBIENDO" : 
+                     alert.operator === "cross_down" ? "▼ BAJANDO" : "◉ CRUCE";
     const telegramMessage = `🔔 *ALERTA DE PRECIO* 🔔\n━━━━━━━━━━━━━━━━━━━━━\n\n${direction} *${symbolLabel}*\n\n💰 *Precio Actual:* $${fmtPrice(price)}\n🎯 *Precio Objetivo:* $${fmtPrice(alert.value)}\n\n📝 *Mensaje:* ${alert.message}\n⏰ *Hora:* ${new Date().toLocaleString('es-CL')}\n\n━━━━━━━━━━━━━━━━━━━━━\n🤖 Trading Alert System`;
     
-    console.log("📱 Enviando alerta por Telegram...", {symbol: symbolLabel, price, target: alert.value});
-    
-    // Enviar directamente a la API de Telegram
     const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
     const response = await fetch(url, {
       method: 'POST',
@@ -6680,9 +6787,7 @@ async function sendTelegramAlert(alert, price){
       }),
     });
     const data = await response.json();
-    if(data.ok) {
-      console.log("✅ Alerta enviada por Telegram exitosamente");
-    } else {
+    if(!data.ok) {
       console.error("❌ Error de Telegram:", data.description);
     }
   } catch (error) {
@@ -6797,7 +6902,7 @@ function exportChartPNG(){
   hctx.fillStyle = "#111113";
   hctx.fillRect(0, 0, totalW, headerH);
   hctx.font = "bold 13px 'JetBrains Mono', monospace";
-  hctx.fillStyle = inst.color || "#0b84ff";
+  hctx.fillStyle = inst.color || "#f4f4f5";
   hctx.beginPath();
   hctx.arc(18, headerH / 2, 9, 0, Math.PI * 2);
   hctx.fill();
@@ -6810,7 +6915,7 @@ function exportChartPNG(){
   hctx.fillText(`${inst.label}  `, 34, headerH / 2 + 5);
   const labelW = hctx.measureText(`${inst.label}  `).width;
   hctx.font = "13px 'JetBrains Mono', monospace";
-  hctx.fillStyle = "#a9adba";
+  hctx.fillStyle = "#a5a5ac";
   hctx.fillText(`${tfLabel}  ${inst.exchange}`, 34 + labelW, headerH / 2 + 5);
   if(last) {
     const diff = last.c - (panel.candles.length > 1 ? panel.candles[panel.candles.length - 2].c : last.o);
@@ -6821,7 +6926,7 @@ function exportChartPNG(){
     const ohlcW = hctx.measureText(ohlcText).width;
     hctx.fillText(ohlcText, totalW / 2 - ohlcW / 2, headerH / 2 + 5);
     const chgText = `${diff >= 0 ? "+" : ""}${fmtPrice(diff)} (${diff >= 0 ? "+" : ""}${pct.toFixed(2)}%)`;
-    hctx.fillStyle = diff >= 0 ? "#2ed7b4" : "#ff5364";
+    hctx.fillStyle = diff >= 0 ? "#f4f4f5" : "#7a7b82";
     hctx.textAlign = "right";
     hctx.fillText(chgText, totalW - 12, headerH / 2 + 5);
   }
@@ -6835,7 +6940,7 @@ function exportChartPNG(){
   fctx.fillStyle = "#111113";
   fctx.fillRect(0, 0, totalW, footerH);
   fctx.font = "11px 'JetBrains Mono', monospace";
-  fctx.fillStyle = "#6b6e7a";
+  fctx.fillStyle = "#6b6c73";
   fctx.fillText(new Date().toLocaleString("es-ES", {timeZone:"America/New_York", dateStyle:"medium", timeStyle:"short"}), 10, footerH / 2 + 4);
   fctx.textAlign = "right";
   fctx.fillText("ChartFlow", totalW - 10, footerH / 2 + 4);
@@ -6886,12 +6991,13 @@ function init(){
   applyWatchlistOpen();
   updateSymbolShell();
   renderWatchlist();
-  loadAlerts();
+  loadAlertsFromServer();
   initAlertsPanel();
   loadIndicatorSettings();
   loadActiveBibiruColorProfile();
   loadDesignSettings();
   applyDesignToDom();
+  applyTitleColors();
   window.addEventListener("pointerdown", unlockAlertSound, {once:true});
   panels.push(new ChartPanel(0, window.__savedPanelTfs?.[0] || "5m"), new ChartPanel(1, window.__savedPanelTfs?.[1] || "15m"));
   setLayout(layoutMode);
@@ -7292,7 +7398,7 @@ function loadPanelTemplate(num) {
   localStorage.setItem("chartflow_active_panel_template", num);
   
   if (!template) {
-    showToast(`Panel ${num} vacío — guarda con 💾`);
+    showToast(`Panel ${num} vacío — guarda con ⇩`);
     return;
   }
   
@@ -7362,15 +7468,6 @@ function updatePanelTemplateButtons() {
   });
 }
 
-function resetAllPanelTemplates() {
-  if (!confirm("¿Borrar TODOS los templates de panel?")) return;
-  localStorage.removeItem("chartflow_panel_templates");
-  localStorage.removeItem("chartflow_active_panel_template");
-  activePanelTemplate = 1;
-  updatePanelTemplateButtons();
-  showToast("Todos los templates de panel borrados");
-}
-
 function loadActivePanelTemplate() {
   const saved = localStorage.getItem("chartflow_active_panel_template");
   if (saved) {
@@ -7430,7 +7527,7 @@ function loadColorTemplate(num) {
   localStorage.setItem("chartflow_active_color_template", num);
   
   if (!template) {
-    showToast(`Modo ${num} vacío — guarda con 💾`);
+    showToast(`Modo ${num} vacío — guarda con ⇩`);
     return;
   }
   
@@ -7440,6 +7537,7 @@ function loadColorTemplate(num) {
   delete colorSettings.layoutPreset;
   Object.assign(designSettings, colorSettings);
   applyDesignToDom();
+  applyTitleColors();
   saveDesignSettings();
   redrawAll();
   showToast(`Modo de color ${num} aplicado: ${template.name || `Modo ${num}`}`);
@@ -7453,15 +7551,6 @@ function updateColorTemplateButtons() {
     const t = templates[num];
     btn.title = t?.name || `Modo ${num} — vacío`;
   });
-}
-
-function resetAllColorTemplates() {
-  if (!confirm("¿Borrar TODOS los modos de color?")) return;
-  localStorage.removeItem("chartflow_color_templates");
-  localStorage.removeItem("chartflow_active_color_template");
-  activeColorTemplate = 1;
-  updateColorTemplateButtons();
-  showToast("Todos los modos de color borrados");
 }
 
 function loadActiveColorTemplate() {
