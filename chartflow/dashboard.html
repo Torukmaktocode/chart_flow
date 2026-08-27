@@ -4991,7 +4991,9 @@ class ChartPanel {
     this.lastChart = {left, right, top, xH, yW, mainW, mainH, totalH, data, plotLeftPad, stochPane: stochPaneH ? {y0: mainH, h: stochPaneH, count: stochPaneCount} : null};
     const y = v => mainH - ((v - scale.lo) / scale.range) * mainH;
     const rightBars = clamp(Number(designSettings.rightBars) || 0, 0, 40);
-    const maxRightPad = clamp(320 + rightBars * 2, 320, 360);
+    const isMultiPanel = layoutMode > 1;
+    const padBase = isMultiPanel ? 220 : 320;
+    const maxRightPad = clamp(padBase + rightBars * 2, padBase, padBase + 40);
     const visibleCount = Math.max(20, Math.floor(this.candles.length / Math.max(1, this.view.xZoom)));
     const maxOffset = Math.max(0, this.candles.length - visibleCount);
     const scrollRatio = maxOffset > 0 ? clamp((this.view.xOffset || 0) / maxOffset, 0, 1) : 0;
