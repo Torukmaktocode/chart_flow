@@ -6868,17 +6868,17 @@ function unlockAlertSound(){
 // Ping de 1.2s al puerto: si el servicio vive abre pestaña; si no, avisa
 // sin abrir una pagina muerta (los servidores corren en consolas separadas)
 const DASH_SERVICES = {
-  8765: { name: "Stocks Dashboard", how: "cd stock-dashboard && node server.js" },
-  8770: { name: "Dollar / VIX / Bonds", how: "cd dollar-vix-bonds-dashboard && node server.js" },
-  3001: { name: "War Room (noticias)", how: "cd chartflow-backtest\\warroom && node server.js" },
+  8765: { name: "Stocks Dashboard", url: "/dashboard.html", how: "cd stock-dashboard && node server.js" },
+  8770: { name: "Dollar / VIX / Bonds", url: "/dashboard.html", how: "cd dollar-vix-bonds-dashboard && node server.js" },
+  3001: { name: "War Room (noticias)", url: "/", how: "cd chartflow-backtest\\warroom && node server.js" },
 };
 function openDashboard(port){
   const svc = DASH_SERVICES[port];
   if(!svc) return;
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 1200);
+  const t = setTimeout(() => ctrl.abort(), 1500);
   fetch(`http://127.0.0.1:${port}/`, { mode: "no-cors", signal: ctrl.signal })
-    .then(() => { clearTimeout(t); window.open(`http://127.0.0.1:${port}/`, "_blank"); })
+    .then(() => { clearTimeout(t); window.open(`http://127.0.0.1:${port}${svc.url}`, "_blank"); })
     .catch(() => { clearTimeout(t); showToast(`⛔ ${svc.name} apagado — arranca con: ${svc.how}`); });
 }
 function showToast(message){
