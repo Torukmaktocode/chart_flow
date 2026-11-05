@@ -542,13 +542,18 @@ async function fetchOne(feed) {
       const tags  = extractTags(full);
       const cat   = feed.trump ? 'trump' : categorize(full);
       const nas   = analyzeNas(title, body, cat, tags);
+      // Anticlock-skew: algunos feeds (Google News sobre todo) publican
+      // timestamps en el futuro; eso rompe el orden del feed y lo hace
+      // parecer congelado. Se amarra al presente.
+      let itemTs = item.pubDate ? new Date(item.pubDate).getTime() : Date.now();
+      if (!Number.isFinite(itemTs) || itemTs > Date.now() + 120000) itemTs = Date.now();
       return {
         id:          Buffer.from(title).toString('base64').slice(0, 18),
         src:         feed.src,
         cls:         feed.cls,
         imp:         scoreImpact(full),
         cat,
-        ts:          item.pubDate ? new Date(item.pubDate).getTime() : Date.now(),
+        ts:          itemTs,
         title,
         body,
         tags,
