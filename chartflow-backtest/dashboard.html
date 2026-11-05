@@ -1221,7 +1221,13 @@ async function startBacktest(){
   
   try{
     const r=await fetch(url);const d=await r.json();
-    if(!d.candles||d.candles.length<2){toast("Sin datos para ese rango");exitBacktest();return}
+    if(!d.candles||d.candles.length<2){
+      let extra="";
+      if(d.coverage&&d.coverage.total){
+        const f=new Date(d.coverage.first),l=new Date(d.coverage.last);
+        extra=` — historial disponible: ${f.toLocaleDateString("es-ES")} → ${l.toLocaleDateString("es-ES")} (${d.coverage.total.toLocaleString("es-ES")} velas)`;
+      }
+      toast("Sin datos para ese rango"+extra);exitBacktest();return}
     S.candles=d.candles;S.idx=Math.min(60,d.candles.length-1);S.playing=false;
     $("cTotal").textContent=S.candles.length;$("playPause").textContent="▶";$("playPause").classList.remove("playing");
     S.loaded=true;

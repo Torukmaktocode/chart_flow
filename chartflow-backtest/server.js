@@ -570,6 +570,17 @@ function aggregate(candles, targetMinutes) {
   return Array.from(buckets.values()).sort((a, b) => a.t - b.t);
 }
 
+// Cobertura real de datos para avisar al usuario cuando el rango no cruza nada
+function localCoverage(symbol, tf) {
+  try {
+    const filePath = path.join(DATA_DIR, symbol, `${tf}.json`);
+    if (!fs.existsSync(filePath)) return null;
+    const candles = loadYearFileCached(filePath);
+    if (!candles || !candles.length) return null;
+    return { first: candles[0].t, last: candles[candles.length - 1].t, total: candles.length };
+  } catch { return null; }
+}
+
 // Try to serve from local data first, then proxy to ChartFlow
 function handleChartRequest(req, res) {
   const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
@@ -578,6 +589,8 @@ function handleChartRequest(req, res) {
   const fromTs = parseInt(url.searchParams.get("from")) || 0;
   const toTs = parseInt(url.searchParams.get("to")) || 0;
   const count = parseInt(url.searchParams.get("count")) || 0;
+
+  const filePath = path.join(DATA_DIR, symbol, `${tf}.json`);
 
   // Try local data first (count: ultimas N velas del rango; el cliente pide 5000)
   const localData = loadLocalData(symbol, tf, fromTs, toTs, count);
@@ -593,7 +606,24 @@ function handleChartRequest(req, res) {
     return;
   }
 
-  // Fallback to ChartFlow proxy
+  // Si el archivo local EXISTE pero el rango no cruza datos, NO salgas al proxy:
+  // responde con la cobertura real para que la UI avise con fechas exactas
+  if (fs.existsSync(filePath)) {
+    const cov = localCoverage(symbol, tf);
+    console.log(`📁 Local sin velas en rango: ${symbol} ${tf} | cobertura: ${cov ? new Date(cov.first).toISOString().slice(0, 10) + " → " + new Date(cov.last).toISOString().slice(0, 10) : "?"}`);
+    sendJson(res, 200, {
+      symbol,
+      label: symbol,
+      timeframe: tf,
+      source: "local",
+      candles: [],
+      coverage: cov,
+      hint: "El rango pedido no cruza los datos descargados. Ejecuta node download-history.js para refrescar.",
+    });
+    return;
+  }
+
+  // Fallback to ChartFlow proxy (solo si el par simbolo/tf local no existe)
   console.log(`🌐 Proxy: ${symbol} ${tf}`);
   const proxyUrl = `http://127.0.0.1:${CHARTFLOW_PORT}${url.pathname}${url.search}`;
   http.get(proxyUrl, { headers: { "User-Agent": "ChartFlow-Backtest/1.0" } }, proxyRes => {
