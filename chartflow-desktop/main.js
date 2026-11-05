@@ -162,6 +162,16 @@ function activatePane(name) {
     v = new WebContentsView({ webPreferences: { contextIsolation: true, nodeIntegration: false } });
     v.setBounds(paneBounds());
     v.webContents.loadURL(PANE_URLS[name]);
+    // CLIC DERECHO → menu de fondo via evento NATIVO de Electron (el renderer
+    // no siempre entrega 'contextmenu' en views embebidas; el nivel main SI)
+    v.webContents.on("context-menu", (e, params) => {
+      e.preventDefault();
+      const open = params.misspelledWord === "" && false ? null : null;
+      v.webContents.executeJavaScript(
+        `try { openThemeMenu({ clientX: ${params.x}, clientY: ${params.y}, preventDefault(){}, stopPropagation(){} }); 'menu-abierto'; } catch (err) { 'sin menu: ' + err.message; }`,
+        false
+      ).catch(() => {});
+    });
     panes[name] = v;
   }
   if (activePane && activePane !== v) win.contentView.removeChildView(activePane);

@@ -25,7 +25,9 @@ var THEMES = {
            yBg:'#0D0E0E', yTick:'#2b2c31', yText:'#92939a', lastRow:'#54555a',
            xBg:'#0D0E0E', xText:'#92939a', badgeBg:'#f4f4f5' },
 };
-var THEME_NAME = localStorage.getItem('stock_theme') || 'navy';
+// Tema por defecto de la app de escritorio: NEGRO ChartFlow (coherente con la shell;
+// el usuario puede conmutar a azul marino con clic derecho)
+var THEME_NAME = localStorage.getItem('stock_theme') || 'black';
 var CUSTOM_BG = localStorage.getItem('stock_custom_bg') || '#101014';
 function themePalette(){
   if (THEME_NAME === 'custom') {
@@ -98,9 +100,25 @@ function openThemeMenu(e){
   document.body.appendChild(m);
   m.style.left = Math.min(e.clientX, window.innerWidth - 230) + 'px';
   m.style.top = Math.min(e.clientY, window.innerHeight - 150) + 'px';
+  // Cierre: mousedown FUERA del menu (las interacciones dentro no cierran);
+  // Escape tambien cierra; NUNCA usar 'contextmenu' como cierre (mataria el menu
+  // que este mismo evento acaba de abrir)
   setTimeout(function(){
-    document.addEventListener('click', closeThemeMenu, { once: true });
-    document.addEventListener('contextmenu', closeThemeMenu, { once: true });
+    var closer = function (ev) {
+      if (m.contains(ev.target)) return;
+      document.removeEventListener('mousedown', closer);
+      document.removeEventListener('keydown', onEsc);
+      closeThemeMenu();
+    };
+    var onEsc = function (ev) {
+      if (ev.key === 'Escape') {
+        document.removeEventListener('mousedown', closer);
+        document.removeEventListener('keydown', onEsc);
+        closeThemeMenu();
+      }
+    };
+    document.addEventListener('mousedown', closer);
+    document.addEventListener('keydown', onEsc);
   }, 0);
 }
 function pickCustomBg(){
@@ -112,7 +130,21 @@ function pickCustomBg(){
   inp.click();
   inp.remove();
 }
-document.addEventListener('contextmenu', openThemeMenu);
+// Diagnostico global de errores del dashboard (visible en console + usable via CDP)
+window.addEventListener("error", function (e) {
+  window.__lastErr = (e.message || "err") + " @" + (e.lineno || "?");
+  console.error("SD-ERR:", window.__lastErr);
+});
+
+// Adjunte el menu de fondo UNA sola vez, con guarda contra duplicados, en dos
+// momentos (script-end + DOMContentLoaded) para que nunca quede desatado
+function ctxAttach(){
+  if (window.__ctxAttached) { document.removeEventListener('contextmenu', openThemeMenu); }
+  document.addEventListener('contextmenu', openThemeMenu);
+  window.__ctxAttached = true;
+}
+document.addEventListener("DOMContentLoaded", ctxAttach);
+ctxAttach();
 
 var STOCKS = [
   {sym:'NVDA', name:'NVIDIA Corporation', title:'NVIDIA Corporation', dot:'#76b900'},

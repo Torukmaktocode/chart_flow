@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DXY VIX US10Y Dashboard</title>
 <style>
-/* ── TEMAS: navy (original) | black (ChartFlow) — conmutable en la topbar ── */
+/* â”€â”€ TEMAS: navy (original) | black (ChartFlow) â€” conmutable en la topbar â”€â”€ */
 :root{
   --bg:#050614;--panel:#030722;--topbar:#0e0e12;--hover:#252b3a;--surface:#10131d;
   --gridline:rgba(58,63,84,.78);--tick:#303544;--border:#222;
@@ -67,19 +67,19 @@ canvas.main{position:absolute;top:0;left:0}
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:8px">
     <span class="logo">DOLLAR MACRO DASHBOARD</span>
-    <span class="sub">DXY · VIX · US10Y · <span id="intervalLabel">5 min</span></span>
+    <span class="sub">DXY Â· VIX Â· US10Y Â· <span id="intervalLabel">5 min</span></span>
     <div style="display:flex;gap:2px;margin-left:4px;">
       <button class="interval-btn" data-interval="5m" onclick="switchInterval('5m')" style="background:#FF8C42;color:#fff;border:none;padding:1px 6px;font-size:9px;font-family:inherit;cursor:pointer;border-radius:2px;">5m</button>
       <button class="interval-btn" data-interval="15m" onclick="switchInterval('15m')" style="background:#252630;color:#8a8a95;border:none;padding:1px 6px;font-size:9px;font-family:inherit;cursor:pointer;border-radius:2px;">15m</button>
       <button class="interval-btn" data-interval="30m" onclick="switchInterval('30m')" style="background:#252630;color:#8a8a95;border:none;padding:1px 6px;font-size:9px;font-family:inherit;cursor:pointer;border-radius:2px;">30m</button>
     </div>
   </div>
-  <div class="right"><button id="themeBtn" onclick="cycleTheme()" title="Cambiar tema: azul marino / negro ChartFlow">◐ NEGRO</button><span class="live-dot"></span><span id="clock">NY --:--:--</span><button onclick="loadAll()">Actualizar</button></div>
+  <div class="right"><button id="themeBtn" onclick="cycleTheme()" title="Cambiar tema: azul marino / negro ChartFlow">â— NEGRO</button><span class="live-dot"></span><span id="clock">NY --:--:--</span><button onclick="loadAll()">Actualizar</button></div>
 </div>
 <div id="grid" class="grid"></div>
 
 <script>
-// ── TEMAS CONMUTABLES: navy (original) | black (ChartFlow) ──
+// â”€â”€ TEMAS CONMUTABLES: navy (original) | black (ChartFlow) â”€â”€
 // Persistido en localStorage; el canvas lee THEME actual
 const THEMES = {
   navy:  { grid:"rgba(58,63,84,.78)", tick:"#303544", panel:"#030722",
@@ -89,13 +89,13 @@ const THEMES = {
            candleUp:"#f4f4f5", candleDn:"#7a7b82", candleDnFill:"rgba(122,123,130,.55)",
            axisTextY:"#92939a", axisTextX:"#92939a", badgeBg:"#f4f4f5", badgeTx:"#0D0E0E" },
 };
-let THEME = THEMES[localStorage.getItem("dvb_theme") || "navy"] || THEMES.navy;
+let THEME = THEMES[localStorage.getItem("dvb_theme") || "black"] || THEMES.navy;
 let CUSTOM_BG = localStorage.getItem("dvb_custom_bg") || "#101014";
 THEME = THEME || THEMES.navy;
 function themePalette(name){
-  const n = name || localStorage.getItem("dvb_theme") || "navy";
+  const n = name || localStorage.getItem("dvb_theme") || "black";
   if (n === "custom") {
-    const base = THEME; // heredada del arranque válido
+    const base = THEME; // heredada del arranque vÃ¡lido
     return { grid: THEMES.black.grid, tick: THEMES.black.tick, panel: CUSTOM_BG,
              candleUp: THEMES.black.candleUp, candleDn: THEMES.black.candleDn, candleDnFill: THEMES.black.candleDnFill,
              axisTextY: THEMES.black.axisTextY, axisTextX: THEMES.black.axisTextX, badgeBg: THEMES.black.badgeBg, badgeTx: THEMES.black.badgeTx };
@@ -111,7 +111,7 @@ function applyTheme(name){
   root.setProperty("--bg", THEME.panel);
   root.setProperty("--panel", THEME.panel);
   const btn = document.getElementById("themeBtn");
-  if(btn) btn.textContent = name === "navy" ? "◐ NEGRO" : name === "black" ? "◐ AZUL" : "◐ TEMA";
+  if(btn) btn.textContent = name === "navy" ? "â— NEGRO" : name === "black" ? "â— AZUL" : "â— TEMA";
   redrawAll();
   closeThemeMenu();
 }
@@ -124,7 +124,7 @@ function closeThemeMenu(){ var m = document.getElementById("bgCtxMenu"); if (m) 
 function openThemeMenu(e){
   e.preventDefault(); e.stopPropagation();
   closeThemeMenu();
-  var savedTheme = localStorage.getItem("dvb_theme") || "navy";
+  var savedTheme = localStorage.getItem("dvb_theme") || "black";
   var m = document.createElement("div");
   m.id = "bgCtxMenu";
   m.style.cssText = "position:fixed;z-index:9999;min-width:210px;background:#141519;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:6px 0;box-shadow:0 10px 30px rgba(0,0,0,.6);font:10px Arial,sans-serif;color:#f4f4f5";
@@ -132,7 +132,7 @@ function openThemeMenu(e){
   title.textContent = "FONDO DE PANTALLA";
   title.style.cssText = "padding:4px 14px 8px;font-weight:700;letter-spacing:.6px;color:#92939a;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px";
   m.appendChild(title);
-  [["◐ Azul Marino","navy"],["○ Negro ChartFlow","black"],["● Personalizado","custom"]].forEach(function(o){
+  [["â— Azul Marino","navy"],["â—‹ Negro ChartFlow","black"],["â— Personalizado","custom"]].forEach(function(o){
     var row = document.createElement("div");
     row.textContent = o[0];
     row.style.cssText = "padding:7px 14px;cursor:pointer;white-space:nowrap" + (savedTheme===o[1] ? ";background:rgba(129,140,248,.18);color:#a5b4fc" : "");
@@ -151,9 +151,24 @@ function openThemeMenu(e){
   document.body.appendChild(m);
   m.style.left = Math.min(e.clientX, window.innerWidth - 230) + "px";
   m.style.top = Math.min(e.clientY, window.innerHeight - 150) + "px";
+  // Cierre con guarda: clic/touch FUERA del menu lo cierra (dentro no);
+  // Escape cierra; NUNCA 'contextmenu' (cerraria el menu recien abierto)
   setTimeout(function(){
-    document.addEventListener("click", closeThemeMenu, { once: true });
-    document.addEventListener("contextmenu", closeThemeMenu, { once: true });
+    var closer = function (ev) {
+      if (m.contains(ev.target)) return;
+      document.removeEventListener("mousedown", closer);
+      document.removeEventListener("keydown", onMenuItemEsc);
+      closeThemeMenu();
+    };
+    var onMenuItemEsc = function (ev) {
+      if (ev.key === "Escape") {
+        document.removeEventListener("mousedown", closer);
+        document.removeEventListener("keydown", onMenuItemEsc);
+        closeThemeMenu();
+      }
+    };
+    document.addEventListener("mousedown", closer);
+    document.addEventListener("keydown", onMenuItemEsc);
   }, 0);
 }
 function pickCustomBg(){
@@ -167,15 +182,15 @@ function pickCustomBg(){
 }
 document.addEventListener("contextmenu", openThemeMenu);
 function cycleTheme(){
-  const cur = localStorage.getItem("dvb_theme") || "navy";
+  const cur = localStorage.getItem("dvb_theme") || "black";
   applyTheme(cur === "navy" ? "black" : "navy");
 }
 // aplicar el tema guardado ANTES del primer render
-document.documentElement.dataset.theme = (localStorage.getItem("dvb_theme") || "navy");
+document.documentElement.dataset.theme = (localStorage.getItem("dvb_theme") || "black");
 (function initThemeBtn(){
-  const saved = localStorage.getItem("dvb_theme") || "navy";
+  const saved = localStorage.getItem("dvb_theme") || "black";
   const btn = document.getElementById("themeBtn");
-  if(btn) btn.textContent = saved === "navy" ? "◐ NEGRO" : saved === "black" ? "◐ AZUL" : "◐ TEMA";
+  if(btn) btn.textContent = saved === "navy" ? "â— NEGRO" : saved === "black" ? "â— AZUL" : "â— TEMA";
 })();
 
 const INSTRUMENTS = [
@@ -329,7 +344,7 @@ function buildPanel(inst){
   panel.id = "panel-" + inst.key;
   panel.innerHTML = `
     <div class="head">
-      <div class="title"><span class="dot" style="background:${inst.dot}"></span><span>${inst.title}</span><span class="meta" id="meta-${inst.key}">· 5 · TVC</span></div>
+      <div class="title"><span class="dot" style="background:${inst.dot}"></span><span>${inst.title}</span><span class="meta" id="meta-${inst.key}">Â· 5 Â· TVC</span></div>
       <div class="price-row"><span class="price" id="price-${inst.key}">--</span><span class="chg" id="chg-${inst.key}"></span><span class="tick-time" id="tick-${inst.key}"></span></div>
     </div>
     <div class="unit">${inst.unit}</div>
