@@ -3487,11 +3487,16 @@ class ChartPanel {
     const requestedSymbol = designSettings.syncSymbol ? activeSymbolKey : (this.symbolKey || activeSymbolKey);
     const inst = instrumentFor(requestedSymbol);
     if(firstLoad) loading.textContent = `Cargando ${inst.label}...`;
+    // Token de peticion: si se dispara otra carga (nuevo tf/simbolo) esta queda obsoleta
+    this._reqSeq = (this._reqSeq || 0) + 1;
+    const reqSeq = this._reqSeq, reqTf = this.tf;
     try{
       const r = await fetch(`/api/chart?tf=${encodeURIComponent(this.tf)}&symbol=${encodeURIComponent(requestedSymbol)}`, {cache:"no-store"});
       const j = await r.json();
       if(!r.ok) throw new Error(j.error || "Error cargando datos");
+      if(reqSeq !== this._reqSeq) return;
       if(requestedSymbol !== (designSettings.syncSymbol ? activeSymbolKey : (this.symbolKey || activeSymbolKey))) return;
+      if(reqTf !== this.tf) return;
       const meta = instrumentFor(j.symbol || requestedSymbol);
       if(j.label) {
         Object.assign(meta, {
@@ -7474,7 +7479,9 @@ function loadActivePanelTemplate() {
   const saved = localStorage.getItem("chartflow_active_panel_template");
   if (saved) {
     activePanelTemplate = parseInt(saved) || 1;
-    loadPanelTemplate(activePanelTemplate);
+    // SOLO marcar el template como activo; NO re-aplicarlo en cada arranque,
+    // porque pisaba el layout/simbolos/TFs/sync guardados de la ultima sesion.
+    // El template se aplica cuando el usuario hace clic en su boton (M1/M2/M3).
   }
   updatePanelTemplateButtons();
 }
