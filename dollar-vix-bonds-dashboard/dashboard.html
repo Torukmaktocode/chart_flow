@@ -5,39 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DXY VIX US10Y Dashboard</title>
 <style>
+/* ── TEMAS: navy (original) | black (ChartFlow) — conmutable en la topbar ── */
+:root{
+  --bg:#050614;--panel:#030722;--topbar:#0e0e12;--hover:#252b3a;--surface:#10131d;
+  --gridline:rgba(58,63,84,.78);--tick:#303544;--border:#222;
+  --text:#d8dcef;--text-hi:#f0f3ff;--text-price:#f7f8ff;
+  --dim1:#6d7892;--dim2:#7d879d;--dim3:#8d96aa;--dim4:#66708a;
+  --up:#26a69a;--dn:#ef5350;
+  --candle-up:#f4f5ff;--candle-dn:#a0a6b8;--candle-dn-fill:rgba(160,166,184,.55);
+  --badge-bg:#f2f4fa;--badge-tx:#10131d;
+  --logo:#26a69a;--gold:#d9b84f;--gold-t:#f6e08a;--unit-bg:#060a25;
+}
+[data-theme="black"]{
+  --bg:#0D0E0E;--panel:#0D0E0E;--topbar:#141519;--hover:#24262b;--surface:#141519;
+  --gridline:rgba(255,255,255,.06);--tick:#2b2c31;--border:rgba(255,255,255,.08);
+  --text:#f4f4f5;--text-hi:#f4f4f5;--text-price:#f4f4f5;
+  --dim1:#92939a;--dim2:#92939a;--dim3:#92939a;--dim4:#92939a;
+  --candle-up:#f4f4f5;--candle-dn:#7a7b82;--candle-dn-fill:rgba(122,123,130,.55);
+  --badge-bg:#f4f4f5;--badge-tx:#0D0E0E;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;background:#050614;color:#d8dcef;font-family:Arial,Helvetica,sans-serif}
-.topbar{display:flex;align-items:center;justify-content:space-between;background:#0e0e12;border-bottom:1px solid #222;padding:0 10px;height:32px;flex-shrink:0}
-.logo{font-size:12px;font-weight:700;color:#26a69a;letter-spacing:1px}
-.sub{font-size:10px;color:#6d7892;margin-left:8px}
-.right{display:flex;align-items:center;gap:10px;font-size:10px;color:#7d879d}
-.live-dot{width:6px;height:6px;border-radius:50%;background:#26a69a;animation:pulse 2s infinite}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+.topbar{display:flex;align-items:center;justify-content:space-between;background:var(--topbar);border-bottom:1px solid var(--border);padding:0 10px;height:32px;flex-shrink:0}
+.logo{font-size:12px;font-weight:700;color:var(--logo);letter-spacing:1px}
+.sub{font-size:10px;color:var(--dim1);margin-left:8px}
+.right{display:flex;align-items:center;gap:10px;font-size:10px;color:var(--dim2)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--logo);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
-button{background:transparent;border:1px solid #303544;color:#8d96aa;font-family:inherit;font-size:10px;padding:3px 9px;border-radius:3px;cursor:pointer}
-button:hover{background:#252b3a;color:#d8dcef}
-.grid{height:100vh;display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#303544}
-.panel{position:relative;background:#030722;display:flex;flex-direction:column;overflow:hidden}
+button{background:transparent;border:1px solid var(--tick);color:var(--dim3);font-family:inherit;font-size:10px;padding:3px 9px;border-radius:3px;cursor:pointer}
+button:hover{background:var(--hover);color:var(--text)}
+#themeBtn{border-color:var(--gold-t);color:var(--gold-t);font-weight:700}
+.grid{height:100vh;display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--tick)}
+.panel{position:relative;background:var(--panel);display:flex;flex-direction:column;overflow:hidden}
 .head{position:absolute;top:4px;left:8px;right:58px;height:36px;padding:0;z-index:12}
-.title{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#f0f3ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
-.meta{font-size:12px;color:#f0f3ff;font-weight:700;flex:0 0 auto}
+.meta{font-size:12px;color:var(--text-hi);font-weight:700;flex:0 0 auto}
 .price-row{margin-top:2px;display:flex;gap:8px;align-items:center;font-size:12px;font-weight:700}
-.price{color:#f7f8ff}
-.chg.up{color:#26a69a}.chg.dn{color:#ef5350}
-.tick-time{font-size:9px;color:#66708a;margin-left:2px}
-.unit{position:absolute;top:4px;right:8px;z-index:13;border:1px solid #d9b84f;color:#f6e08a;border-radius:3px;padding:4px 7px;font-size:10px;font-weight:700;line-height:1;background:#060a25}
+.price{color:var(--text-price)}
+.chg.up{color:var(--up)}.chg.dn{color:var(--dn)}
+.tick-time{font-size:9px;color:var(--dim4);margin-left:2px}
+.unit{position:absolute;top:4px;right:8px;z-index:13;border:1px solid var(--gold);color:var(--gold-t);border-radius:3px;padding:4px 7px;font-size:10px;font-weight:700;line-height:1;background:var(--unit-bg)}
 .chart{position:relative;flex:1;overflow:hidden}
 canvas.main{position:absolute;top:0;left:0}
-.yaxis{position:absolute;top:0;right:0;bottom:28px;width:70px;background:#030722;border-left:1px solid #303544}
-.xaxis{position:absolute;left:0;right:70px;bottom:0;height:28px;background:#030722;border-top:1px solid #303544}
+.yaxis{position:absolute;top:0;right:0;bottom:28px;width:70px;background:var(--panel);border-left:1px solid var(--tick)}
+.xaxis{position:absolute;left:0;right:70px;bottom:0;height:28px;background:var(--panel);border-top:1px solid var(--tick)}
 .hline{position:absolute;left:0;right:70px;height:1px;background:repeating-linear-gradient(90deg,rgba(235,238,250,.58) 0,rgba(235,238,250,.58) 1px,transparent 1px,transparent 4px);display:none;pointer-events:none;z-index:5}
-.badge{position:absolute;right:8px;width:58px;transform:translateY(-50%);font-size:9px;font-weight:700;line-height:10px;text-align:center;padding:2px 3px;color:#10131d;border-radius:2px;display:none;z-index:6}
-.badge .cd{display:block;margin-top:1px;font-size:9px;font-weight:400;line-height:10px;color:#10131d}
+[data-theme="black"] .hline{background:repeating-linear-gradient(90deg,rgba(244,244,245,.5) 0,rgba(244,244,245,.5) 1px,transparent 1px,transparent 4px)}
+.badge{position:absolute;right:8px;width:58px;transform:translateY(-50%);font-size:9px;font-weight:700;line-height:10px;text-align:center;padding:2px 3px;color:var(--badge-tx);border-radius:2px;display:none;z-index:6}
+.badge .cd{display:block;margin-top:1px;font-size:9px;font-weight:400;line-height:10px;color:var(--badge-tx)}
 .wm{position:absolute;left:calc(50% - 35px);top:50%;transform:translate(-50%,-50%);text-align:center;opacity:.13;pointer-events:none;z-index:1}
-.wm-symbol{font-size:56px;font-weight:800;color:#d8dcef;letter-spacing:1px}
-.wm-label{font-size:24px;color:#d8dcef;margin-top:8px;max-width:720px}
-.loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;flex-direction:column;background:#030722;color:#69738d;font-size:11px;z-index:20}
-.spin{width:15px;height:15px;border:1.5px solid #303544;border-top-color:#26a69a;border-radius:50%;animation:spin .75s linear infinite}
+.wm-symbol{font-size:56px;font-weight:800;color:var(--text);letter-spacing:1px}
+.wm-label{font-size:24px;color:var(--text);margin-top:8px;max-width:720px}
+.loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;flex-direction:column;background:var(--panel);color:var(--dim4);font-size:11px;z-index:20}
+.spin{width:15px;height:15px;border:1.5px solid var(--tick);border-top-color:var(--logo);border-radius:50%;animation:spin .75s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:1100px){.grid{grid-template-columns:1fr}.panel{min-height:33.33vh}.wm-symbol{font-size:32px}.wm-label{font-size:13px}}
 </style>
@@ -53,11 +74,110 @@ canvas.main{position:absolute;top:0;left:0}
       <button class="interval-btn" data-interval="30m" onclick="switchInterval('30m')" style="background:#252630;color:#8a8a95;border:none;padding:1px 6px;font-size:9px;font-family:inherit;cursor:pointer;border-radius:2px;">30m</button>
     </div>
   </div>
-  <div class="right"><span class="live-dot"></span><span id="clock">NY --:--:--</span><button onclick="loadAll()">Actualizar</button></div>
+  <div class="right"><button id="themeBtn" onclick="cycleTheme()" title="Cambiar tema: azul marino / negro ChartFlow">◐ NEGRO</button><span class="live-dot"></span><span id="clock">NY --:--:--</span><button onclick="loadAll()">Actualizar</button></div>
 </div>
 <div id="grid" class="grid"></div>
 
 <script>
+// ── TEMAS CONMUTABLES: navy (original) | black (ChartFlow) ──
+// Persistido en localStorage; el canvas lee THEME actual
+const THEMES = {
+  navy:  { grid:"rgba(58,63,84,.78)", tick:"#303544", panel:"#030722",
+           candleUp:"#f4f5ff", candleDn:"#a0a6b8", candleDnFill:"rgba(160,166,184,.55)",
+           axisTextY:"#e5e9f3", axisTextX:"#858da3", badgeBg:"#f2f4fa", badgeTx:"#10131d" },
+  black: { grid:"rgba(255,255,255,.06)", tick:"#2b2c31", panel:"#0D0E0E",
+           candleUp:"#f4f4f5", candleDn:"#7a7b82", candleDnFill:"rgba(122,123,130,.55)",
+           axisTextY:"#92939a", axisTextX:"#92939a", badgeBg:"#f4f4f5", badgeTx:"#0D0E0E" },
+};
+let THEME = THEMES[localStorage.getItem("dvb_theme") || "navy"] || THEMES.navy;
+let CUSTOM_BG = localStorage.getItem("dvb_custom_bg") || "#101014";
+THEME = THEME || THEMES.navy;
+function themePalette(name){
+  const n = name || localStorage.getItem("dvb_theme") || "navy";
+  if (n === "custom") {
+    const base = THEME; // heredada del arranque válido
+    return { grid: THEMES.black.grid, tick: THEMES.black.tick, panel: CUSTOM_BG,
+             candleUp: THEMES.black.candleUp, candleDn: THEMES.black.candleDn, candleDnFill: THEMES.black.candleDnFill,
+             axisTextY: THEMES.black.axisTextY, axisTextX: THEMES.black.axisTextX, badgeBg: THEMES.black.badgeBg, badgeTx: THEMES.black.badgeTx };
+  }
+  return THEMES[n] || THEMES.navy;
+}
+function applyTheme(name){
+  THEME = themePalette(name);
+  if (name === "custom") { THEME.panel = CUSTOM_BG; }
+  localStorage.setItem("dvb_theme", name);
+  document.documentElement.dataset.theme = name;
+  var root = document.documentElement.style;
+  root.setProperty("--bg", THEME.panel);
+  root.setProperty("--panel", THEME.panel);
+  const btn = document.getElementById("themeBtn");
+  if(btn) btn.textContent = name === "navy" ? "◐ NEGRO" : name === "black" ? "◐ AZUL" : "◐ TEMA";
+  redrawAll();
+  closeThemeMenu();
+}
+function applyCustomBg(hex){
+  CUSTOM_BG = hex;
+  localStorage.setItem("dvb_custom_bg", hex);
+  applyTheme("custom");
+}
+function closeThemeMenu(){ var m = document.getElementById("bgCtxMenu"); if (m) m.remove(); }
+function openThemeMenu(e){
+  e.preventDefault(); e.stopPropagation();
+  closeThemeMenu();
+  var savedTheme = localStorage.getItem("dvb_theme") || "navy";
+  var m = document.createElement("div");
+  m.id = "bgCtxMenu";
+  m.style.cssText = "position:fixed;z-index:9999;min-width:210px;background:#141519;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:6px 0;box-shadow:0 10px 30px rgba(0,0,0,.6);font:10px Arial,sans-serif;color:#f4f4f5";
+  var title = document.createElement("div");
+  title.textContent = "FONDO DE PANTALLA";
+  title.style.cssText = "padding:4px 14px 8px;font-weight:700;letter-spacing:.6px;color:#92939a;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px";
+  m.appendChild(title);
+  [["◐ Azul Marino","navy"],["○ Negro ChartFlow","black"],["● Personalizado","custom"]].forEach(function(o){
+    var row = document.createElement("div");
+    row.textContent = o[0];
+    row.style.cssText = "padding:7px 14px;cursor:pointer;white-space:nowrap" + (savedTheme===o[1] ? ";background:rgba(129,140,248,.18);color:#a5b4fc" : "");
+    row.onclick = function(){ if (o[1]==="custom") pickCustomBg(); else applyTheme(o[1]); };
+    if (o[1]==="custom") {
+      var sw = document.createElement("input");
+      sw.type = "color";
+      sw.value = CUSTOM_BG;
+      sw.style.cssText = "width:20px;height:20px;border:1px solid rgba(255,255,255,.2);background:transparent;border-radius:3px;padding:0;margin-left:8px;vertical-align:middle;cursor:pointer";
+      sw.oninput = function(){ applyCustomBg(sw.value); };
+      sw.onclick = function(ev){ ev.stopPropagation(); };
+      row.appendChild(sw);
+    }
+    m.appendChild(row);
+  });
+  document.body.appendChild(m);
+  m.style.left = Math.min(e.clientX, window.innerWidth - 230) + "px";
+  m.style.top = Math.min(e.clientY, window.innerHeight - 150) + "px";
+  setTimeout(function(){
+    document.addEventListener("click", closeThemeMenu, { once: true });
+    document.addEventListener("contextmenu", closeThemeMenu, { once: true });
+  }, 0);
+}
+function pickCustomBg(){
+  var inp = document.createElement("input");
+  inp.type = "color";
+  inp.value = CUSTOM_BG;
+  inp.oninput = function(){ applyCustomBg(inp.value); };
+  document.body.appendChild(inp);
+  inp.click();
+  inp.remove();
+}
+document.addEventListener("contextmenu", openThemeMenu);
+function cycleTheme(){
+  const cur = localStorage.getItem("dvb_theme") || "navy";
+  applyTheme(cur === "navy" ? "black" : "navy");
+}
+// aplicar el tema guardado ANTES del primer render
+document.documentElement.dataset.theme = (localStorage.getItem("dvb_theme") || "navy");
+(function initThemeBtn(){
+  const saved = localStorage.getItem("dvb_theme") || "navy";
+  const btn = document.getElementById("themeBtn");
+  if(btn) btn.textContent = saved === "navy" ? "◐ NEGRO" : saved === "black" ? "◐ AZUL" : "◐ TEMA";
+})();
+
 const INSTRUMENTS = [
   {key:"DXY", title:"Indice del dolar de EE. UU.", symbol:"DXY", mode:"candles", color:"#f4f5ff", dot:"#26a69a", decimals:3, suffix:"", unit:"USD"},
   {key:"VIX", title:"Indice Volatility S&P 500", symbol:"VIX", mode:"line", color:"#ff334f", dot:"#ef5350", decimals:2, suffix:"", unit:"USD"},
@@ -439,7 +559,7 @@ function draw(inst){
 
   const ctx = fitCanvas(main, w, h);
   ctx.clearRect(0,0,w,h);
-  ctx.strokeStyle="rgba(58,63,84,.78)";
+  ctx.strokeStyle=THEME.grid;
   ctx.lineWidth=1;
   for(let i=0;i<=5;i++){ const yy=Math.round(h/5*i)+.5; ctx.beginPath(); ctx.moveTo(0,yy); ctx.lineTo(w,yy); ctx.stroke(); }
   for(let i=0;i<=5;i++){ const xx=Math.round(w/5*i)+.5; ctx.beginPath(); ctx.moveTo(xx,0); ctx.lineTo(xx,h); ctx.stroke(); }
@@ -457,8 +577,8 @@ function draw(inst){
     renderData.forEach((p,i)=>{
       const xx=x(i), yo=y(p.o), yc=y(p.c), yh=y(p.h), yl=y(p.l);
       const rising = p.c >= p.o;
-      ctx.strokeStyle = rising ? "#f4f6ff" : "#a0a6b8";
-      ctx.fillStyle = rising ? "#f4f6ff" : "rgba(160,166,184,.55)";
+      ctx.strokeStyle = rising ? THEME.candleUp : THEME.candleDn;
+      ctx.fillStyle = rising ? THEME.candleUp : THEME.candleDnFill;
       ctx.beginPath(); ctx.moveTo(xx,yh); ctx.lineTo(xx,yl); ctx.stroke();
       const top = Math.min(yo,yc), bodyH = Math.max(1, Math.abs(yc-yo));
       ctx.fillRect(xx-candleW/2, top, candleW, bodyH);
@@ -469,22 +589,22 @@ function draw(inst){
   const lastY = clamp(y(last), 1, h-1);
   hline.style.display="block"; hline.style.top=Math.round(lastY)+"px";
   badge.style.display="block"; badge.style.top=Math.round(lastY)+"px"; badge.innerHTML=`<span>${fmt(last, inst)}</span><span class="cd">${candleCountdownText(Date.now())}</span>`;
-  badge.style.background = inst.mode === "line" ? "#ff334f" : "#f2f4fa";
-  badge.style.color = inst.mode === "line" ? "#fff" : "#10131d";
+  badge.style.background = inst.mode === "line" ? (THEME.badgeLine || "#ff334f") : THEME.badgeBg;
+  badge.style.color = inst.mode === "line" ? "#fff" : THEME.badgeTx;
 
   const yctx=fitCanvas(yCanvas, YW, h);
-  yctx.clearRect(0,0,YW,h); yctx.fillStyle="#030722"; yctx.fillRect(0,0,YW,h);
+  yctx.clearRect(0,0,YW,h); yctx.fillStyle=THEME.panel; yctx.fillRect(0,0,YW,h);
   yctx.font='11px Arial,Helvetica,sans-serif'; yctx.textAlign="right";
   for(let i=0;i<=6;i++){
     if(i === 0) continue;
     const val = hi - (hi-lo)/6*i, yy=Math.round(h/6*i);
-    yctx.fillStyle="#303544"; yctx.fillRect(0,yy,5,1);
-    yctx.fillStyle="#e5e9f3"; yctx.fillText(fmt(val,inst), YW-10, clamp(yy+3,9,h-2));
+    yctx.fillStyle=THEME.tick; yctx.fillRect(0,yy,5,1);
+    yctx.fillStyle=THEME.axisTextY; yctx.fillText(fmt(val,inst), YW-10, clamp(yy+3,9,h-2));
   }
 
   const xctx=fitCanvas(xCanvas, w, XH);
-  xctx.clearRect(0,0,w,XH); xctx.fillStyle="#030722"; xctx.fillRect(0,0,w,XH);
-  xctx.font='11px Arial,Helvetica,sans-serif'; xctx.fillStyle="#858da3"; xctx.textAlign="center";
+  xctx.clearRect(0,0,w,XH); xctx.fillStyle=THEME.panel; xctx.fillRect(0,0,w,XH);
+  xctx.font='11px Arial,Helvetica,sans-serif'; xctx.fillStyle=THEME.axisTextX; xctx.textAlign="center";
   const seen={};
   for(let i=0;i<5;i++){
     const spanMs = data[data.length-1].t - data[0].t;

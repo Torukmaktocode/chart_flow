@@ -15,6 +15,105 @@ var MIN_VISIBLE_BARS = 8;
 var MAX_X_ZOOM = 90;
 var TV_DEFAULT_VISIBLE_BARS = 38;
 
+// ── TEMAS: navy | black (ChartFlow) | custom (color libre) ────
+// El menu se abre con CLIC DERECHO en cualquier parte del dashboard.
+var THEMES = {
+  navy:  { panel:'#030722', grid:'rgba(58,63,84,0.78)', dot:'#eef1fb', dotRing:'#030722',
+           yBg:'#030722', yTick:'#303544', yText:'#e5e9f3', lastRow:'#555e72',
+           xBg:'#030722', xText:'#787b86', badgeBg:'#f2f4fa' },
+  black: { panel:'#0D0E0E', grid:'rgba(255,255,255,.06)', dot:'#f4f4f5', dotRing:'#0D0E0E',
+           yBg:'#0D0E0E', yTick:'#2b2c31', yText:'#92939a', lastRow:'#54555a',
+           xBg:'#0D0E0E', xText:'#92939a', badgeBg:'#f4f4f5' },
+};
+var THEME_NAME = localStorage.getItem('stock_theme') || 'navy';
+var CUSTOM_BG = localStorage.getItem('stock_custom_bg') || '#101014';
+function themePalette(){
+  if (THEME_NAME === 'custom') {
+    var base = THEMES.black;
+    var p = {};
+    for (var k in base) p[k] = base[k];
+    p.panel = CUSTOM_BG; p.yBg = CUSTOM_BG; p.xBg = CUSTOM_BG; p.dotRing = CUSTOM_BG;
+    return p;
+  }
+  return THEMES[THEME_NAME] || THEMES.navy;
+}
+var THEME = themePalette();
+function applyTheme(name){
+  THEMES.custom = THEMES.custom || (function(){ var b = THEMES.black, o = {}; for (var k in b) o[k] = b[k]; return o; })();
+  if (name === 'custom') { THEMES.custom.panel = CUSTOM_BG; THEMES.custom.yBg = CUSTOM_BG; THEMES.custom.xBg = CUSTOM_BG; THEMES.custom.dotRing = CUSTOM_BG; }
+  THEME_NAME = name;
+  localStorage.setItem('stock_theme', name);
+  document.documentElement.dataset.theme = name;
+  THEME = themePalette();
+  var root = document.documentElement.style;
+  root.setProperty('--panel', THEME.panel);
+  root.setProperty('--bg', THEME.panel);
+  if (window.redrawAll) redrawAll();
+  var btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = name === 'navy' ? '◐ NEGRO' : '◐ AZUL';
+  closeThemeMenu();
+}
+function cycleTheme(){ applyTheme(THEME_NAME === 'navy' ? 'black' : 'navy'); }
+function applyCustomBg(hex){
+  CUSTOM_BG = hex;
+  localStorage.setItem('stock_custom_bg', hex);
+  applyTheme('custom');
+}
+function closeThemeMenu(){ var m = document.getElementById('bgCtxMenu'); if (m) m.remove(); }
+function openThemeMenu(e){
+  e.preventDefault(); e.stopPropagation();
+  closeThemeMenu();
+  var m = document.createElement('div');
+  m.id = 'bgCtxMenu';
+  m.style.cssText = 'position:fixed;z-index:9999;min-width:210px;background:#141519;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:6px 0;box-shadow:0 10px 30px rgba(0,0,0,.6);font:10px Arial,sans-serif;color:#f4f4f5';
+  var title = document.createElement('div');
+  title.textContent = 'FONDO DE PANTALLA';
+  title.style.cssText = 'padding:4px 14px 8px;font-weight:700;letter-spacing:.6px;color:#92939a;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px';
+  m.appendChild(title);
+  var opts = [
+    ['◐ Azul Marino', 'navy'],
+    ['○ Negro ChartFlow', 'black'],
+    ['● Personalizado', 'custom'],
+  ];
+  opts.forEach(function (o) {
+    var row = document.createElement('div');
+    row.textContent = o[0];
+    var active = THEME_NAME === o[1];
+    row.style.cssText = 'padding:7px 14px;cursor:pointer;white-space:nowrap' + (active ? ';background:rgba(129,140,248,.18);color:#a5b4fc' : '');
+    row.onclick = function () {
+      if (o[1] === 'custom') { pickCustomBg(); }
+      else applyTheme(o[1]);
+    };
+    if (o[1] === 'custom') {
+      var sw = document.createElement('input');
+      sw.type = 'color';
+      sw.value = CUSTOM_BG;
+      sw.style.cssText = 'width:20px;height:20px;border:1px solid rgba(255,255,255,.2);background:transparent;border-radius:3px;padding:0;margin-left:8px;vertical-align:middle;cursor:pointer';
+      sw.oninput = function () { applyCustomBg(sw.value); };
+      sw.onclick = function (ev) { ev.stopPropagation(); };
+      row.appendChild(sw);
+    }
+    m.appendChild(row);
+  });
+  document.body.appendChild(m);
+  m.style.left = Math.min(e.clientX, window.innerWidth - 230) + 'px';
+  m.style.top = Math.min(e.clientY, window.innerHeight - 150) + 'px';
+  setTimeout(function(){
+    document.addEventListener('click', closeThemeMenu, { once: true });
+    document.addEventListener('contextmenu', closeThemeMenu, { once: true });
+  }, 0);
+}
+function pickCustomBg(){
+  var inp = document.createElement('input');
+  inp.type = 'color';
+  inp.value = CUSTOM_BG;
+  inp.oninput = function(){ applyCustomBg(inp.value); };
+  document.body.appendChild(inp);
+  inp.click();
+  inp.remove();
+}
+document.addEventListener('contextmenu', openThemeMenu);
+
 var STOCKS = [
   {sym:'NVDA', name:'NVIDIA Corporation', title:'NVIDIA Corporation', dot:'#76b900'},
   {sym:'AAPL', name:'Apple Inc.',          title:'Apple Inc', dot:'#b8beca'},
@@ -585,7 +684,7 @@ function drawPanel(s, pts, livePrice) {
   var ctx = fitCanvas(cv, cW, cH);
   ctx.clearRect(0,0,cW,cH);
 
-  ctx.strokeStyle = 'rgba(58,63,84,0.78)';
+  ctx.strokeStyle = THEME.grid;
   ctx.lineWidth = 1;
   for (var i = 0; i <= 5; i++) {
     var gy = Math.round((cH/5)*i) + 0.5;
@@ -614,8 +713,8 @@ function drawPanel(s, pts, livePrice) {
   lastY = Math.max(1, Math.min(cH-1, lastY));
   var lastX = lineCoords.length ? lineCoords[lineCoords.length - 1].x : Math.max(1, cW - RIGHT_GAP);
 
-  ctx.fillStyle = '#eef1fb';
-  ctx.strokeStyle = '#030722';
+  ctx.fillStyle = THEME.dot;
+  ctx.strokeStyle = THEME.dotRing;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(lastX, lastY, 3.2, 0, Math.PI * 2);
@@ -628,11 +727,11 @@ function drawPanel(s, pts, livePrice) {
   pb.style.display = 'block';
   pb.innerHTML = '<span>' + fmtP(last) + '</span><span class="cd">' + candleCountdownText(Date.now()) + '</span>';
   pb.style.top = Math.round(lastY) + 'px';
-  pb.style.background = '#f2f4fa';
+  pb.style.background = THEME.badgeBg;
 
   var yCtx = fitCanvas(yaC, YAXW, cH);
   yCtx.clearRect(0,0,YAXW,cH);
-  yCtx.fillStyle = '#030722';
+  yCtx.fillStyle = THEME.yBg;
   yCtx.fillRect(0,0,YAXW,cH);
   yCtx.fillStyle = '#787b86';
   yCtx.font = '11px Arial,Helvetica,sans-serif';
@@ -642,20 +741,20 @@ function drawPanel(s, pts, livePrice) {
     if (yi === 0) continue;
     var yv  = hi - (range / ySteps) * yi;
     var ypy = Math.round((cH / ySteps) * yi);
-    yCtx.fillStyle = '#303544';
+    yCtx.fillStyle = THEME.yTick;
     yCtx.fillRect(0, ypy, 5, 1);
-    yCtx.fillStyle = '#e5e9f3';
+    yCtx.fillStyle = THEME.yText;
     var labelY = Math.min(cH - 2, Math.max(9, ypy + 3));
     yCtx.fillText(fmtP(yv), YAXW - 10, labelY);
   }
-  yCtx.fillStyle = '#555e72';
+  yCtx.fillStyle = THEME.lastRow;
   yCtx.fillRect(0, Math.round(lastY), YAXW, 1);
 
   var xCtx = fitCanvas(xaC, cW, XAXH);
   xCtx.clearRect(0,0,cW,XAXH);
-  xCtx.fillStyle = '#030722';
+  xCtx.fillStyle = THEME.xBg;
   xCtx.fillRect(0,0,cW,XAXH);
-  xCtx.fillStyle = '#787b86';
+  xCtx.fillStyle = THEME.xText;
   xCtx.font = '11px Arial,Helvetica,sans-serif';
   xCtx.textAlign = 'center';
   var spanMs = pts[pts.length - 1].t - pts[0].t;
