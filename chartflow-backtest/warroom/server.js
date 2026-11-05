@@ -861,12 +861,20 @@ async function fetchAllNews() {
   });
 
   all.sort((a, b) => b.ts - a.ts);
-  newsCache     = all.slice(0, 150);
+  // Conservar las noticias inyectadas del calendario económico (vigencia 2h)
+  const keepEcon = newsCache.filter(n => n.econ && (Date.now() - n.ts) < 7200000 && !all.some(a => a.id === n.id));
+  newsCache = [...all, ...keepEcon].sort((a, b) => b.ts - a.ts).slice(0, 150);
   lastNewsFetch = Date.now();
 
   const srcs = [...new Set(newsCache.map(n => n.src))].length;
   const okFeeds = Object.values(feedHealth).filter(h => h.ok).length;
   console.log(`[OK] ${newsCache.length} artículos de ${srcs} fuentes activas (${okFeeds} feeds saludables)`);
+  // Titulares en español: adjuntar de caché o encolar para traducción de fondo
+  newsCache.forEach(n => {
+    const tEs = transCache.get('es:' + n.title);
+    if (tEs) n.titleEs = tEs;
+    else if (!n.econ) queueTranslate('news', n.id, n.title);
+  });
   return newsCache;
 }
 
@@ -1004,8 +1012,395 @@ app.get('/api/liveprices', async (req, res) => {
 });
 
 // ── ECONOMIC CALENDAR — FOREX FACTORY ─────────────────────────
-const ECON_CACHE_TTL = 300000;
+const ECON_CACHE_TTL     = 300000;
+const ECON_INJECT_WINDOW = 6 * 60 * 1000;   // se emite como noticia durante 6 min tras el dato
+const ECON_TICK          = 30 * 1000;
 let econCache = null; let econCacheTs = 0;
+const econInjected = new Set();
+const econPreAlerted = new Set();
+
+// Etiqueta de hora de FF ("4:30am", "All Day") → ISO en hora ET con offset DST correcto
+function ffTimeToISO(dateStr, label) {
+  const m = String(label || '').trim().match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/i);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  const mi = m[2];
+  if (/pm/i.test(m[3]) && h !== 12) h += 12;
+  if (/am/i.test(m[3]) && h === 12) h = 0;
+  // Offset de US Eastern según DST (2do domingo marzo → 1er domingo noviembre)
+  const d = new Date(dateStr + 'T12:00:00Z');
+  const y = d.getUTCFullYear();
+  const dstStart = new Date(Date.UTC(y, 2, 1)); dstStart.setUTCDate(1 + (7 - dstStart.getUTCDay()) % 7 + 7);
+  const dstEnd   = new Date(Date.UTC(y, 10, 1)); dstEnd.setUTCDate(1 + (7 - dstEnd.getUTCDay()) % 7);
+  const isDst = d >= dstStart && d < dstEnd;
+  return dateStr + 'T' + String(h).padStart(2, '0') + ':' + mi + ':00' + (isDst ? '-04:00' : '-05:00');
+}
+
+// JSON gratuito de ForexFactory (thisweek + nextweek si existe)
+const FF_JSON_URLS = [
+  'https://nfs.faireconomy.media/ff_calendar_thisweek.json',
+  'https://nfs.faireconomy.media/ff_calendar_nextweek.json',
+];
+async function fetchEconFFJson() {
+  const out = [];
+  for (const url of FF_JSON_URLS) {
+    try {
+      const r = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        timeout: 15000
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const arr = await r.json();
+      if (!Array.isArray(arr)) throw new Error('formato inesperado');
+      const seenIds = new Set();
+      arr.forEach(ev => {
+        const time = new Date(ev.date).getTime();
+        if (!time || !ev.title) return;
+        const id = 'econ-' + time + '-' + (ev.country || '') + '-' + String(ev.title).slice(0, 40);
+        if (seenIds.has(id)) return;
+        seenIds.add(id);
+        out.push({
+          id,
+          time,
+          date: String(ev.date).slice(0, 10),
+          timeLabel: new Date(time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York' }),
+          currency: ev.country || '',
+          event: ev.title,
+          impact: ev.impact === 'High' ? 'High' : ev.impact === 'Medium' ? 'Medium' : ev.impact === 'Holiday' ? 'Holiday' : 'Low',
+          forecast: ev.forecast || null,
+          previous: ev.previous || null,
+          actual: null,
+          isPast: time <= Date.now(),
+        });
+      });
+    } catch (e) {
+      if (url.includes('thisweek')) console.log('[ECON] ff json thisweek failed:', e.message);
+    }
+  }
+  return out;
+}
+
+function econToNewsItem(e) {
+  const imp = e.isSpeech ? 'm' : (e.impact === 'High' ? 'c' : e.impact === 'Medium' ? 'h' : 'm');
+  const parts = [];
+  if (e.actual) parts.push('real ' + e.actual);
+  if (e.forecast) parts.push('prev. ' + e.forecast);
+  if (e.previous) parts.push('ant. ' + e.previous);
+  const suffix = parts.length ? ': ' + parts.join(' · ') : '';
+  return {
+    id: e.id,
+    src: (e.currency || 'ECON') + ' DATA',
+    cls: 'sec',
+    imp,
+    cat: 'econ',
+    econ: true,
+    econSpeech: !!e.isSpeech,
+    ts: e.time,
+    title: (e.isSpeech ? '🔊 ' : '') + (e.currency || 'ECON') + ' — ' + e.event + suffix,
+    body: e.isSpeech
+      ? 'Discurso/comparecencia de ' + (e.currency || 'ECON') + ' (' + (e.src || 'calendario') + ') · puede mover el mercado por declaraciones'
+      : 'Calendario Económico · impacto ' + e.impact + (e.actual ? '' : ' · dato por confirmar'),
+    tags: e.isSpeech ? ['DISCURSO'] : (e.impact === 'High' ? ['NAS100'] : []),
+    trump: false,
+    trumpDirect: false,
+    url: 'https://www.forexfactory.com/calendar',
+    nasDir: null, nasKey: null, nasMag: 'low', conf: 0, nasEs: '', nasEn: '',
+  };
+}
+
+// Tick: datos de alto/medio impacto recién publicados se inyectan en el feed
+// Resultados reales (scrape de FF trae el campo "actual" que el JSON no incluye)
+const econActuals = new Map(); // key "event|currency" → actual
+let econActualsTs = 0;
+// ── Fuente complementaria: TRADING ECONOMICS (cobertura tipo Investing) ──
+// TE publica días/eventos que ForexFactory no lista (subastas, balance Fed,
+// desgloses de claims...). Su SSR marca: fila <tr data-id>, fecha en td class,
+// hora 12h en GMT, importancia en 'calendar-date-N' (3=alto).
+const TE_CUR = new Map([
+  ['united states','USD'],['euro area','EUR'],['germany','EUR'],['france','EUR'],
+  ['spain','EUR'],['italy','EUR'],['netherlands','EUR'],['belgium','EUR'],
+  ['austria','EUR'],['portugal','EUR'],['ireland','EUR'],['finland','EUR'],
+  ['greece','EUR'],['slovakia','EUR'],['slovenia','EUR'],['latvia','EUR'],
+  ['lithuania','EUR'],['estonia','EUR'],['luxembourg','EUR'],['cyprus','EUR'],
+  ['malta','EUR'],['united kingdom','GBP'],['japan','JPY'],['china','CNY'],
+  ['canada','CAD'],['switzerland','CHF'],['australia','AUD'],['new zealand','NZD'],
+  ['hong kong','HKD'],['singapore','SGD'],['south korea','KRW'],['india','INR'],
+  ['brazil','BRL'],['mexico','MXN'],['south africa','ZAR'],['sweden','SEK'],
+  ['norway','NOK'],['denmark','DKK'],['turkey','TRY'],['singapore','SGD'],
+]);
+function parseTECTime(chunk) {
+  const dateM = chunk.match(/class='\s*(\d{4}-\d{2}-\d{2})'/);
+  const timeM = chunk.match(/>\s*(\d{1,2}):(\d{2})\s*(AM|PM)\s*</i);
+  if (!dateM || !timeM) return null;
+  let hh = parseInt(timeM[1], 10);
+  const ap = timeM[3].toLowerCase();
+  if (ap === 'pm' && hh !== 12) hh += 12;
+  if (ap === 'am' && hh === 12) hh = 0;
+  const time = new Date(dateM[1] + 'T' + String(hh).padStart(2, '0') + ':' + timeM[2] + ':00Z').getTime(); // SSR de TE va en GMT
+  return time ? { date: dateM[1], time } : null;
+}
+async function fetchTECalendar() {
+  const rows = [];
+  try {
+    const r = await fetch('https://tradingeconomics.com/calendar', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36', 'Accept-Language': 'en-US,en;q=0.9' },
+      timeout: 20000
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const html = await r.text();
+    const chunks = html.split('<tr data-url=').slice(1);
+    const seenTe = new Set();
+    chunks.forEach(ch => {
+      const cur = TE_CUR.get((ch.match(/data-country="([^"]+)"/) || [])[1]);
+      if (!cur) return;
+      const dt = parseTECTime(ch);
+      const nameM = ch.match(/class='calendar-event'[^>]*>([^<]+)</);
+      if (!dt || !nameM) return;
+      // TE repite filas del mismo evento con data-id distintos: clave por fecha+hora+evento
+      const antiDup = dt.date + '|' + dt.time + '|' + String(nameM[1]).trim().toLowerCase();
+      if (seenTe.has(antiDup)) return;
+      seenTe.add(antiDup);
+      const impM  = ch.match(/calendar-date-(\d)/);
+      const actM  = ch.match(/id='actual'[^>]*>\s*([^<]{1,25})</);
+      const preM  = ch.match(/id='previous'[^>]*>\s*([^<]{1,25})</);
+      const conM  = ch.match(/id='consensus'[^>]*>\s*([^<]{1,25})</);
+      const fcM   = ch.match(/id='forecast'[^>]*>\s*([^<]{1,25})</);
+      const clean = s => { const v = (s || '').trim(); return v ? v : null; };
+      rows.push({
+        id: 'te-' + dt.time + '-' + cur + '-' + String(nameM[1]).slice(0, 40),
+        time: dt.time,
+        // Fecha por HORA ET (lo que espera el usuario: 18:00-00:00 ET = mismo día;
+        // tras las 00:00 ET ya es el día siguiente), no por el día GMT de TE
+        date: new Date(dt.time).toLocaleDateString('en-CA', { timeZone: 'America/New_York' }),
+        timeLabel: new Date(dt.time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York' }),
+        currency: cur,
+        event: nameM[1].trim(),
+        impact: impM ? (impM[1] === '3' ? 'High' : impM[1] === '2' ? 'Medium' : 'Low') : 'Low',
+        forecast: clean(conM && conM[1]) || clean(fcM && fcM[1]),
+        previous: clean(preM && preM[1]),
+        actual: clean(actM && actM[1]),
+        isPast: dt.time <= Date.now(),
+        src: 'TE',
+      });
+    });
+    if (rows.length) console.log(`[ECON] Trading Economics: ${rows.length} eventos (${chunks.length} filas)`);
+  } catch (e) {
+    console.log('[ECON] TE calendar falló:', e.message);
+  }
+  return rows;
+}
+
+function econEventKey(e) { return String(e.event) + '|' + (e.currency || ''); }
+
+async function enrichEconActuals() {
+  if (Date.now() - econActualsTs < 60000) return;
+  econActualsTs = Date.now();
+  try {
+    const rows = await scrapeEconWeek('this');
+    rows.forEach(e => {
+      if (e.actual) econActuals.set(econEventKey(e), e.actual);
+    });
+    // Parchear eventos y noticias recientes con el resultado real
+    (econCache.events || []).forEach(e => {
+      const actual = econActuals.get(econEventKey(e));
+      if (actual && !e.actual) e.actual = actual;
+    });
+    newsCache.forEach(n => {
+      if (!n.econ || n._conf) return;
+      const actual = econActuals.get(n.econKey || '');
+      if (actual) {
+        n._conf = true;
+        // Marcador ▲/▼ comparando el real con la previsión
+        const parseNum = s => {
+          const m = String(s || '').replace(',', '.').match(/-?\d+(\.\d+)?/);
+          return m ? parseFloat(m[0]) : null;
+        };
+        const a = parseNum(actual), f = parseNum(n.econForecast);
+        const marker = (a != null && f != null && a !== f)
+          ? (a > f ? ' ▲' : ' ▼')
+          : '';
+        const parts = ['real ' + actual];
+        if (n.econForecast) parts.push('prev. ' + n.econForecast);
+        if (n.econPrevious) parts.push('ant. ' + n.econPrevious);
+        n.title = (n.econCurrency || 'USD') + ' — ' + n.econEvent + ': ' + parts.join(' · ') + marker;
+        n.body = 'Calendario Económico USD · impacto ' + n.econImpact + ' · dato confirmado';
+        console.log(`[ECON] resultado confirmado: ${n.econEvent} = ${actual}${marker.trim()}`);
+      }
+    });
+  } catch (e) {
+    // scrape silencioso; se reintenta en el próximo tick
+  }
+}
+
+async function econInjectionTick() {
+  try {
+    await refreshEconCalendar();
+    await enrichEconActuals();
+    const now = Date.now();
+
+    // 1) PRE-AVISOS: dato USD (alto/medio) que se publica en <= 10 min
+    const PRE_WINDOW = 10 * 60 * 1000;
+    const pre = (econCache.events || []).filter(e =>
+      (e.impact === 'High' || e.impact === 'Medium') &&
+      e.currency === 'USD' &&
+      e.time > now && (e.time - now) <= PRE_WINDOW &&
+      !econPreAlerted.has(e.id));
+    for (const e of pre) {
+      econPreAlerted.add(e.id);
+      if (newsCache.some(n => n.id === 'econpre-' + e.id)) continue;
+      const isSpeechEv = /speech|testimon|appear|remarks|speaks|speaking|talks|statement|declara|discurso|comparecencia/i.test(e.event || '');
+      const mins = Math.max(1, Math.round((e.time - now) / 60000));
+      newsCache.unshift({
+        id: 'econpre-' + e.id,
+        src: 'USD DATA',
+        cls: 'sec',
+        imp: e.impact === 'High' ? 'h' : 'm',
+        cat: 'econ',
+        econ: true,
+        econPre: true,
+        econSpeech: isSpeechEv,
+        ts: Date.now(),
+        title: `⏰ PRE-AVISO — ${isSpeechEv ? 'Discurso' : 'Dato'} en ${mins} min: USD ${e.event}`,
+        body: isSpeechEv
+          ? 'Discurso miembro FED/FOMC en ' + mins + ' min · declaraciones pueden mover NAS100'
+          : `Impacto ${e.impact}` + (e.forecast ? ` · previsión ${e.forecast}` : '') + (e.previous ? ` · ant. ${e.previous}` : '') + ' · preparado para volatilidad',
+        tags: isSpeechEv ? ['DISCURSO'] : (e.impact === 'High' ? ['NAS100'] : []),
+        trump: false,
+        trumpDirect: false,
+        url: 'https://www.forexfactory.com/calendar',
+        nasDir: null, nasKey: null, nasMag: 'low', conf: 0, nasEs: '', nasEn: '',
+      });
+      console.log(`[ECON] pre-aviso (${mins} min): ${e.event}`);
+    }
+
+    // 2) PUBLICACIONES: dato USD (alto/medio) recién salido
+    const due = (econCache.events || []).filter(e =>
+      (e.impact === 'High' || e.impact === 'Medium') &&
+      e.currency === 'USD' &&
+      e.time <= now && (now - e.time) < ECON_INJECT_WINDOW &&
+      !econInjected.has(e.id));
+    let injected = 0;
+    for (const e of due) {
+      econInjected.add(e.id);
+      // Al arrancar el server solo se re-emiten eventos muy recientes (no repetir todo el día)
+      if (newsCache.some(n => n.id === e.id)) continue;
+      const item = econToNewsItem(e);
+      item.econKey     = econEventKey(e);
+      item.econEvent   = e.event;
+      item.econCurrency = e.currency;
+      item.econImpact  = e.impact;
+      item.econForecast = e.forecast;
+      item.econPrevious = e.previous;
+      newsCache.unshift(item);
+      injected++;
+      console.log(`[ECON] noticia USD generada: ${e.event}`);
+    }
+    if (injected || pre.length) {
+      newsCache.sort((a, b) => b.ts - a.ts);
+      if (newsCache.length > 150) newsCache.length = 150;
+    }
+  } catch (e) {
+    console.log('[ECON] tick error:', e.message);
+  }
+}
+
+async function refreshEconCalendar() {
+  if (econCache && Date.now() - econCacheTs < ECON_CACHE_TTL) return econCache;
+  let events = await fetchEconFFJson();
+  if (!events.length) {
+    try {
+      const [tw, nw, wa] = await Promise.all([
+        scrapeEconWeek('this'),
+        scrapeEconWeek('next'),
+        scrapeEconWeek(new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0])
+      ]);
+      events = [...tw, ...nw, ...wa].map(e => ({
+        ...e,
+        id: 'econ-' + e.time + '-' + e.currency + '-' + String(e.event).slice(0, 40),
+      }));
+    } catch (err) {
+      console.log('[ECON] scrape fallback failed:', err.message);
+    }
+  }
+  // Trading Economics: cobertura suplementaria tipo Investing (actual incluido).
+  // En cada franja fecha+divisa+minuto, si TE tiene datos, TE gana (más granular);
+  // FF conserva los suyos donde TE no llega (menos riesgo de duplicados).
+  try {
+    const teRows = await fetchTECalendar();
+    if (teRows.length) {
+      const teSlots = new Set(teRows.map(e => e.currency + '|' + Math.floor(e.time / 60000)));
+      events = events.filter(e => !teSlots.has(e.currency + '|' + Math.floor(e.time / 60000)));
+      events = events.concat(teRows);
+    }
+  } catch (err) { console.log('[ECON] merge TE fallido:', err.message); }
+  // Rellenar la semana próxima si el JSON no la trae (nextweek.json sale 404 hasta el fin de semana)
+  if (events.length) {
+    const hoyNY = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const bD = new Date(hoyNY + 'T12:00:00');
+    const dow = (bD.getDay() + 6) % 7; // 0 = lunes
+    const finEsta = new Date(bD.getTime() + (6 - dow) * 86400000).toISOString().slice(0, 10);
+    const hayProx = events.some(e => e.date > finEsta);
+    if (!hayProx) {
+      try {
+        const nw = await scrapeEconWeek('next');
+        const extra = nw.map(e => ({
+          ...e,
+          id: 'econ-' + e.time + '-' + e.currency + '-' + String(e.event).slice(0, 40),
+        }));
+        const exKeys = new Set(events.map(e => e.date + '|' + e.currency + '|' + e.event));
+        extra.forEach(e => {
+          const k = e.date + '|' + e.currency + '|' + e.event;
+          if (exKeys.has(k) || !e.time) return;
+          exKeys.add(k);
+          events.push(e);
+        });
+        if (nw.length) console.log(`[ECON] semana proxima desde scrape: +${extra.filter(e => e.date > finEsta).length} eventos`);
+      } catch (err) {
+        console.log('[ECON] relleno semana proxima fallido:', err.message);
+      }
+    }
+  }
+  // Solo reemplazar la cache si hay datos nuevos (FF limita con 429: conservar lo valido)
+  if (events.length) {
+    // Deduplicación global por id (JSON + scrape + TE pueden solapar)
+  const seenEv = new Set();
+  events = events.filter(e => {
+    if (!e.id || seenEv.has(e.id)) return false;
+    seenEv.add(e.id);
+    return true;
+  });
+  // Distinguir discursos/comparecencias (no son datos de mercado)
+  events.forEach(e => {
+    e.isSpeech = /speech|testimon|appear|remarks|speaks|speaking|talks|statement|declara|discurso|comparecencia/i.test(e.event || '');
+  });
+  events.sort((a, b) => a.time - b.time);
+    econCache = { count: events.length, events, ts: Date.now() };
+    econCacheTs = Date.now();
+    try { fs.writeFileSync(path.join(__dirname, 'econ-cache.json'), JSON.stringify(econCache)); } catch {}
+  } else if (!econCache) {
+    // Arranque en frio con FF limitado: recuperar la ultima copia valida del disco
+    try {
+      const f = path.join(__dirname, 'econ-cache.json');
+      if (fs.existsSync(f)) {
+        const stored = JSON.parse(fs.readFileSync(f, 'utf8'));
+        if (stored && stored.events && stored.events.length) {
+          econCache = stored;
+          econCacheTs = stored.ts || 0;
+          console.log(`[ECON] cache recuperada del disco (${stored.count} eventos)`);
+        }
+      }
+    } catch (err) { console.log('[ECON] lectura cache fallida:', err.message); }
+  }
+  // Títulos del calendario en español: adjuntar de caché o encolar para fondo
+  if (econCache && econCache.events) {
+    econCache.events.forEach(ev => {
+      const tEs = transCache.get('es:' + ev.event);
+      if (tEs) ev.eventEs = tEs;
+      else queueTranslate('econ', ev.id, ev.event);
+    });
+  }
+  return econCache || { count: 0, events: [], ts: Date.now() };
+}
 
 async function scrapeEconWeek(weekParam) {
   try {
@@ -1049,11 +1444,17 @@ async function scrapeEconWeek(weekParam) {
       const actual = isHoliday ? '' : $(row).find('.calendar__actual').text().trim();
       if (!currentDate) return;
       if (eventEl && eventEl !== '') {
-        const dt = time ? new Date(currentDate + 'T' + time) : new Date(currentDate + 'T12:00:00');
+        const iso = ffTimeToISO(currentDate, time);
+        const dt = new Date(iso || (currentDate + 'T12:00:00-05:00'));
         events.push({
           time: dt.getTime(),
           date: currentDate,
-          timeLabel: time || (isHoliday ? 'All Day' : '--:--'),
+          timeLabel: (() => {
+            const iso = ffTimeToISO(currentDate, time);
+            return iso
+              ? new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York' })
+              : (time || (isHoliday ? 'All Day' : '--:--'));
+          })(),
           currency: currency || (isHoliday ? 'ALL' : ''),
           event: eventEl,
           impact: impactEl.includes('High') ? 'High' : impactEl.includes('Medium') ? 'Medium' : 'Low',
@@ -1072,31 +1473,114 @@ async function scrapeEconWeek(weekParam) {
 }
 
 app.get('/api/econcalendar', async (req, res) => {
-  if (econCache && Date.now() - econCacheTs < ECON_CACHE_TTL)
-    return res.json({ ok: true, ...econCache });
   try {
-    const [thisWeek, nextWeek, weekAfter] = await Promise.all([
-      scrapeEconWeek('this'),
-      scrapeEconWeek('next'),
-      scrapeEconWeek(new Date(Date.now() + 14*86400000).toISOString().split('T')[0])
-    ]);
-    const merged = [...thisWeek, ...nextWeek, ...weekAfter];
-    const seen = new Set();
-    const events = [];
-    for (const e of merged) {
-      const key = e.date + '|' + e.currency + '|' + e.event;
-      if (seen.has(key)) { continue; }
-      seen.add(key);
-      events.push(e);
-    }
-    const data = events.sort((a, b) => a.time - b.time);
-    econCache = { count: data.length, events: data, ts: Date.now() };
-    econCacheTs = Date.now();
-    res.json({ ok: true, ...econCache });
+    const data = await refreshEconCalendar();
+    res.json({ ok: true, ...data });
   } catch (e) {
     res.json({ ok: false, error: e.message });
   }
 });
+
+// ── RELAY DE TRADUCCIÓN (caché + throttle anti-429) ───────────
+const transCache = new Map();
+let transQ = Promise.resolve();
+
+function gtxThrottle(text, from, to) {
+  transQ = transQ.then(async () => {
+    await new Promise(r => setTimeout(r, 300));
+    return doGtx(text, from, to);
+  });
+  return transQ;
+}
+
+async function doGtx(text, from, to) {
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
+  const r = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+    timeout: 8000
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const data = await r.json();
+  return (data[0] || []).map(s => s[0]).join('');
+}
+
+app.get('/api/translate', async (req, res) => {
+  const q  = String(req.query.q || '').slice(0, 600);
+  const to = req.query.to === 'en' ? 'en' : 'es';
+  if (!q) return res.json({ ok: false, text: q });
+  const key = to + ':' + q;
+  if (transCache.has(key)) return res.json({ ok: true, text: transCache.get(key) });
+  try {
+    const text = await gtxThrottle(q, 'en', to);
+    if (text && text !== q) {
+      transCache.set(key, text);
+      if (transCache.size > 3000) transCache.delete(transCache.keys().next().value);
+    }
+    res.json({ ok: true, text: text || q });
+  } catch (e) {
+    // Google limitó la petición: se devuelve el original y se reintentará más tarde
+    res.json({ ok: false, text: q });
+  }
+});
+
+// ── TRADUCCIÓN EN SERVIDOR (cola de fondo con caché persistente) ──
+// Las titulares se traducen SIN que el cliente martillee: /api/news trae titleEs
+const TRANSLATE_STORE = path.join(__dirname, 'translate-cache.json');
+const transQueue   = [];          // {kind:'news'|'squawk'|'econ', id, text, key}
+const transPending = new Set();   // claves en cola/curso
+let transResume = 0;              // timestamp hasta el que esperar si Google devuelve 429
+
+function loadTransStore() {
+  try {
+    if (fs.existsSync(TRANSLATE_STORE)) {
+      const arr = JSON.parse(fs.readFileSync(TRANSLATE_STORE, 'utf8'));
+      (arr || []).forEach(kv => transCache.set('es:' + kv.q, kv.t));
+      console.log(`[TRANSLATE] caché cargada del disco (${(arr || []).length} titulares)`);
+    }
+  } catch (e) { console.log('[TRANSLATE] lectura caché fallida:', e.message); }
+}
+let transSaved = 0;
+function saveTransStore() {
+  transSaved++;
+  if (transSaved % 40 !== 0) return; // persistir cada 40 titulares nuevos
+  try {
+    const arr = [];
+    transCache.forEach((t, k) => { if (k.startsWith('es:')) arr.push({ q: k.slice(3), t }); });
+    fs.writeFileSync(TRANSLATE_STORE, JSON.stringify(arr.slice(-2000)));
+  } catch {}
+}
+
+function queueTranslate(kind, id, text) {
+  if (!text || !text.trim() || String(text).trim().length < 3) return;
+  const key = 'es:' + text;
+  if (transCache.has(key) || transPending.has(key)) return;
+  transPending.add(key);
+  transQueue.push({ kind, id, text, key });
+}
+
+setInterval(async () => {
+  if (Date.now() < transResume) return;
+  const job = transQueue.shift();
+  if (!job) return;
+  try {
+    const t = await doGtx(job.text, 'en', 'es');
+    if (t && t !== job.text) {
+      transCache.set(job.key, t);
+      saveTransStore();
+      if (job.kind === 'econ' && econCache) {
+        const ev = econCache.events.find(e => e.id === job.id);
+        if (ev) ev.eventEs = t;
+      } else {
+        const n = newsCache.find(x => x.id === job.id);
+        if (n) n.titleEs = t;
+      }
+    }
+  } catch (e) {
+    if (String(e.message).includes('429')) transResume = Date.now() + 8000;
+  } finally {
+    transPending.delete(job.key);
+  }
+}, 400);
 
 app.get('/api/trump', async (req, res) => {
   if (Date.now() - lastNewsFetch > NEWS_TTL) await fetchAllNews();
@@ -1139,6 +1623,8 @@ app.get('/api/intelligence', async (req, res) => {
 
 app.get('/api/status', (req, res) => {
   const feedsOk = Object.values(feedHealth).filter(h => h.ok).length;
+  let uiStamp = 0;
+  try { uiStamp = fs.statSync(path.join(__dirname, 'index.html')).mtimeMs; } catch {}
   res.json({
     ok:          true,
     articles:    newsCache.length,
@@ -1150,6 +1636,7 @@ app.get('/api/status', (req, res) => {
     lastNews:    new Date(lastNewsFetch).toISOString(),
     lastSquawk:  lastSquawkFetch ? new Date(lastSquawkFetch).toISOString() : 'nunca',
     lastMarket:  new Date(lastMktFetch).toISOString(),
+    uiStamp,
     cost:        '$0/mes — 100% gratuito',
   });
 });
@@ -1749,16 +2236,19 @@ app.listen(PORT, async () => {
   console.log(`  http://localhost:${PORT}/api/squawk`);
   console.log(`  http://localhost:${PORT}/api/status\n`);
 
+  loadTransStore();
   // Fetch paralelo inicial
   await Promise.allSettled([
     fetchAllSquawk(),
     fetchAllNews(),
     fetchPrices(),
+    econInjectionTick(),
   ]);
 
   setInterval(fetchAllSquawk, SQUAWK_TTL);
   setInterval(fetchAllNews,   NEWS_TTL);
   setInterval(fetchPrices,    MKT_TTL);
+  setInterval(econInjectionTick, ECON_TICK);
 });
 // ── SÍMBOLOS ──────────────────────────────────────────────────
 const SYMBOLS = {

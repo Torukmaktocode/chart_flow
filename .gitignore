@@ -145,3 +145,6 @@ jspm_packages/
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+# caches en runtime del calendario economico
+chartflow-backtest/warroom/econ-cache.json
+chartflow-backtest/warroom/translate-cache.json

@@ -102,6 +102,8 @@ function sendStatus() {
 
 // (re)verificar puertos cada 5 s: actualizar LEDs y AUTOREVIVIR servicios caidos
 // (si un backend muere, se re-spawnea oculto desde la app)
+// Si el backend revivio tras caerse, se recarga su panel para no dejar scripts viejos
+const lastUp = {};
 setInterval(async () => {
   for (const svc of SERVICES) {
     const up = await portBusy(svc.port);
@@ -113,7 +115,11 @@ setInterval(async () => {
     } else if (up) {
       const st = children[svc.name] ? "ACTIVO" : "ACTIVO (externo)";
       if (svc.status !== st) { svc.status = st; }
+      if (lastUp[svc.name] === false && panes[svc.name]) {
+        try { panes[svc.name].webContents.reload(); } catch (e) {}
+      }
     }
+    lastUp[svc.name] = up;
   }
   sendStatus();
 }, 5000);

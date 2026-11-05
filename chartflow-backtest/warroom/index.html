@@ -72,6 +72,41 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .sa{background:#7f1d1d;color:#fca5a5}.sc{background:#1a1a2e;color:#a0a8c0}
 .sy{background:#0a1628;color:#93c5fd}.si{background:#0d2010;color:#86efac}
 .ss{background:#1a0040;color:#c4b5fd}.sbl{background:#0d1626;color:#93c5fd}
+.sec{background:#2a1a00;color:#fbbf24}
+.calsec{padding:10px 12px 5px;font-size:10px;letter-spacing:1.2px;color:var(--tx3);font-weight:700}
+.calstick{position:sticky;top:0;z-index:6;background:rgba(13,14,14,0.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--bd)}
+.calhead{display:grid;gap:8px;padding:7px 12px;font-size:10px;letter-spacing:0.8px;color:var(--tx2);font-weight:700;text-transform:uppercase;border-bottom:1px solid #333333}
+.calday{padding:9px 12px 4px;font-size:12px;color:var(--tx1,#e5e5e5);font-weight:700;text-align:center;background:#111111;border-top:1px solid var(--bd)}
+.calsep{padding:8px 12px 3px;font-size:11px;color:var(--tx2);font-weight:700;text-align:center;background:#111111;border-top:1px solid var(--bd)}
+.calrow{display:grid;grid-template-columns:58px 48px minmax(150px,1fr) 80px 88px 88px 74px 62px;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--bd);font-size:12px}
+.calrow.ihigh{background:rgba(239,68,68,0.05)}.calrow.imed{background:rgba(245,158,11,0.06)}
+.caltime{color:var(--tx3);font-variant-numeric:tabular-nums;font-size:11px}
+.calcur{background:#1a1a2e;color:#a0a8c0;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;text-align:center}
+.calname{min-width:0;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calrow.sp .calname{color:var(--tx3);font-style:italic}
+.mic{width:15px;height:15px;vertical-align:-2.5px;pointer-events:none;flex-shrink:0}
+.calcol{color:var(--tx3);font-variant-numeric:tabular-nums;font-size:11.5px}
+.calcol.cact{color:#86efac;font-weight:700}
+.calcol i{font-style:normal}
+.mkup{color:#22c55e}.mkdn{color:#ef4444}
+.calimp{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;text-align:center}
+.ih{background:#7f1d1d;color:#fca5a5}.im{background:#78350f;color:#fdba74}.il{background:#1a1a1a;color:#6b7280}
+.calstate{text-align:right}
+.calcnt{font-size:10px;color:#fbbf24}
+.caldone{color:var(--tx3);font-size:11px}
+.cwait{color:var(--tx3);animation:blink 1.2s infinite}
+.calsempty{padding:12px;font-size:11px;color:var(--tx3)}
+.calchips{display:flex;gap:6px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--bd);align-items:center}
+.calspace{flex:1}
+.vchip{border-color:#2f2f3a;color:#aab4c4}
+.vchip.on{background:linear-gradient(180deg,#60a5fa,#3b82f6);border-color:#60a5fa;color:#0b1220;box-shadow:0 2px 10px rgba(96,165,250,0.25)}
+.cchip{background:#141414;border:1px solid #2a2a2a;color:#9a9a9a;padding:5px 13px;border-radius:999px;font-size:10.5px;font-weight:700;cursor:pointer;letter-spacing:0.6px;transition:all .15s ease;display:inline-flex;align-items:center;gap:4px;font-family:inherit}
+.cchip i{font-style:normal;opacity:0.55;font-weight:600}
+.cchip:hover{border-color:#3d3d3d;color:#e5e5e5;transform:translateY(-1px)}
+.cchip.on{background:linear-gradient(180deg,#fbbf24,#f59e0b);border-color:#fbbf24;color:#1a1200;box-shadow:0 2px 10px rgba(251,191,36,0.25)}
+.cchip.on i{opacity:0.8}
+@keyframes blink{50%{opacity:0.3}}
+@keyframes blink{50%{opacity:0.3}}
 .sw{background:#1a1a1a;color:#e5e7eb}.sbr{background:#1a0a00;color:#fcd34d}
 .ib{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px}
 .ibc{background:var(--rd);color:#fff}.ibh{background:var(--am);color:#000}
@@ -215,7 +250,7 @@ const TL = {
     magH:'Magnitud ALTA', magM:'Magnitud MEDIA', magL:'Magnitud BAJA',
     conf:'Confianza', crit:'CRÍTICO', high:'ALTO', med:'MEDIO', low:'BAJO',
     now:'ahora', m:'m', h:'h',
-    tabs:['Todo','🎙 Trump / Truth Social','Reuters / AP','Fed / Macro','Mercados / Tech','⚡ Squawk X'],
+    tabs:['Todo','🎙 Trump / Truth Social','Reuters / AP','Fed / Macro','Mercados / Tech','⚡ Squawk X','📅 Calendario'],
     noServer:`<div class="err-box">
       <b>⚠ Servidor no encontrado</b><br><br>
       Abre una terminal en la carpeta <code>warroom</code> y ejecuta:<br><br>
@@ -234,7 +269,7 @@ const TL = {
     magH:'HIGH Magnitude', magM:'MED Magnitude', magL:'LOW Magnitude',
     conf:'Confidence', crit:'CRITICAL', high:'HIGH', med:'MED', low:'LOW',
     now:'now', m:'m', h:'h',
-    tabs:['All','🎙 Trump / Truth Social','Reuters / AP','Fed / Macro','Markets / Tech','⚡ Squawk X'],
+    tabs:['All','🎙 Trump / Truth Social','Reuters / AP','Fed / Macro','Markets / Tech','⚡ Squawk X','📅 Calendar'],
     noServer:`<div class="err-box">
       <b>⚠ Server not found</b><br><br>
       Open a terminal in the <code>warroom</code> folder and run:<br><br>
@@ -248,31 +283,34 @@ const TL = {
 let lang = 'es', activeTab = 0, allNews = [], mktData = {}, serverOk = false;
 const t = k => TL[lang][k] || k;
 
-// ── TRADUCCIÓN GRATUITA vía Google Translate ────────────────
+// ── TRADUCCIÓN vía relay del server (caché + throttle anti-429) ──
 const translationCache = new Map();
 async function translateText(text, from, to) {
   if (!text || !text.trim()) return text;
   const key = `${to}:${text}`;
   if (translationCache.has(key)) return translationCache.get(key);
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
-    const res = await fetch(url);
-    if (!res.ok) return text;
-    const data = await res.json();
-    const translated = data[0].map(s => s[0]).join('');
-    translationCache.set(key, translated);
-    return translated;
+    const d = await api(`/translate?to=${to}&q=${encodeURIComponent(text)}`);
+    if (d && d.text && d.text !== text) { translationCache.set(key, d.text); return d.text; }
+    return text;
   } catch { return text; }
 }
-async function translateNews(items) {
-  if (lang !== 'es') return;
-  const batch = items.slice(0, 40);
-  await Promise.allSettled(batch.map(async (n) => {
-    if (n._translatedEs) return;
-    if (n.title && !n._origTitle) { n._origTitle = n.title; n.title = await translateText(n.title, 'en', 'es'); }
-    if (n.body && !n._origBody)  { n._origBody = n.body;   n.body = await translateText(n.body, 'en', 'es'); }
-    n._translatedEs = true;
-  }));
+// Titulares via titleEs del server (cola de fondo); solo los cuerpos traduce el cliente
+let translatingRun = false;
+async function translateNewsProgressive() {
+  if (translatingRun) return;
+  translatingRun = true;
+  try {
+    for (;;) {
+      const batch = allNews.filter(n => !n._translatedEs && !n.econ && n.body && n.body.trim()).slice(0, 20);
+      if (!batch.length) break;
+      await Promise.allSettled(batch.map(async (n) => {
+        if (n.body && !n._origBody) { n._origBody = n.body; n.body = await translateText(n.body, 'en', 'es'); }
+        n._translatedEs = true;
+      }));
+      renderFeed();
+    }
+  } finally { translatingRun = false; }
 }
 
 // ── API ────────────────────────────────────────────────────
@@ -290,9 +328,9 @@ async function loadNews(){
     serverOk = true;
     setDot('live');
     document.getElementById('srcInfo').textContent = allNews.length + (lang==='es'?' artículos · ':' articles · ') + [...new Set(allNews.map(n=>n.src))].length + (lang==='es'?' fuentes':' sources');
-    if(lang==='es') await translateNews(allNews);
     renderFeed();
     checkBreaking();
+    if(lang==='es') translateNewsProgressive();
   } catch {
     serverOk = false;
     setDot('error');
@@ -325,7 +363,7 @@ async function loadSquawk(){
     // Merge into allNews for the "Todo" tab (avoid dupes)
     const ids = new Set(allNews.map(n=>n.id));
     squawkData.forEach(n=>{ if(!ids.has(n.id)) allNews.unshift(n); });
-    if(lang==='es' && squawkData.length) await translateNews(squawkData);
+    if(lang==='es' && squawkData.length) translateNewsProgressive();
     if(activeTab===5) renderFeed();
     // Update nitter status in header
     const si = document.getElementById('srcInfo');
@@ -345,6 +383,7 @@ const FILTERS=[
   n=>n.cat==='fed',
   n=>n.cat==='tech'||n.cat==='markets',
   n=>n.squawk||n.cat==='squawk',
+  n=>n.cat==='econ',
 ];
 
 function ago(ts){
@@ -408,6 +447,8 @@ function impMiniFallback(n){
 function renderFeed(){
   const el=document.getElementById('flist');
   if(!serverOk) return;
+  // Calendario económico — pestaña 6
+  if(activeTab===6){ renderCalendar(el); return; }
   const q=(document.getElementById('srch').value||'').toLowerCase();
   let items=allNews.filter(FILTERS[activeTab]||(_=>true));
   if(q) items=items.filter(n=>(n.title||'').toLowerCase().includes(q)||(n.body||'').toLowerCase().includes(q));
@@ -571,6 +612,207 @@ function renderFeed(){
 }
 
 // ── TABS / LANG ────────────────────────────────────────────
+// ── CALENDARIO ECONÓMICO ───────────────────────────────────
+let econData = [];
+let calCur = localStorage.getItem('calCur') || 'ALL';
+let calView = localStorage.getItem('calView') || 'semana';
+const CVIEWS = ['ayer','hoy','mañana','semana','proxima'];
+let calTZ = localStorage.getItem('calTZ') || 'local';
+const TZMAP = { et:'America/New_York', local:'America/Santiago', madrid:'Europe/Madrid' };
+const calTZName = () => TZMAP[calTZ] || TZMAP.et;
+// Fecha de un evento en la zona horaria ELEGIDA (así el corte 00:00 es el tuyo)
+const evDateAt = ts => new Date(ts).toLocaleDateString('en-CA', { timeZone: calTZName() });
+const evDate = e => (e.time > 0 && !isNaN(e.time)) ? evDateAt(e.time) : (e.date || '');
+const esc = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tTitle = n => (lang==='es' && n.titleEs) ? n.titleEs : (n.title||'');
+
+async function loadCalendar(){
+  try {
+    const d = await api('/econcalendar');
+    econData = (d.ok && d.events) ? d.events : [];
+    if(!serverOk) serverOk = true; // el calendario confirma que hay servidor
+  } catch(e){ console.warn('Econ error:', e.message); }
+  if(activeTab===6) renderFeed();
+  if(lang==='es') translateEconTitles();
+}
+
+// Títulos del calendario en español (vía relay, con caché de cliente y servidor)
+let econTransRun = false;
+async function translateEconTitles(){
+  if(econTransRun) return; econTransRun = true;
+  try {
+    for(;;){
+      const batch = econData.filter(e => !e._esT && e.event).slice(0, 30);
+      if(!batch.length) break;
+      await Promise.allSettled(batch.map(async e => {
+        e._esT = true;
+        e.eventEs = await translateText(e.event, 'en', 'es');
+      }));
+      if(activeTab===6) renderFeed();
+    }
+  } finally { econTransRun = false; }
+}
+
+function calCountdown(ts){
+  const diff = ts - Date.now();
+  if(diff <= 0) return null;
+  const m = Math.floor(diff/60000), h = Math.floor(m/60), d = Math.floor(h/24);
+  if(d >= 1) return 'en ' + d + 'd ' + (h%24) + 'h';
+  if(h >= 1) return 'en ' + h + 'h ' + (m%60) + 'm';
+  return 'en ' + Math.max(m,1) + 'm';
+}
+
+const CALGRID = '58px 48px minmax(150px,1fr) 80px 88px 88px 74px 62px';
+
+// Hora según zona elegida (ET = EE.UU. / CL = Chile UTC-4 / ES = España)
+function calTime(e){
+  if(!e.time || isNaN(e.time) || e.time<=0) return esc(e.timeLabel||'--:--');
+  if(calTZ==='et') return esc(e.timeLabel||'');
+  return new Date(e.time).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',timeZone:calTZName()});
+}
+
+const ICON_SPEAK = '<svg class="mic" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z" fill="#fbbf24" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+function calRowHTML(e){
+  const cnt = calCountdown(e.time);
+  const impCls  = e.impact==='High'?'ih':e.impact==='Medium'?'im':'il';
+  const impTxt  = e.impact==='High'?t('high'):e.impact==='Medium'?t('med'):e.impact==='Holiday'?(lang==='es'?'FESTIVO':'HOLIDAY'):t('low');
+  const rowCls  = e.impact==='High'?' ihigh':e.impact==='Medium'?' imed':'';
+  // Marcador ▲/▼ real vs previsión
+  const pn = s => { const m = String(s||'').replace(',','.').match(/-?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : null; };
+  const av = pn(e.actual), fv = pn(e.forecast);
+  const mark = (av!=null && fv!=null && av!==fv) ? (av>fv?'<i class="mkup">▲</i> ':'<i class="mkdn">▼</i> ') : '';
+  const state = cnt ? `<span class="calcnt">${cnt}</span>` : ((e.actual||(e.time<=Date.now()&&e.time>0)) ? '<span class="caldone">✓</span>' : '');
+  const mic = e.isSpeech ? ICON_SPEAK + ' ' : '';
+  return `<div class="calrow${rowCls}${e.isSpeech?' sp':''}">
+    <span class="caltime">${calTime(e)}</span>
+    <span class="calcur">${esc(e.currency||'ALL')}</span>
+    <span class="calname">${mic}${esc(lang==='es' && e.eventEs && e.eventEs!==(e.event||'') ? e.eventEs : (e.event||''))}</span>
+    <span class="calcol cact">${e.actual?mark+esc(e.actual):(e.time<=Date.now()&&!e.actual?'<span class="cwait">…</span>':'')}</span>
+    <span class="calcol">${e.forecast!=null?esc(e.forecast):''}</span>
+    <span class="calcol">${e.previous!=null?esc(e.previous):''}</span>
+    <span class="calimp ${impCls}">${impTxt}</span>
+    <span class="calstate">${state}</span>
+  </div>`;
+}
+
+function renderCalendar(el){
+  if(!econData.length){
+    el.innerHTML=`<div class="loading-msg"><span class="spinner"></span>${lang==='es'?'Cargando calendario económico...':'Loading economic calendar...'}</div>`;
+    return;
+  }
+  // Chips de filtro por divisa (ej. solo USD)
+  const counts = {};
+  econData.forEach(e => { counts[e.currency||'ALL'] = (counts[e.currency||'ALL']||0)+1; });
+  const curs = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+  const chips = `<div class="calchips">
+    <button class="cchip vchip${calView==='ayer'?' on':''}" onclick="setCalView('ayer')">${lang==='es'?'AYER':'YESTERDAY'}</button>
+    <button class="cchip vchip${calView==='hoy'?' on':''}" onclick="setCalView('hoy')">${lang==='es'?'HOY':'TODAY'}</button>
+    <button class="cchip vchip${calView==='mañana'?' on':''}" onclick="setCalView('mañana')">${lang==='es'?'MAÑANA':'TOMORROW'}</button>
+    <button class="cchip vchip${calView==='semana'?' on':''}" onclick="setCalView('semana')">${lang==='es'?'ESTA SEMANA':'THIS WEEK'}</button>
+    <button class="cchip vchip${calView==='proxima'?' on':''}" onclick="setCalView('proxima')">${lang==='es'?'PRÓXIMA SEMANA':'NEXT WEEK'}</button>
+    <span class="calspace"></span>
+    <button class="cchip tchip${calTZ==='et'?' on':''}" onclick="setCalTZ('et')" title="Hora de EE.UU. (ET)">ET</button>
+    <button class="cchip tchip${calTZ==='local'?' on':''}" onclick="setCalTZ('local')" title="Tu hora (Santiago, UTC-4)">CL</button>
+    <button class="cchip tchip${calTZ==='madrid'?' on':''}" onclick="setCalTZ('madrid')" title="Hora de España (CET)">ES</button>
+    <button class="cchip${calCur==='ALL'?' on':''}" onclick="setCalCur('ALL')">${lang==='es'?'TODAS':'ALL'} <i>${econData.length}</i></button>
+    ${curs.map(c=>`<button class="cchip${calCur===c?' on':''}" onclick="setCalCur('${esc(c)}')">${esc(c)} <i>${counts[c]}</i></button>`).join('')}
+  </div>`;
+  const head = `<div class="calhead" style="grid-template-columns:${CALGRID}">
+    <span>${lang==='es'?'HORA':'TIME'}</span>
+    <span>${lang==='es'?'DIV.':'CUR.'}</span>
+    <span>${lang==='es'?'EVENTO':'EVENT'}</span>
+    <span>${lang==='es'?'ACTUAL':'ACTUAL'}</span>
+    <span>${lang==='es'?'PREVISIÓN':'FORECAST'}</span>
+    <span>${lang==='es'?'ANTERIOR':'PREVIOUS'}</span>
+    <span>${lang==='es'?'IMPACTO':'IMPACT'}</span>
+    <span></span>
+  </div>`;
+  const fEcon = calCur==='ALL' ? econData : econData.filter(e => (e.currency||'ALL')===calCur);
+  const now = Date.now();
+  const hoy = evDateAt(now); // "hoy" según la zona elegida
+  const base = new Date(hoy+'T12:00:00');
+  const dia = (base.getDay()+6)%7; // 0 = lunes
+  const finEsta = new Date(base.getTime() + (6-dia)*86400000).toISOString().slice(0,10);
+  const pas=[],pend=[],resto=[],prox=[],ant=[];
+  fEcon.forEach(e=>{
+    const d = evDate(e);
+    if(d===hoy) (e.time<=now?pas:pend).push(e);
+    else if(d<hoy) ant.push(e);                    // días anteriores de la semana
+    else if(d<=finEsta) resto.push(e);             // solo días futuros de esta semana
+    else prox.push(e);
+  });
+  const DIAS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const dayTitle = d => { const b=new Date(d+'T12:00:00'); return DIAS[b.getDay()]+', '+b.getDate()+' de '+MESES[b.getMonth()]+' de '+b.getFullYear(); };
+  const orden = evs => evs.slice().sort((a,b)=>a.time-b.time);
+  const days = evs => { // agrupar por día (en la zona elegida) los títulos
+    let out='';
+    let lastD='';
+    orden(evs).forEach(e=>{
+      const d=evDate(e);
+      if(d!==lastD){ lastD=d; out+=`<div class="calsep">${dayTitle(d)}</div>`; }
+      out+=calRowHTML(e);
+    });
+    return out;
+  };
+  let html = `<div class="calstick">${chips}${head}</div>`;
+  const hoySec = () => {
+    let h = `<div class="calsec">${lang==='es'?`HOY · PUBLICADOS (${pas.length})`:`TODAY · RELEASED (${pas.length})`}</div>`;
+    h += pas.length ? days(pas) : `<div class="calsempty">${lang==='es'?'Sin datos publicados aún hoy':'No data released yet today'}</div>`;
+    if(pend.length) h += `<div class="calsec">${lang==='es'?`HOY · PENDIENTES (${pend.length})`:`TODAY · PENDING (${pend.length})`}</div>` + days(pend);
+    return h;
+  };
+  const manana = new Date(base.getTime()+86400000).toISOString().slice(0,10);
+  const ayer   = new Date(base.getTime()-86400000).toISOString().slice(0,10);
+  if(CVIEWS.includes(calView)===false) calView='semana';
+  if(calView==='ayer'){
+    const evs = orden(fEcon.filter(e=>evDate(e)===ayer));
+    html += `<div class="calsec">${lang==='es'?`AYER (${evs.length})`:`YESTERDAY (${evs.length})`}</div>`;
+    html += evs.length ? `<div class="calsep">${dayTitle(ayer)}</div>` + evs.map(e=>calRowHTML(e)).join('') : `<div class="calsempty">${lang==='es'?'Sin datos ayer':'No data yesterday'}</div>`;
+  } else if(calView==='hoy'){
+    html += hoySec();
+  } else if(calView==='mañana'){
+    const evsMan = orden(fEcon.filter(e=>evDate(e)===manana));
+    html += `<div class="calsec">${lang==='es'?`MAÑANA (${evsMan.length})`:`TOMORROW (${evsMan.length})`}</div>`;
+    html += evsMan.length ? `<div class="calsep">${dayTitle(manana)}</div>` + evsMan.map(e=>calRowHTML(e)).join('') : `<div class="calsempty">${lang==='es'?'Sin datos programados mañana':'No events scheduled tomorrow'}</div>`;
+  } else if(calView==='proxima'){
+    const evsProx = orden(fEcon.filter(e=>evDate(e)>finEsta));
+    html += evsProx.length ? `<div class="calsec">${lang==='es'?`PRÓXIMA SEMANA (${evsProx.length})`:`NEXT WEEK (${evsProx.length})`}</div>` + days(evsProx)
+                           : `<div class="calsempty">${lang==='es'?'Próxima semana aún no publicada por la fuente (suele salir el fin de semana)':'Next week not published by the source yet (usually out on weekends)'}</div>`;
+  } else {
+    // Esta semana, orden cronológico: días anteriores → hoy → resto de la semana
+    html += hoySec();
+    if(resto.length) html += `<div class="calsec">${lang==='es'?'RESTO DE LA SEMANA':'REST OF THE WEEK'}</div>` + days(resto);
+    if(ant.length)   html += `<div class="calsec">${lang==='es'?'DÍAS ANTERIORES (publicados)':'EARLIER THIS WEEK (released)'}</div>` + days(ant);
+  }
+  el.innerHTML = html;
+}
+
+function setCalView(v){
+  if(CVIEWS.includes(v)===false) return;
+  calView = v;
+  localStorage.setItem('calView', v);
+  renderFeed();
+  const el=document.getElementById('flist');
+  if(el) el.scrollTop = 0;
+}
+
+function setCalTZ(z){
+  calTZ = z;
+  localStorage.setItem('calTZ', z);
+  renderFeed();
+}
+
+function setCalCur(c){
+  calCur = c;
+  localStorage.setItem('calCur', c);
+  renderFeed();
+  if(activeTab===6){
+    const el=document.getElementById('flist');
+    if(el) el.scrollTop = 0;
+  }
+}
+
 function renderTabs(){
   document.getElementById('tabRow').innerHTML=t('tabs').map((tb,i)=>
     `<button class="tab${activeTab===i?' on':''}" onclick="switchTab(${i})">${tb}</button>`).join('');
@@ -586,7 +828,7 @@ function setLang(l){
   renderFeed();
   renderTicker();
   // Traducir noticias al español si es necesario
-  if(l==='es' && allNews.length) translateNews(allNews).then(()=>renderFeed());
+  if(l==='es' && allNews.length) translateNewsProgressive();
 }
 
 // ── MARKETS (los precios viven en el ticker y en los chips de contexto) ──
@@ -609,7 +851,7 @@ function renderTicker(){
 }
 
 function checkBreaking(){
-  const crit=allNews.filter(n=>n.imp==='c'&&Date.now()-n.ts<600000);
+  const crit=allNews.filter(n=>n.imp==='c'&&Date.now()-n.ts<600000&&!n.econPre);
   if(!crit.length) return;
   const top=crit[0];
   if(top.trumpDirect){
@@ -656,10 +898,29 @@ async function hardRefresh(){
 // ── INIT ──────────────────────────────────────────────────
 renderTabs(); updateClock();
 setInterval(updateClock, 1000);
-loadNews(); loadMarkets(); loadSquawk();
+loadNews(); loadMarkets(); loadSquawk(); loadCalendar();
 setInterval(loadNews,    90000);
-setInterval(loadMarkets, 60000);   // ticker + Δ% de los chips de contexto
+setInterval(loadMarkets, 60000);   // ticker + % de los chips de contexto
 setInterval(loadSquawk,  60000);
+setInterval(loadCalendar, 60000);  // calendario económico
+
+// Auto-recarga de la UI cuando el servidor se actualiza (evita scripts viejos)
+async function watchUi(){
+  try {
+    const s = await api('/status');
+    if (s && s.uiStamp) {
+      const prev = localStorage.getItem('uiStamp');
+      if (prev && prev !== String(s.uiStamp)) {
+        localStorage.setItem('uiStamp', String(s.uiStamp));
+        location.reload();
+        return;
+      }
+      localStorage.setItem('uiStamp', String(s.uiStamp));
+    }
+  } catch {}
+}
+watchUi();
+setInterval(watchUi, 60000);
 </script>
 </body>
 </html>
