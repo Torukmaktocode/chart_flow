@@ -580,7 +580,7 @@ body{background:var(--bg)}
     <button class="btn" id="publishButton" title="Exportar panel como imagen PNG">Publicar</button>
   </div>
   <div class="charts single" id="charts"></div>
-  <div class="grid-sidebar" id="gridSidebar"><a href="http://127.0.0.1:8765/dashboard.html" target="_blank" class="leftbar-btn" title="Stocks Dashboard" style="margin-bottom:4px">▲<span class="btn-label">STK</span></a><a href="http://127.0.0.1:8770/dashboard.html" target="_blank" class="leftbar-btn" title="Dollar, VIX & Bonds Dashboard" style="margin-bottom:4px;background:var(--surface-3);border-color:var(--bull)">⇅<span class="btn-label">DVB</span></a><a href="http://127.0.0.1:3001/" target="_blank" class="leftbar-btn" title="War Room 1 — News & Calendar" style="margin-bottom:4px;background:var(--surface-3);border-color:#8a8a92">✦<span class="btn-label">WR1</span></a><a href="http://127.0.0.1:3001/wr2" target="_blank" class="leftbar-btn" title="War Room 2 — Intelligence Dashboard" style="margin-bottom:4px;background:var(--surface-3);border-color:#c9c9cf">◈<span class="btn-label">WR2</span></a><button class="icon-btn watchlist-toggle" data-role="watchlist-button" title="Lista de seguimiento">☰</button><button class="icon-btn alerts-toggle" data-role="alerts-button" title="Alertas"><span class="alerts-toggle-badge" data-role="alerts-badge">0</span>⏱</button></div>
+  <div class="grid-sidebar" id="gridSidebar"><button onclick="openDashboard(8765)" class="leftbar-btn" title="Stocks Dashboard" style="margin-bottom:4px">▲<span class="btn-label">STK</span></button><button onclick="openDashboard(8770)" class="leftbar-btn" title="Dollar, VIX & Bonds Dashboard" style="margin-bottom:4px;background:var(--surface-3);border-color:var(--bull)">⇅<span class="btn-label">DVB</span></button><button onclick="openDashboard(3001)" class="leftbar-btn" title="Trading War Room — Noticias Live" style="margin-bottom:4px;background:var(--surface-3);border-color:#8a8a92">✦<span class="btn-label">WAR</span></button><button class="icon-btn watchlist-toggle" data-role="watchlist-button" title="Lista de seguimiento">☰</button><button class="icon-btn alerts-toggle" data-role="alerts-button" title="Alertas"><span class="alerts-toggle-badge" data-role="alerts-badge">0</span>⏱</button></div>
   <div class="bottom-bar" id="bottomBar">
     <div class="left-section">
       <div class="time-ranges" id="timeRanges">
@@ -3363,7 +3363,7 @@ function computeRtcStrategy(data, settings = rtcSettings){
 function panelHtml(index){
   const inst = activeInstrument();
   return `
-    <div class="rightbar"><a href="http://127.0.0.1:8765/dashboard.html" target="_blank" class="leftbar-btn" title="Stocks Dashboard">▲<span class="btn-label">STK</span></a><a href="http://127.0.0.1:8770/dashboard.html" target="_blank" class="leftbar-btn" title="Dollar, VIX & Bonds Dashboard" style="background:var(--surface-3);border-color:var(--bull)">⇅<span class="btn-label">DVB</span></a><a href="http://127.0.0.1:3001/" target="_blank" class="leftbar-btn" title="Trading War Room" style="background:var(--surface-3);border-color:var(--pu)">✦<span class="btn-label">WAR</span></a><button class="icon-btn watchlist-toggle" data-role="watchlist-button" title="Lista de seguimiento">☰</button><button class="icon-btn alerts-toggle" data-role="alerts-button" title="Alertas"><span class="alerts-toggle-badge" data-role="alerts-badge">0</span>⏱</button></div>
+    <div class="rightbar"><button onclick="openDashboard(8765)" class="leftbar-btn" title="Stocks Dashboard">▲<span class="btn-label">STK</span></button><button onclick="openDashboard(8770)" class="leftbar-btn" title="Dollar, VIX & Bonds Dashboard" style="background:var(--surface-3);border-color:var(--bull)">⇅<span class="btn-label">DVB</span></button><button onclick="openDashboard(3001)" class="leftbar-btn" title="Trading War Room — Noticias Live" style="background:var(--surface-3);border-color:var(--pu)">✦<span class="btn-label">WAR</span></button><button class="icon-btn watchlist-toggle" data-role="watchlist-button" title="Lista de seguimiento">☰</button><button class="icon-btn alerts-toggle" data-role="alerts-button" title="Alertas"><span class="alerts-toggle-badge" data-role="alerts-badge">0</span>⏱</button></div>
     <div class="main-title"><span class="tag100" data-role="symbol-tag" style="background:${inst.color}">${inst.tag}</span><span><span data-role="symbol-label">${inst.label}</span> · <span data-role="tf-title">5</span> · <span data-role="symbol-exchange">${inst.exchange}</span></span><span class="ohlc" data-role="ohlc" style="display:none">O -- H -- L -- C --</span><span class="change" data-role="chg" style="display:none">--</span></div>
     <div class="indicator-stack" data-role="indicator-stack"></div>
     <div class="indicator-title" data-role="indicator-title">ICT Killzones & Pivots [TFO] <button class="indicator-gear" data-role="ict-gear" title="Configuración">⚙</button><span class="indicator-code">{}</span></div>
@@ -6863,6 +6863,23 @@ function unlockAlertSound(){
     if(!sharedAudioContext) sharedAudioContext = new AudioContext();
     if(sharedAudioContext.state === "suspended") sharedAudioContext.resume();
   } catch {}
+}
+// ── ACCESOS A OTROS DASHBOARDS (resilientes) ─────────────────
+// Ping de 1.2s al puerto: si el servicio vive abre pestaña; si no, avisa
+// sin abrir una pagina muerta (los servidores corren en consolas separadas)
+const DASH_SERVICES = {
+  8765: { name: "Stocks Dashboard", how: "cd stock-dashboard && node server.js" },
+  8770: { name: "Dollar / VIX / Bonds", how: "cd dollar-vix-bonds-dashboard && node server.js" },
+  3001: { name: "War Room (noticias)", how: "cd chartflow-backtest\\warroom && node server.js" },
+};
+function openDashboard(port){
+  const svc = DASH_SERVICES[port];
+  if(!svc) return;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 1200);
+  fetch(`http://127.0.0.1:${port}/`, { mode: "no-cors", signal: ctrl.signal })
+    .then(() => { clearTimeout(t); window.open(`http://127.0.0.1:${port}/`, "_blank"); })
+    .catch(() => { clearTimeout(t); showToast(`⛔ ${svc.name} apagado — arranca con: ${svc.how}`); });
 }
 function showToast(message){
   const toast = document.getElementById("toast");

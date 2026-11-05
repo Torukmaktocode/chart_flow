@@ -36,29 +36,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .banner.show{display:flex}
 .bdot{width:6px;height:6px;border-radius:50%;background:var(--or);animation:pulse .7s infinite;flex-shrink:0}
 
-/* IMPACT BOX */
-.ibox{background:var(--bg2);border-bottom:1px solid var(--bd);padding:9px 12px;flex-shrink:0}
-.ibox-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.ibox-title{font-size:9px;color:var(--tx3);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-.ibox-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px}
-.icard{background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:8px 10px}
-.icard.bull{border-color:#166534;background:#021a0c}.icard.bear{border-color:#7f1d1d;background:#1a0202}
-.ic-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-.ic-src{font-size:9px;color:var(--tx3)}.ic-dir{font-size:11px;font-weight:600}
-.up{color:var(--gn)}.dn{color:var(--rd)}.ne{color:var(--am)}
-.ic-event{font-size:11px;color:var(--tx2);line-height:1.35;margin-bottom:3px}
-.ic-analysis{font-size:10px;color:var(--tx3);line-height:1.4;margin-bottom:3px}
-.ic-mag{font-size:10px;font-weight:600}
-.mg-h{color:var(--rd)}.mg-m{color:var(--am)}.mg-l{color:var(--bl)}
-.cbar{height:3px;background:var(--bd);border-radius:2px;margin-top:4px;overflow:hidden}
-.cfill{height:100%;border-radius:2px}
-.ic-conf{font-size:9px;color:var(--tx4);margin-top:2px}
-
-/* BODY */
-.body{display:grid;grid-template-columns:1fr 275px;flex:1;overflow:hidden;min-height:0}
+/* BODY — feed a ancho completo (la sidebar y el strip de impacto se eliminaron:
+   el contexto multi-activo vive ahora dentro de cada noticia) */
+.body{display:grid;grid-template-columns:1fr;flex:1;overflow:hidden;min-height:0}
 
 /* FEED */
-.feed{display:flex;flex-direction:column;border-right:1px solid var(--bd);overflow:hidden}
+.feed{display:flex;flex-direction:column;overflow:hidden}
 .tabs{display:flex;border-bottom:1px solid var(--bd);flex-shrink:0;overflow-x:auto}
 .tabs::-webkit-scrollbar{display:none}
 .tab{padding:8px 12px;font-size:10px;color:var(--tx3);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;white-space:nowrap}
@@ -76,14 +59,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-msg{text-align:center;color:var(--tx4);font-size:12px;padding:30px 0}
 
-/* NEWS CARD */
-.nc{background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:8px 9px;margin-bottom:5px;animation:si .2s ease;cursor:pointer;transition:border-color .15s}
+/* NEWS CARD — ancho completo, tipografía más legible */
+.nc{background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:11px 13px;margin-bottom:7px;animation:si .2s ease;cursor:pointer;transition:border-color .15s}
 .nc:hover{border-color:var(--bd3)}
 @keyframes si{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .nc.c{border-left:3px solid var(--rd)}.nc.h{border-left:3px solid var(--am)}
 .nc.m{border-left:3px solid var(--bl)}.nc.l{border-left:3px solid var(--bd)}
-.nc-top{display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap}
-.src{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px}
+.nc-top{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.src{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:3px}
 .sr{background:#333333;color:#cccccc}.st{background:#333333;color:#cccccc}
 .sf{background:#222222;color:#cccccc}.sb{background:#333333;color:#cccccc}
 .sa{background:#7f1d1d;color:#fca5a5}.sc{background:#1a1a2e;color:#a0a8c0}
@@ -94,8 +77,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .ibc{background:var(--rd);color:#fff}.ibh{background:var(--am);color:#000}
 .ibm{background:var(--bl);color:#fff}.ibl{background:var(--bd);color:var(--tx3)}
 .ago{font-size:9px;color:var(--tx4);margin-left:auto}
-.nc-title{font-size:11px;color:#e2e8f0;line-height:1.4;font-weight:500;margin-bottom:3px}
-.nc-body{font-size:10px;color:var(--tx3);line-height:1.4;margin-bottom:4px}
+.nc-title{font-size:12.5px;color:#e2e8f0;line-height:1.5;font-weight:600;margin-bottom:4px}
+.nc-body{font-size:11px;color:var(--tx3);line-height:1.55;margin-bottom:5px}
 .nc-imp{display:flex;align-items:flex-start;gap:5px;background:var(--bg3);border-radius:4px;padding:4px 7px;margin:4px 0;border:1px solid var(--bd)}
 .nc-link{font-size:9px;color:var(--bl);text-decoration:none;opacity:.7}.nc-link:hover{opacity:1}
 .ntag{font-size:9px;background:#0f172a;color:var(--tx3);padding:1px 5px;border-radius:2px}
@@ -151,19 +134,18 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .sq-foot{display:flex;gap:8px;font-size:9px;align-items:center;opacity:.6}
 /* X logo en SVG */
 .x-icon{width:11px;height:11px;flex-shrink:0}
-.side{display:flex;flex-direction:column;overflow:hidden}
-.sblk{border-bottom:1px solid var(--bd);padding:9px 11px;flex-shrink:0}
-.sblk.gr{flex:1;overflow-y:auto}.sblk.gr::-webkit-scrollbar{width:3px}.sblk.gr::-webkit-scrollbar-thumb{background:var(--bd)}
-.sb-title{font-size:9px;color:var(--tx4);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:5px}
-.live-pill{font-size:8px;background:#052e16;color:var(--gn);padding:1px 4px;border-radius:2px}
-.mr{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #222222;gap:4px}
-.ms{font-size:10px;color:var(--tx2)}.mv{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}.mc{font-size:9px;font-variant-numeric:tabular-nums}
-.ci{display:flex;gap:6px;padding:4px 0;border-bottom:1px solid #222222;align-items:flex-start}
-.ct{font-size:9px;min-width:34px;padding-top:2px;flex-shrink:0;font-variant-numeric:tabular-nums}
-.cd{width:5px;height:5px;border-radius:50%;margin-top:4px;flex-shrink:0}
-.cl{font-size:10px;color:#cbd5e1;line-height:1.3}.cs{font-size:9px;color:var(--tx3)}
-.ali{display:flex;align-items:flex-start;gap:5px;padding:4px 0;border-bottom:1px solid #222222}
-.al-i{font-size:12px;flex-shrink:0;margin-top:1px}.al-t{font-size:10px;color:var(--tx2);line-height:1.3;flex:1}.al-a{font-size:9px;color:var(--tx4);white-space:nowrap}
+/* Direcciones — ticker y chips de contexto */
+.up{color:var(--gn)}.dn{color:var(--rd)}.ne{color:var(--am)}
+
+/* RAÍL DE CONTEXTO MULTI-ACTIVO (por noticia) */
+.xcrail{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;flex-shrink:0}
+.xc{display:inline-flex;gap:4px;align-items:center;background:var(--bg3);border:1px solid var(--bd);border-radius:3px;padding:2.5px 7px;font-size:9.5px;color:var(--tx3);font-variant-numeric:tabular-nums;cursor:default}
+.xc b{font-size:11px;line-height:1;flex-shrink:0}
+.xc span{font-weight:600;letter-spacing:.02em}
+.xc i{font-style:normal;color:var(--tx4);font-size:9px}
+.xc.up{border-color:#14532d}.xc.up b{color:var(--gn)}.xc.up i{color:#4ade80}
+.xc.dn{border-color:#7f1d1d}.xc.dn b{color:var(--rd)}.xc.dn i{color:#f87171}
+.xc.ne{opacity:.55}
 
 /* TICKER */
 .ticker{background:#0a0a0a;border-top:1px solid var(--bd);padding:5px 9px;display:flex;gap:14px;overflow-x:auto;white-space:nowrap;flex-shrink:0}
@@ -200,18 +182,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <button onclick="this.parentElement.classList.remove('show')" style="margin-left:auto;background:none;border:none;color:#555555;cursor:pointer;font-size:14px">✕</button>
 </div>
 
-<!-- NAS100 IMPACT -->
-<div class="ibox">
-  <div class="ibox-hdr">
-    <div class="ibox-title" id="iboxTitle">Análisis de impacto NAS100</div>
-    <div class="badge bb" id="overallBadge">—</div>
-    <div style="font-size:9px;color:var(--tx4)" id="lastUpd"></div>
-  </div>
-  <div class="ibox-cards" id="iCards">
-    <div class="loading-msg"><span class="spinner"></span>Conectando al servidor...</div>
-  </div>
-</div>
-
 <!-- BODY -->
 <div class="body">
   <div class="feed">
@@ -222,21 +192,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     </div>
     <div class="flist" id="flist">
       <div class="loading-msg"><span class="spinner"></span>Cargando noticias en vivo...</div>
-    </div>
-  </div>
-
-  <div class="side">
-    <div class="sblk">
-      <div class="sb-title"><span id="mktTit">Mercados</span><span class="live-pill">LIVE</span></div>
-      <div id="mktP"><div class="loading-msg" style="padding:8px 0;font-size:10px">Cargando precios...</div></div>
-    </div>
-    <div class="sblk">
-      <div class="sb-title" id="calTit">Calendario hoy</div>
-      <div id="calP"></div>
-    </div>
-    <div class="sblk gr">
-      <div class="sb-title" id="alTit">Alertas</div>
-      <div id="alP"></div>
     </div>
   </div>
 </div>
@@ -337,14 +292,11 @@ async function loadNews(){
     document.getElementById('srcInfo').textContent = allNews.length + (lang==='es'?' artículos · ':' articles · ') + [...new Set(allNews.map(n=>n.src))].length + (lang==='es'?' fuentes':' sources');
     if(lang==='es') await translateNews(allNews);
     renderFeed();
-    loadImpact();
-    buildAlerts();
     checkBreaking();
   } catch {
     serverOk = false;
     setDot('error');
     document.getElementById('flist').innerHTML = t('noServer');
-    document.getElementById('iCards').innerHTML = '<div class="loading-msg" style="font-size:10px;color:var(--tx4)">Sin conexión</div>';
   }
 }
 
@@ -352,8 +304,8 @@ async function loadMarkets(){
   try {
     const d = await api('/markets');
     mktData  = d.prices || {};
-    renderMkt();
     renderTicker();
+    renderFeed(); // actualiza los Δ% reales de los chips de contexto
     const vix = mktData['VIX'];
     if(vix && vix.price){
       const vb = document.getElementById('vixBadge');
@@ -383,61 +335,7 @@ async function loadSquawk(){
   } catch(e){ console.warn('Squawk load error:', e.message); }
 }
 
-async function loadImpact(){
-  try {
-    const d = await api('/impact');
-    lastImpactData = d;
-    renderImpact(d);
-  } catch { renderImpact(null); }
-}
-
 function setDot(s){ document.getElementById('statusDot').className = 'dot ' + s; }
-
-// ── IMPACT PANEL ───────────────────────────────────────────
-function renderImpact(data){
-  const items = data?.topImpact || allNews.filter(n=>n.nasDir&&n.nasDir!=='neu').slice(0,4);
-  const bias  = data?.bias || computeBias();
-  const now   = new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
-
-  const ob = document.getElementById('overallBadge');
-  ob.textContent = bias==='bull'?t('bull'):bias==='bear'?t('bear'):t('neu');
-  ob.className   = 'badge '+(bias==='bull'?'bg':bias==='bear'?'br':'ba');
-  document.getElementById('iboxTitle').textContent = t('iboxTitle');
-  document.getElementById('lastUpd').textContent   = t('upd')+' '+now;
-
-  if(!items.length){
-    const msg = lang==='es'?'Sin noticias de impacto en las últimas 2h':'No high-impact news in the last 2h';
-    document.getElementById('iCards').innerHTML=`<div class="loading-msg" style="font-size:10px">${msg}</div>`;
-    return;
-  }
-  document.getElementById('iCards').innerHTML = items.slice(0,4).map(n=>{
-    const bull=n.nasDir==='bull', bear=n.nasDir==='bear';
-    const col =bull?'#22c55e':bear?'#ef4444':'#f59e0b';
-    const dir =bull?t('impUp'):bear?t('impDn'):t('impNeu');
-    const ana =lang==='es'?(n.nasEs||''):(n.nasEn||'');
-    const mag =n.nasMag==='high'?t('magH'):n.nasMag==='med'?t('magM'):t('magL');
-    const magC=n.nasMag==='high'?'mg-h':n.nasMag==='med'?'mg-m':'mg-l';
-    const ttl =(n.title||'').slice(0,65);
-    const conf=n.conf||60;
-    return `<div class="icard ${bull?'bull':bear?'bear':''}">
-      <div class="ic-top"><span class="ic-src">${n.src}</span>
-        <span class="ic-dir ${bull?'up':bear?'dn':'ne'}">${bull?'▲':bear?'▼':'◆'} ${dir}</span>
-      </div>
-      <div class="ic-event">${ttl}${ttl.length>=65?'…':''}</div>
-      ${ana?`<div class="ic-analysis">${ana}</div>`:''}
-      <div class="ic-mag ${magC}">${mag}</div>
-      <div class="cbar"><div class="cfill" style="width:${conf}%;background:${col}"></div></div>
-      <div class="ic-conf">${t('conf')}: ${conf}%</div>
-    </div>`;
-  }).join('');
-}
-
-function computeBias(){
-  const r=allNews.filter(n=>Date.now()-n.ts<7200000);
-  let bull=0,bear=0;
-  r.forEach(n=>{const w=n.imp==='c'?3:n.imp==='h'?2:1;if(n.nasDir==='bull')bull+=w;else if(n.nasDir==='bear')bear+=w;});
-  return bull>bear+3?'bull':bear>bull+3?'bear':'neu';
-}
 
 // ── FEED ─────────────────────────────────────────────────
 const FILTERS=[
@@ -462,7 +360,37 @@ function ibadge(i){
 }
 function tagCl(g){return g==='NAS100'||g==='RALLY'?'nt-n':g==='VOL'?'nt-v':g==='CRASH'?'nt-c':'';}
 
-function impMini(n){
+// ── RAÍL DE CONTEXTO MULTI-ACTIVO ────────────────────────────
+// Por noticia: flecha = dirección ESPERADA (regla transparente del server,
+// n.cross); Δ% = cambio REAL ahora (mktData, /api/markets). Sin confianza inventada.
+const CROSS_CFG = {
+  NAS100:{lab:'NAS100', mk:'NAS100'}, US30:{lab:'US30', mk:'DOW'},
+  SPX500:{lab:'SPX',   mk:'SPX'},   VIX:{lab:'VIX',  mk:'VIX'},
+  BONOS:{lab:'BONOS',  mk:'US10Y', yld:true}, DOLAR:{lab:'DÓLAR', mk:'DXY'},
+  ORO:{lab:'ORO', mk:'GOLD'},
+};
+function crossRail(n){
+  const x = n && n.cross;
+  if(!x || !Array.isArray(x.assets)) return impMiniFallback(n);
+  const tip = x.tip ? x.tip[lang] || x.tip.es : '';
+  const chips = x.assets.map(a=>{
+    const cfg = CROSS_CFG[a.k]; if(!cfg) return '';
+    const arrow = a.dir==='up' ? '▲' : a.dir==='dn' ? '▼' : '~';
+    const d = mktData[cfg.mk];
+    let pct = '';
+    if(d && d.changePct != null){
+      const v = d.changePct||0;
+      pct = (v>=0?'+':'')+v.toFixed(2)+'%' + (cfg.yld ? ' yld' : '');
+    }
+    const cls = a.dir==='up' ? 'up' : a.dir==='dn' ? 'dn' : 'ne';
+    return `<span class="xc ${cls}" title="${cfg.lab}: esperado ${a.dir==='up'?'sube':a.dir==='dn'?'baja':'sin impacto claro'}${pct?' · real '+pct:''}. ${tip}">`
+      + `<b>${arrow}</b><span>${cfg.lab}</span>${pct?`<i>${pct}</i>`:''}</span>`;
+  }).join('');
+  return chips ? `<div class="xcrail">${chips}</div>` : '';
+}
+// Fallback: si el server todavía no manda cross (cache vieja), muestra el mini
+// NAS100 que existía antes — nunca tarjeta vacía
+function impMiniFallback(n){
   if(!n.nasDir||n.nasDir==='neu') return '';
   const bull=n.nasDir==='bull', bear=n.nasDir==='bear';
   const col=bull?'#22c55e':bear?'#ef4444':'#f59e0b';
@@ -507,15 +435,6 @@ function renderFeed(){
       const cls   = hdl==='DeItaone'?'delta':hdl==='FirstSquawk'?'first':'live';
 
       d.className=`sq sq-${cls}`;
-      const bull=n.nasDir==='bull',bear=n.nasDir==='bear';
-      const ncol=bull?'#22c55e':bear?'#ef4444':'#f59e0b';
-      const dir=bull?t('impUp'):bear?t('impDn'):t('impNeu');
-      const ana=lang==='es'?(n.nasEs||''):(n.nasEn||'');
-      const impH=n.nasDir&&n.nasDir!=='neu'?`<div class="nc-imp">
-        <span style="font-size:12px;font-weight:700;color:${ncol};flex-shrink:0">${bull?'▲':bear?'▼':'◆'}</span>
-        <div><div style="font-size:10px;font-weight:700;color:${ncol}">${dir}</div>${ana?`<div style="font-size:10px;color:var(--tx3)">${ana}</div>`:''}</div>
-      </div>`:'';
-
       // Iniciales del avatar
       const initials = hdl==='DeItaone'?'Δ1':hdl==='FirstSquawk'?'1S':'LS';
 
@@ -530,7 +449,7 @@ function renderFeed(){
           ${ibadge(n.imp)}
         </div>
         <div class="sq-body ${cls}">${n.title||''}</div>
-        ${impH}
+        ${crossRail(n)}
         <div class="sq-foot" style="color:${color}">
           <a href="https://x.com/${hdl}" target="_blank" style="color:${color};font-size:9px;text-decoration:none;display:flex;align-items:center;gap:3px">${xLogo} ver en X</a>
           ${n.url&&n.url!==`https://x.com/${hdl}`?`<a href="${n.url}" target="_blank" style="color:${color};font-size:9px;text-decoration:none">→ post</a>`:''}
@@ -581,14 +500,6 @@ function renderFeed(){
       const profileUrl = 'https://truthsocial.com/@realDonaldTrump';
       const postUrl    = n.url || profileUrl;
 
-      const impHtml = n.nasDir && n.nasDir!=='neu' ? `<div class="nc-imp">
-        <span style="font-size:12px;font-weight:700;color:${col};flex-shrink:0">${bull?'▲':bear?'▼':'◆'}</span>
-        <div>
-          <div style="font-size:10px;font-weight:700;color:${col}">${dir}</div>
-          ${ana?`<div style="font-size:10px;color:var(--tx3)">${ana}</div>`:''}
-        </div>
-      </div>` : '';
-
       d.innerHTML=`
         <span class="tc-topbar ${isDirect?'direct':'indirect'}"></span>
         <div class="tc-h">
@@ -601,7 +512,7 @@ function renderFeed(){
           ${ibadge(n.imp)}
         </div>
         <div class="tc-body ${bodyCls}">${n.title||''}</div>
-        ${impHtml}
+        ${crossRail(n)}
         <div class="tc-foot ${footCls}">
           <a href="${profileUrl}" target="_blank" class="nc-link" style="color:${isDirect?'#3b82f6':'#f97316'}">→ perfil oficial</a>
           ${postUrl!==profileUrl?`<a href="${postUrl}" target="_blank" class="nc-link" style="margin-left:4px;color:${isDirect?'#3b82f6':'#f97316'}">→ ver post</a>`:''}
@@ -622,14 +533,6 @@ function renderFeed(){
     // Posts directos de Trump → card azul especial también en el feed general
     if(n.trumpDirect){
       d.className='tc direct';
-      const bull=n.nasDir==='bull',bear=n.nasDir==='bear';
-      const col=bull?'#22c55e':bear?'#ef4444':'#f59e0b';
-      const dir=bull?t('impUp'):bear?t('impDn'):t('impNeu');
-      const ana=lang==='es'?(n.nasEs||''):(n.nasEn||'');
-      const impH=n.nasDir&&n.nasDir!=='neu'?`<div class="nc-imp">
-        <span style="font-size:12px;font-weight:700;color:${col};flex-shrink:0">${bull?'▲':bear?'▼':'◆'}</span>
-        <div><div style="font-size:10px;font-weight:700;color:${col}">${dir}</div>${ana?`<div style="font-size:10px;color:var(--tx3)">${ana}</div>`:''}</div>
-      </div>`:'';
       d.innerHTML=`<span class="tc-topbar direct"></span>
         <div class="tc-h">
           <div class="tc-av direct" style="font-size:16px">🇺🇸</div>
@@ -641,7 +544,7 @@ function renderFeed(){
           ${ibadge(n.imp)}
         </div>
         <div class="tc-body direct">${n.title||''}</div>
-        ${impH}
+        ${crossRail(n)}
         <div class="tc-foot direct">
           <a href="https://truthsocial.com/@realDonaldTrump" target="_blank" class="nc-link" style="color:#3b82f6">→ perfil oficial</a>
           ${n.url?`<a href="${n.url}" target="_blank" class="nc-link" style="color:#3b82f6;margin-left:4px">→ ver post</a>`:''}
@@ -656,9 +559,9 @@ function renderFeed(){
         <span class="ago">${ago(n.ts)}</span>
       </div>
       <div class="nc-title">${n.title||''}</div>
-      ${n.body?`<div class="nc-body">${n.body.slice(0,180)}${n.body.length>180?'…':''}</div>`:''}
-      ${impMini(n)}
-      <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px;align-items:center">
+      ${n.body?`<div class="nc-body">${n.body.slice(0,260)}${n.body.length>260?'…':''}</div>`:''}
+      ${crossRail(n)}
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;align-items:center">
         ${tags}
         ${n.url?`<a href="${n.url}" target="_blank" class="nc-link" style="margin-left:auto">→ abrir</a>`:''}
       </div>`;
@@ -681,34 +584,18 @@ function setLang(l){
   document.getElementById('srch').placeholder=t('ph');
   renderTabs();
   renderFeed();
-  renderMkt();
-  buildCal();
-  buildAlerts();
-  renderImpact(lastImpactData);
+  renderTicker();
   // Traducir noticias al español si es necesario
   if(l==='es' && allNews.length) translateNews(allNews).then(()=>renderFeed());
 }
 
-// ── MARKETS ──────────────────────────────────────────────
-const MKT_ORDER=['NAS100','SPX','DOW','VIX','DXY','US10Y','GOLD','CRUDE','NVDA','AAPL','MSFT','BTC'];
+// ── MARKETS (los precios viven en el ticker y en los chips de contexto) ──
 function fmtP(sym,p){
   if(p==null||isNaN(p)) return '—';
   if(['US10Y','VIX'].includes(sym)) return p.toFixed(2)+(sym==='US10Y'?'%':'');
   if(sym==='DXY') return p.toFixed(2);
   if(p>1000) return p.toLocaleString('en',{maximumFractionDigits:0});
   return '$'+p.toFixed(2);
-}
-function renderMkt(){
-  document.getElementById('mktP').innerHTML=MKT_ORDER.map(sym=>{
-    const d=mktData[sym]; if(!d) return '';
-    const pct=(d.changePct||0), dir=pct>=0?'up':'dn';
-    return `<div class="mr">
-      <span class="ms">${sym}</span>
-      <span class="mv ${dir}">${fmtP(sym,d.price)}</span>
-      <span class="mc ${dir}">${pct>=0?'+':''}${pct.toFixed(2)}%</span>
-    </div>`;
-  }).filter(Boolean).join('');
-  document.getElementById('mktTit').textContent=t('mktTit');
 }
 function renderTicker(){
   const syms=['NAS100','SPX','VIX','DXY','US10Y','NVDA','AAPL','META','MSFT','GOOGL','AMZN','TSLA','AMD','GOLD','CRUDE','BTC'];
@@ -719,55 +606,6 @@ function renderTicker(){
     return `<div class="tk"><span class="tks">${sym}</span><span class="${dir}">${fmtP(sym,d.price)}</span><span class="${dir}" style="font-size:9px">${pct}</span></div>`;
   }).filter(Boolean);
   document.getElementById('tkRow').innerHTML=parts.length?parts.join(''):`<span style="font-size:10px;color:var(--tx4)">${lang==='es'?'Iniciando servidor...':'Starting server...'}</span>`;
-}
-
-// ── CALENDAR ──────────────────────────────────────────────
-function buildCal(){
-  const et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
-  const h=et.getHours();
-  const CAL=lang==='es'?[
-    {t:'8:30',l:'Datos macro pre-apertura',s:'CPI / NFP / PPI si aplica hoy',dot:'#f59e0b',done:h>=9},
-    {t:'9:30',l:'Apertura NY — NAS100',s:'Inicio killzone NY',dot:'#22c55e',done:h>=10,active:h===9},
-    {t:'9:50',l:'Fin ventana prioritaria',s:'Mayor win rate señales',dot:'#22c55e',done:h>=10},
-    {t:'11:00',l:'Cierre killzone NY AM',s:'Reducir exposición',dot:'#475569',done:h>=11},
-    {t:'14:00',l:'Discursos Fed (si aplica)',s:'Powell / Waller / Williams',dot:'#8b5cf6',done:h>=14},
-    {t:'16:00',l:'Earnings post-market',s:'MAG7 — revisar hoy',dot:'#3b82f6',done:h>=16},
-  ]:[
-    {t:'8:30',l:'Pre-market data',s:'CPI / NFP / PPI if scheduled',dot:'#f59e0b',done:h>=9},
-    {t:'9:30',l:'NYSE / NAS100 open',s:'NY killzone begins',dot:'#22c55e',done:h>=10,active:h===9},
-    {t:'9:50',l:'Priority window ends',s:'Highest win rate zone',dot:'#22c55e',done:h>=10},
-    {t:'11:00',l:'NY AM killzone closes',s:'Reduce exposure',dot:'#475569',done:h>=11},
-    {t:'14:00',l:'Fed speeches (if any)',s:'Powell / Waller / Williams',dot:'#8b5cf6',done:h>=14},
-    {t:'16:00',l:'Post-market earnings',s:'MAG7 — check today',dot:'#3b82f6',done:h>=16},
-  ];
-  document.getElementById('calP').innerHTML=CAL.map(c=>`
-    <div class="ci">
-      <span class="ct" style="color:${c.done?'#334155':c.active?'#22c55e':'#f59e0b'}">${c.t}</span>
-      <div class="cd" style="background:${c.done?'#333333':c.dot}"></div>
-      <div><div class="cl" style="color:${c.done?'#334155':'#cbd5e1'}">${c.l}</div>
-      <div class="cs">${c.s}</div></div>
-    </div>`).join('');
-  document.getElementById('calTit').textContent=t('calTit');
-}
-
-// ── ALERTS ────────────────────────────────────────────────
-function buildAlerts(){
-  const recent=allNews.filter(n=>Date.now()-n.ts<3600000).slice(0,6);
-  const el=document.getElementById('alP');
-  if(!el) return;
-  el.innerHTML=recent.map(n=>{
-    const bull=n.nasDir==='bull',bear=n.nasDir==='bear';
-    const col=bull?'#22c55e':bear?'#ef4444':'#f59e0b';
-    const icon = n.trumpDirect ? '🇺🇸' : n.trump ? '🎙' : n.imp==='c' ? '⚡' : n.imp==='h' ? '⚠' : '📰';
-    const arrow = n.nasDir&&n.nasDir!=='neu' ? ' → '+(bull?'▲':'▼')+' NAS100' : '';
-    const nameLabel = n.trumpDirect ? '[TRUMP DIRECTO] ' : '';
-    return `<div class="ali" style="${n.trumpDirect?'background:#111111;border-radius:4px;padding:4px 6px;border-left:2px solid #555555':''}">
-      <span class="al-i" style="color:${n.trumpDirect?'#999999':col}">${icon}</span>
-      <span class="al-t" style="color:${n.trumpDirect?'#cccccc':'var(--tx2)'}">${nameLabel}${(n.title||'').slice(0,68)}${arrow}</span>
-      <span class="al-a">${ago(n.ts)}</span>
-    </div>`;
-  }).join('') || `<div style="font-size:10px;color:var(--tx4);padding:6px 0">${lang==='es'?'Sin alertas recientes':'No recent alerts'}</div>`;
-  document.getElementById('alTit').textContent=t('alTit');
 }
 
 function checkBreaking(){
@@ -816,14 +654,12 @@ async function hardRefresh(){
 }
 
 // ── INIT ──────────────────────────────────────────────────
-renderTabs(); buildCal(); updateClock();
+renderTabs(); updateClock();
 setInterval(updateClock, 1000);
-setInterval(buildCal, 60000);
-loadNews();   loadMarkets();  loadSquawk();
+loadNews(); loadMarkets(); loadSquawk();
 setInterval(loadNews,    90000);
-setInterval(loadMarkets, 20000);
+setInterval(loadMarkets, 60000);   // ticker + Δ% de los chips de contexto
 setInterval(loadSquawk,  60000);
-setInterval(()=>{ if(serverOk) loadImpact(); }, 120000);
 </script>
 </body>
 </html>

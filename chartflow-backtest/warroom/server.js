@@ -29,6 +29,9 @@ app.use(express.json());
 app.use(express.static(__dirname, { maxAge: 0, etag: false }));
 app.use((req, res, next) => { res.set('Cache-Control', 'no-store, no-cache, must-revalidate'); res.set('Pragma', 'no-cache'); res.set('Expires', '0'); next(); });
 
+// Compatibilidad: news.html era la portada temporaria; ahora vive en / (index.html)
+app.get('/news.html', (req, res) => res.redirect('/'));
+
 // ── CACHE ─────────────────────────────────────────────────────
 let newsCache     = [];
 let mktCache      = {};
@@ -185,6 +188,68 @@ function analyzeNas(title, body, cat, tags) {
     return mk('bear','general_bear','high',75,'Sell-off en activos de riesgo → NAS100 cae','Risk asset sell-off → NAS100 lower');
 
   return mk('neu', null, 'low', 40, 'Impacto directo en NAS100 no determinado', 'Direct NAS100 impact undetermined');
+}
+
+// ════════════════════════════════════════════════════════════════
+// CONTEXTO MULTI-ACTIVO — matriz de correlación transparente
+// Reglas deterministas por tipo de evento (sin números fingidos):
+// cada regla de analyzeNas mapea la dirección ESPERADA de cada activo.
+// dir: 'up' sube | 'dn' baja | '~' neutral/depende del régimen
+// ════════════════════════════════════════════════════════════════
+const CROSS_ASSETS = ['NAS100', 'US30', 'SPX500', 'VIX', 'BONOS', 'DOLAR', 'ORO'];
+const CROSS_MAP = {
+  // ── Fed ──
+  fed_bull:     { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'up', DOLAR:'dn', ORO:'up',
+    tip: { es:'Fed dovish: tasas bajan → múltiplos de crecimiento suben, dólar cede, oro se beneficia', en:'Dovish Fed: rates fall → growth multiples expand, dollar slips, gold benefits' } },
+  fed_bear:     { NAS100:'dn', US30:'dn', SPX500:'dn', VIX:'up', BONOS:'dn', DOLAR:'up', ORO:'dn',
+    tip: { es:'Fed hawkish: tasas suben → compresión de múltiplos, dólar arriba, bonos caen (yields arriba)', en:'Hawkish Fed: rates rise → multiple compression, dollar up, bonds down (yields up)' } },
+  // ── Inflación (CPI) ──
+  cpi_bull:     { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'up', DOLAR:'dn', ORO:'~',
+    tip: { es:'CPI frío: menos presión Fed → riesgo-on; el oro depende del régimen', en:'Cool CPI: less Fed pressure → risk-on; gold depends on regime' } },
+  cpi_bear:     { NAS100:'dn', US30:'dn', SPX500:'dn', VIX:'up', BONOS:'dn', DOLAR:'up', ORO:'dn',
+    tip: { es:'CPI caliente: más alzas Fed → yields suben → bonos/cripta/crecimiento caen; dólar arriba', en:'Hot CPI: more Fed hikes → yields up → bonds/growth fall; dollar up' } },
+  // ── Empleo (NFP) ──
+  nfp_bull:     { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'up', DOLAR:'dn', ORO:'~',
+    tip: { es:'NFP débil: Fed más flexible → riesgo-on moderado', en:'Weak NFP: friendlier Fed → mild risk-on' } },
+  nfp_bear:     { NAS100:'dn', US30:'dn', SPX500:'dn', VIX:'up', BONOS:'dn', DOLAR:'up', ORO:'dn',
+    tip: { es:'NFP fuerte: economía caliente → Fed hawkish → yields suben, riesgo bajo presión', en:'Strong NFP: hot economy → hawkish Fed → yields up, risk under pressure' } },
+  // ── Trump / geopolítica ──
+  trump_deal:   { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'up', DOLAR:'~', ORO:'dn',
+    tip: { es:'Acuerdo comercial: alivio de riesgo → índices arriba, volatilidad cae, oro cede por refugio', en:'Trade deal: risk relief → indices up, volatility down, gold loses safe-haven bid' } },
+  trump_tariff: { NAS100:'dn', US30:'dn', SPX500:'dn', VIX:'up', BONOS:'up', DOLAR:'~', ORO:'up',
+    tip: { es:'Aranceles: costo de cadenas de suministro → tech presionado; refugio: oro y bonos', en:'Tariffs: supply-chain cost shock → tech hit; safe havens: gold and bonds' } },
+  trump_dereg:  { NAS100:'up', US30:'~', SPX500:'up', VIX:'dn', BONOS:'~', DOLAR:'~', ORO:'~',
+    tip: { es:'Desregulación: beneficios de márgenes sectoriales, sin efecto macro transversal', en:'Deregulation: sector margin gains, no broad macro shift' } },
+  // ── Earnings tech ──
+  earn_bull:    { NAS100:'up', US30:'~', SPX500:'up', VIX:'dn', BONOS:'~', DOLAR:'~', ORO:'~',
+    tip: { es:'Earnings tech positivos: sector lidera; macro poco afectado', en:'Positive tech earnings: sector leads; macro barely moves' } },
+  earn_bear:    { NAS100:'dn', US30:'~', SPX500:'dn', VIX:'up', BONOS:'~', DOLAR:'~', ORO:'~',
+    tip: { es:'Earnings tech decepcionantes: presión sectorial; macro indiferente', en:'Disappointing tech earnings: sector pressure; macro neutral' } },
+  // ── Tasas/bonos explicitos ──
+  yield_bull:   { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'up', DOLAR:'dn', ORO:'~',
+    tip: { es:'Yields bajan: growth más atractivo respecto a bonos', en:'Yields fall: growth more attractive versus bonds' } },
+  yield_bear:   { NAS100:'dn', US30:'dn', SPX500:'dn', VIX:'~', BONOS:'dn', DOLAR:'up', ORO:'~',
+    tip: { es:'Yields suben: mayor tasa de descuento presiona crecimiento; dólar arriba', en:'Yields rise: higher discount rate hits growth; dollar up' } },
+  // ── Volatilidad / riesgo ──
+  vix_bear:     { NAS100:'dn', US30:'dn', SPX500:'dn', VIX:'up', BONOS:'up', DOLAR:'up', ORO:'up',
+    tip: { es:'Risk-off: índices caen, refugios suben (oro, bonos, dólar, VIX)', en:'Risk-off: indices fall, havens rise (gold, bonds, dollar, VIX)' } },
+  china_bear:   { NAS100:'dn', US30:'dn', SPX500:'~', VIX:'up', BONOS:'up', DOLAR:'~', ORO:'up',
+    tip: { es:'Riesgo supply chain/China: tech expuesto; refugio parcial en oro', en:'China/supply-chain risk: tech exposed; partial gold havens' } },
+  // ── Genéricos ──
+  general_bull: { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'dn', DOLAR:'~', ORO:'dn',
+    tip: { es:'Momentum alcista: riesgo-on; refugios ceden', en:'Bullish momentum: risk-on; havens fade' } },
+  general_bear: { NAS100:'dn', US30:'dn', SPX500:'dn', VIX:'up', BONOS:'up', DOLAR:'up', ORO:'up',
+    tip: { es:'Sell-off de riesgo: huida hacia refugios', en:'Risk sell-off: flight to havens' } },
+};
+// Devuelve {tip, assets:[{k,dir}]} solo si hay regla determinada; null si el
+// impacto no está determinado (la UI no muestra raíl en ese caso)
+function crossAssetContext(key) {
+  const m = key ? CROSS_MAP[key] : null;
+  if (!m) return null;
+  return {
+    tip: m.tip,
+    assets: CROSS_ASSETS.map(k => ({ k, dir: m[k] || '~' })),
+  };
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -496,6 +561,7 @@ async function fetchOne(feed) {
         conf:        nas.conf,
         nasEs:       nas.es,
         nasEn:       nas.en,
+        cross:       crossAssetContext(nas.key),
       };
     });
     markFeedHealth(feed.src, items.length > 0, items.length);
@@ -665,6 +731,7 @@ function parseNitterXML(xml, account) {
       conf:        nas.conf,
       nasEs:       nas.es,
       nasEn:       nas.en,
+      cross:       crossAssetContext(nas.key),
     });
   }
   return items;
@@ -701,6 +768,7 @@ async function fetchLiveSquawkDirect() {
           url: item.link || 'https://x.com/LiveSquawk',
           nasDir:nas.dir, nasKey:nas.key, nasMag:nas.mag, conf:nas.conf,
           nasEs:nas.es, nasEn:nas.en,
+          cross: crossAssetContext(nas.key),
         };
       });
     } catch { continue; }
