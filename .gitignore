@@ -55,6 +55,14 @@ polygon_key.txt
 *.key
 *.pem
 
+# Trading data (personal activity - never commit)
+data/alerts.json
+data/telegram-config.json
+chartflow-backtest/trade-records.json
+chartflow-backtest/trade-records/
+chartflow-backtest/historical-data/
+*.local.*
+
 # Screenshots and charts (generated files)
 assets/screenshots/
 assets/charts/
