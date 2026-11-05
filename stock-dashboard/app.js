@@ -21,7 +21,7 @@ var STOCKS = [
   {sym:'MSFT', name:'Microsoft Corp.',     title:'Microsoft Corp.', dot:'#f05a28'},
   {sym:'AMZN', name:'Amazon.com, Inc.',    title:'Amazon.com, Inc.', dot:'#ff9900'},
   {sym:'GOOGL',name:'Alphabet Inc (Google) Class A', title:'Alphabet Inc (Google) Class A', dot:'#4285f4'},
-  {sym:'GOOG', name:'Alphabet Inc (Google) Class C', title:'Alphabet Inc (Google) Class C', dot:'#34a853'},
+  {sym:'AMD',  name:'Advanced Micro Devices',  title:'Advanced Micro Devices', dot:'#ed1c24'},
   {sym:'META', name:'Meta Platforms Inc Class A', title:'Meta Platforms Inc Class A', dot:'#0082fb'},
   {sym:'TSLA', name:'Tesla, Inc.',         title:'Tesla, Inc.', dot:'#cc0000'},
 ];

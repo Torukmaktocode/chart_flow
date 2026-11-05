@@ -5,7 +5,7 @@ const path = require("path");
 const ROOT = __dirname;
 const PORT = 8765;
 const FINNHUB_TOKEN = process.env.FINNHUB_TOKEN || "";
-const SYMBOLS = new Set(["NVDA", "AAPL", "MSFT", "AMZN", "GOOGL", "GOOG", "META", "TSLA"]);
+const SYMBOLS = new Set(["NVDA", "AAPL", "MSFT", "AMZN", "GOOGL", "AMD", "META", "TSLA"]);
 
 function getMassiveKey() {
   if (process.env.MASSIVE_API_KEY) return process.env.MASSIVE_API_KEY.trim();

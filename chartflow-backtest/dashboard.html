@@ -964,6 +964,9 @@ let priceCenter=0; // Center price for zoom
   $("dateFrom").value=past.toISOString().split("T")[0];
 
   $("startBtn").onclick=startBacktest;$("exitBtn").onclick=exitBacktest;
+  // Cambiar simbolo/TF con la sesion abierta = recarga instantanea (sin volver a pulsar INICIAR)
+  $("symSel").onchange=()=>{ if(S.loaded){ if(S.open.length)toast("⚠ Cambiar de activo cierra los trades abiertos en curso"); startBacktest(); } };
+  $("tfSel").onchange=()=>{ if(S.loaded){ if(S.open.length)toast("⚠ Cambiar temporalidad cierra los trades abiertos en curso"); startBacktest(); } };
   $("playPause").onclick=togglePlay;$("stepFwd").onclick=stepFwd;$("stepBack").onclick=stepBack;
   $("buyBtn").onclick=()=>enterMode("LONG");$("sellBtn").onclick=()=>enterMode("SHORT");
   $("confirmBtn").onclick=confirmTrade;$("cancelBtn").onclick=exitMode;
