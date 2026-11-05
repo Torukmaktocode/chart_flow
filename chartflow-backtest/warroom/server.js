@@ -1663,18 +1663,9 @@ app.get('/api/funds', async (req, res) => {
   res.json({ ok: true, ...fundCache });
 });
 
-// ── RUTA WR2 — War Room 2 separado ──────────────────────────
-app.get('/wr2', (req, res) => {
-  const wr2Path = path.join(__dirname, 'wr2.html');
-  if (fs.existsSync(wr2Path)) {
-    res.sendFile(wr2Path);
-  } else {
-    // Fallback: servir index.html con parámetro room=wr2
-    res.redirect('/?room=wr2');
-  }
-});
-
 // ── ARRANCAR ──────────────────────────────────────────────────
+// La UI unica es la portada de noticias (index.html); las pantallas
+// "Bloomberg clone" (WR1 extendida y wr2.html) fueron eliminadas a peticion del usuario
 const PORT = 3001;
 app.listen(PORT, async () => {
   console.log('\n╔══════════════════════════════════════════════╗');
