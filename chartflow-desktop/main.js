@@ -5,6 +5,10 @@ const { app, BrowserWindow, ipcMain, WebContentsView } = require("electron");
 // Fix de composicion: en Windows hay GPUs (drivers) con las que los iframes
 // cross-origin se pintan en negro; software rendering evita el blank screen
 app.disableHardwareAcceleration();
+// Identidad de la app para que la barra de tareas use el icono ChartCode
+// (sin esto, Windows agrupa la ventana bajo el icono generico de electron.exe)
+const ACT_USER_MODEL_ID = "com.torukmaktocode.chartcode";
+app.setAppUserModelId(ACT_USER_MODEL_ID);
 const { spawn, execSync } = require("child_process");
 const path = require("path");
 const net = require("net");
@@ -21,6 +25,11 @@ const homeServer = http.createServer((req, res) => {
 homeServer.listen(HOME_PORT, "127.0.0.1");
 
 // Los backends viven en el repo raiz (modo desarrollo) o en resources/backend (empaquetado)
+// Persisncia del perfil en carpeta PROPIA (no el "Electron" generico): aqui
+// quedan los localStorage de cada panel (temas, fondos, templates, alertas)
+// entre reinicios de la app
+app.setPath("userData", path.join(app.getPath("appData"), "ChartCode"));
+
 const BACKEND_ROOT = app.isPackaged
   ? path.join(process.resourcesPath, "backend")
   : path.join(__dirname, "..");
@@ -130,7 +139,12 @@ function createWindow() {
     },
   });
   win.loadURL(`http://127.0.0.1:${HOME_PORT}/`);
-  win.once("ready-to-show", () => { win.show(); win.focus(); });
+  win.once("ready-to-show", () => {
+    win.show();
+    win.focus();
+    // reforzar el icono de barra de tareas/ventana (ChartCode)
+    try { win.setIcon(iconPath); } catch (e) { console.warn("icon warn:", e.message); }
+  });
   win.on("closed", () => { win = null; });
   win.on("resize", layoutPane);
 }
@@ -166,6 +180,19 @@ function activatePane(name) {
     v = new WebContentsView({ webPreferences: { contextIsolation: true, nodeIntegration: false } });
     v.setBounds(paneBounds());
     v.webContents.loadURL(PANE_URLS[name]);
+    v.webContents.once("did-finish-load", () => {
+      // restaurar el estado guardado de este panel si existe en el snapshot
+      try {
+        if (fs.existsSync(STATE_FILE())) {
+          const db = JSON.parse(fs.readFileSync(STATE_FILE(), "utf8"));
+          const data = db.panes && db.panes["@" + name];
+          if (data && Object.keys(data).length) {
+            const js = `(()=>{const data=${JSON.stringify(data)};for(const k in data){localStorage.setItem(k,data[k])};return "ok"})()`;
+            v.webContents.executeJavaScript(js, true).then(() => v.webContents.reload()).catch(() => {});
+          }
+        }
+      } catch (e) { console.warn("restore warn:", e.message); }
+    });
     // CLIC DERECHO → menu de fondo via evento NATIVO de Electron (el renderer
     // no siempre entrega 'contextmenu' en views embebidas; el nivel main SI)
     v.webContents.on("context-menu", (e, params) => {
@@ -187,6 +214,43 @@ ipcMain.on("activate-pane", (e, name) => activatePane(name));
 
 ipcMain.handle("services", () => SERVICES.map(s => ({ name: s.name, label: s.label, port: s.port, status: s.status || "-" })));
 ipcMain.handle("open-data-dir", () => { try { execSync(`explorer.exe "${path.join(BACKEND_ROOT, "chartflow-backtest", "historical-data")}"`, { shell: "cmd.exe" }); } catch (e) {} });
+
+// ── ESTADO DEL USUARIO: guardar/restaurar tal como la tiene ──
+const STATE_FILE = () => path.join(app.getPath("userData"), "estado-app.json");
+function collectPaneState(name, cb) {
+  const v = panes[name];
+  if (!v) { cb(null); return; }
+  v.webContents.executeJavaScript(
+    "(()=>{const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);o[k]=localStorage.getItem(k)}return JSON.stringify(o)})()",
+    true
+  ).then(r => cb({ pane: name, data: JSON.parse(r || "{}") })).catch(() => cb(null));
+}
+async function saveAppState(notify) {
+  const names = Object.keys(panes);
+  if (!names.length) return { saved: 0, panes: 0 };
+  const results = await Promise.all(names.map(n => new Promise(r => collectPaneState(n, r))));
+  const db = {};
+  let keys = 0;
+  results.filter(Boolean).forEach(r => {
+    const n = Object.keys(r.data);
+    keys += n.length;
+    // prefijar por panel para no pisar el espacio del otro
+    db["@" + r.pane] = r.data;
+  });
+  fs.writeFileSync(STATE_FILE(), JSON.stringify({
+    savedAt: new Date().toISOString(),
+    version: 1,
+    panes: db,
+  }, null, 2), "utf8");
+  if (notify && win && !win.isDestroyed()) {
+    win.webContents.executeJavaScript(`window.toastHome && window.toastHome("💾 Estado guardado: ${names.length} paneles · ${keys} preferencias")`);
+  }
+  return { saved: keys, panes: names.length, file: STATE_FILE() };
+}
+ipcMain.handle("save-config", () => saveAppState(true));
+
+// AUTO-GUARDADO periodico: el usuario no perdera su disposicion visual
+setInterval(() => { if (win && Object.keys(panes).length) saveAppState(false); }, 120000);
 
 app.whenReady().then(async () => {
   // puerto de depuracion para agentes/antrenamiento con agent-browser

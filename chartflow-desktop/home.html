@@ -38,6 +38,7 @@ iframe.show{display:block}
   <button class="tab" data-tab="macro" data-port="8770">💵 Dolar/VIX</button>
   <button class="tab" data-tab="chartflow" data-port="8780">⚡ ChartFlow</button>
   <span class="spacer"></span>
+  <button class="tab" id="saveBtn" title="Guardar tu disposicion visual exacta (temas, fondos, templates, paneles)">💾 Guardar</button>
   <div class="svc" id="leds"></div>
 </div>
 
@@ -55,6 +56,18 @@ function activate(name){
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>activate(t.dataset.tab));
 activate('backtest');
+
+// Guardado explicito del estado visual tal como la tiene
+window.toastHome = (msg) => {
+  const bar = document.getElementById('footerBar');
+  if (!bar) return;
+  bar.innerHTML = `<span class="line" style="color:#00e5a0">${msg}</span>`;
+  clearTimeout(window.__toastT);
+  window.__toastT = setTimeout(() => {
+    bar.innerHTML = '<span class="line">servicios listos · guardado automatico cada 2 min</span>';
+  }, 4000);
+};
+document.getElementById('saveBtn').onclick = () => window.cf.saveConfig();
 
 // LEDs de estado
 function renderLeds(list){
