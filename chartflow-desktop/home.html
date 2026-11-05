@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>ChartFlow Desktop</title>
+<style>
+:root{
+  --bg:#0D0E0E;--panel:#141519;--hover:#24262b;--border:rgba(255,255,255,.08);
+  --text:#f4f4f5;--dim:#92939a;--ok:#00c896;--warn:#ffc800;--err:#ff3355;
+  --font:'JetBrains Mono',Consolas,monospace;--ui:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--ui)}
+.topbar{height:34px;display:flex;align-items:center;gap:4px;background:var(--panel);border-bottom:1px solid var(--border);padding:0 10px;flex-shrink:0}
+.brand{font:800 12px var(--font);letter-spacing:1px;margin-right:8px;white-space:nowrap}
+.brand b{color:var(--ok)}
+.tab{height:24px;padding:0 12px;border:1px solid var(--border);background:transparent;color:var(--dim);border-radius:4px;font:700 10px var(--ui);cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+.tab.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.spacer{flex:1}
+.svc{display:flex;align-items:center;gap:5px;font:10px var(--font);color:var(--dim);margin-left:8px;white-space:nowrap}
+.led{width:7px;height:7px;border-radius:50%;background:var(--err)}
+.led.up{background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.led.mid{background:var(--warn)}
+.main{flex:1;position:relative}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:var(--bg)}
+iframe.show{display:block}
+.footer{height:64px;background:var(--panel);border-top:1px solid var(--border);display:flex;overflow:hidden;padding:4px 10px;gap:10px;font:9px var(--font);color:var(--dim);flex-shrink:0}
+.col{min-width:200px;overflow:hidden}
+.col.lock{min-width:260px}
+.line{white-space:pre;display:block;line-height:12.5px;overflow:hidden;text-overflow:ellipsis}
+.col.lock .line{color:#9fb8ff}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">CHART FLOW <b>DESKTOP</b></span>
+  <button class="tab" data-tab="backtest" data-port="8790">📈 Backtesting</button>
+  <button class="tab" data-tab="warroom" data-port="3001">📰 War Room</button>
+  <button class="tab" data-tab="stock" data-port="8765">📊 Stocks</button>
+  <button class="tab" data-tab="macro" data-port="8770">💵 Dolar/VIX</button>
+  <button class="tab" data-tab="chartflow" data-port="8780">⚡ ChartFlow</button>
+  <span class="spacer"></span>
+  <div class="svc" id="leds"></div>
+</div>
+
+<div class="main" id="panes">
+  <iframe id="pane-backtest" src="http://127.0.0.1:8790/dashboard.html"></iframe>
+  <iframe id="pane-warroom"  src="http://127.0.0.1:3001/"></iframe>
+  <iframe id="pane-stock"    src="http://127.0.0.1:8765/dashboard.html"></iframe>
+  <iframe id="pane-macro"    src="http://127.0.0.1:8770/dashboard.html"></iframe>
+  <iframe id="pane-chartflow" src="http://127.0.0.1:8780/dashboard.html"></iframe>
+</div>
+
+<div class="footer">
+  <div class="col lock" id="log-backtest"><span class="line">backtest: esperando logs del servicio...</span></div>
+  <div class="col" id="log-warroom"><span class="line">warroom: esperando logs del servicio...</span></div>
+  <div class="col" id="log-stock"><span class="line">stock: esperando logs del servicio...</span></div>
+  <div class="col" id="log-macro"><span class="line">macro: esperando logs del servicio...</span></div>
+  <div class="col" id="log-chartflow"><span class="line">chartflow: esperando logs del servicio...</span></div>
+</div>
+
+<script>
+const PORTS = { backtest:8790, warroom:3001, stock:8765, macro:8770, chartflow:8780 };
+function activate(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===name));
+  document.querySelectorAll('.main iframe').forEach(f=>f.classList.remove('show'));
+  document.getElementById('pane-'+name).classList.add('show');
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>activate(t.dataset.tab));
+activate('backtest');
+
+// LEDs de estado
+function renderLeds(list){
+  const box = document.getElementById('leds');
+  box.innerHTML = list.map(s=>{
+    const up = /ACTIVO|corriendo/.test(s.status);
+    const mid = /iniciando/.test(s.status);
+    return `<span class="svc" title="${s.label}: ${s.status}"><span class="led ${up?'up':mid?'mid':''}"></span>${s.name}</span>`;
+  }).join("");
+}
+window.cf.onStatus(list => renderLeds(list));
+window.cf.onLog(({name, line}) => {
+  const box = document.getElementById('log-'+name);
+  if(!box) return;
+  const first = box.querySelector('.line');
+  if (box.dataset.init !== '1') { box.innerHTML=''; box.dataset.init='1'; }
+  const el = document.createElement('span');
+  el.className='line';
+  el.textContent = line;
+  box.appendChild(el);
+  while (box.children.length > 4) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight;
+});
+
+// primer estado + refresco automatico
+window.cf.services().then(renderLeds);
+</script>
+</body>
+</html>

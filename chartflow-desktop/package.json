@@ -1,0 +1,71 @@
+{
+  "name": "chartflow-desktop",
+  "productName": "ChartFlow Desktop",
+  "version": "0.1.0",
+  "description": "ChartFlow Desktop - backtesting, noticias y dashboards en un solo programa para Windows",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "author": "Torukmaktocode",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.torukmaktocode.chartflow",
+    "productName": "ChartFlow Desktop",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "home.html",
+      "splash.css"
+    ],
+    "extraResources": [
+      {
+        "from": "..",
+        "to": "backend",
+        "filter": [
+          "chartflow-backtest/server.js",
+          "chartflow-backtest/download-history.js",
+          "chartflow-backtest/dashboard.html",
+          "chartflow-backtest/package.json",
+          "chartflow-backtest/historical-data/**",
+          "chartflow-backtest/warroom/server.js",
+          "chartflow-backtest/warroom/index.html",
+          "chartflow-backtest/warroom/package.json",
+          "chartflow-backtest/warroom/node_modules/**",
+          "chartflow-backtest/node_modules/**",
+          "chartflow/server.js",
+          "chartflow/dashboard.html",
+          "chartflow/package.json",
+          "chartflow/node_modules/**",
+          "stock-dashboard/server.js",
+          "stock-dashboard/dashboard.html",
+          "stock-dashboard/app.js",
+          "stock-dashboard/styles.css",
+          "stock-dashboard/package.json",
+          "stock-dashboard/node_modules/**",
+          "dollar-vix-bonds-dashboard/server.js",
+          "dollar-vix-bonds-dashboard/dashboard.html",
+          "dollar-vix-bonds-dashboard/package.json",
+          "dollar-vix-bonds-dashboard/node_modules/**"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": null
+    }
+  },
+  "allowScripts": {
+    "electron@33.4.11": true
+  }
+}
