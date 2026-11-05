@@ -447,6 +447,7 @@
           <div class="side-row"><label>Tipo</label>
             <select id="cfgOrderType" style="flex:1;height:24px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:4px;padding:0 5px;font:10px var(--mono)">
               <option value="MARKET">Mercado</option>
+              <option value="LIMIT">Limit</option>
               <option value="STOP">Stop</option>
             </select>
           </div>
@@ -454,6 +455,8 @@
           <div class="side-row"><label>SL</label><input type="number" id="cfgSL" placeholder="pips" step="0.1"><span class="unit">pips</span></div>
           <div class="side-row"><label>TP</label><input type="number" id="cfgTP" placeholder="pips" step="0.1"><span class="unit">pips</span></div>
           <div class="side-row"><label>Tamaño</label><input type="number" id="cfgSize" value="1" min="0.01" step="0.01"><span class="unit">lote</span></div>
+          <div class="side-row"><label>Spread</label><input type="number" id="cfgSpread" value="0" min="0" step="0.1"><span class="unit">pips</span></div>
+          <div class="side-row" style="margin-top:2px"><label>Slippage</label><input type="number" id="cfgSlippage" value="0" min="0" step="0.1"><span class="unit">pips</span></div>
           <div class="trade-actions" style="margin-top:5px">
             <button class="buy" id="confirmBtn" style="font-size:10px" data-i18n="Confirmar">✓ CONFIRMAR</button>
             <button class="sell" id="cancelBtn" style="background:var(--s3);color:var(--dim);font-size:10px" data-i18n="Cancelar">✕ CANCELAR</button>
@@ -967,7 +970,7 @@ let priceCenter=0; // Center price for zoom
   $("saveEditBtn").onclick=saveEdit;$("cancelEditBtn").onclick=()=>{S.selectedTrade=null;$("editSection").style.display="none";render()};
   $("breakevenBtn").onclick=setBreakeven;
   $("speedSel").onchange=()=>{S.speed=+$("speedSel").value;if(S.playing)startTimer()};
-  $("progBar").onclick=e=>{const r=$("progBar").getBoundingClientRect();S.idx=Math.floor(((e.clientX-r.left)/r.width)*(S.candles.length-1));checkTrades(S.candles[S.idx]);render()};
+  $("progBar").onclick=e=>{if(!S.loaded)return;const r=$("progBar").getBoundingClientRect();advanceTo(Math.floor(((e.clientX-r.left)/r.width)*(S.candles.length-1)))};
   
   // Preservar datos locales: el auto-borrado destruia trades, sesiones y habitos
   // en cada recarga de pagina. Los registros viven en localStorage + servidor.
@@ -1395,9 +1398,48 @@ function saveTrainingSession(minutes){
 
 // REPLAY
 function togglePlay(){S.playing=!S.playing;if(S.playing){$("playPause").textContent="⏸";$("playPause").classList.add("playing");startTimer()}else{$("playPause").textContent="▶";$("playPause").classList.remove("playing");clearInterval(S.timer);S.timer=null}}
-function startTimer(){clearInterval(S.timer);S.timer=setInterval(()=>{if(S.idx<S.candles.length-1){S.idx++;checkTrades(S.candles[S.idx]);render()}else{S.playing=false;$("playPause").textContent="▶";$("playPause").classList.remove("playing");clearInterval(S.timer);toast("Fin de datos")}},Math.max(20,Math.floor(1000/S.speed)))}
-function stepFwd(){if(S.idx<S.candles.length-1){S.idx++;checkTrades(S.candles[S.idx]);render()}}
-function stepBack(){if(S.idx>0){S.idx--;render()}}
+function startTimer(){clearInterval(S.timer);S.timer=setInterval(()=>{if(S.idx<S.candles.length-1){advanceTo(S.idx+1)}else{S.playing=false;$("playPause").textContent="▶";$("playPause").classList.remove("playing");clearInterval(S.timer);toast("Fin de datos")}},Math.max(20,Math.floor(1000/S.speed)))}
+function stepFwd(){if(S.idx<S.candles.length-1)advanceTo(S.idx+1)}
+function stepBack(){if(S.idx>0)advanceTo(S.idx-1)}
+
+// MAQUINA DE ESTADOS DEL REPLAY (honesto):
+// - Avanzar N velas procesa TODAS las intermedias (los SL/TP intermedios ya no se pierden)
+// - Retroceder REVIERTE el estado real: balance, equity y trades reabiertos
+function advanceTo(idx){
+  if(!S.loaded||S.candles.length<2)return;
+  idx=clamp(idx,0,S.candles.length-1);
+  if(idx===S.idx)return;
+  if(idx>S.idx){
+    for(let i=S.idx+1;i<=idx;i++){S.idx=i;checkTrades(S.candles[i])}
+    render();return;
+  }
+  // --- REWIND ---
+  // 1. Trades cerrados despues de idx vuelven a su estado pre-cierre
+  const stillClosed=[],revived=[];
+  S.closed.forEach(t=>{
+    if(t.exitIdx!=null&&t.exitIdx>idx){
+      t.pnl=0;t.exitPrice=null;t.exitTime=null;t.exitIdx=null;t.reason=null;
+      t.status=t.orderType==="STOP"?"PENDING":"OPEN";
+      revived.push(t);
+    }else stillClosed.push(t);
+  });
+  S.closed=stillClosed;
+  // 2. Colocar los revividos de nuevo en la lista de abiertos (los que no existian a esa altura se pierden)
+  //    (los trades con entryIdx>idx quedan fuera: todavia no fue colocados)
+  S.open=S.open.filter(t=>t.entryIdx!=null&&t.entryIdx<=idx).concat(revived.filter(t=>t.entryIdx!=null&&t.entryIdx<=idx));
+  revived.forEach(t=>{if(t.entryIdx==null||t.entryIdx>idx){/*falso positivo: no existia*/}});
+  // 3. Balance y equity reconstruidos desde initial + trades de sesion cerrados a esa altura
+  const sessionClosed=stillClosed.filter(t=>t.exitIdx!=null).sort((a,b)=>a.exitIdx-b.exitIdx);
+  S.balance=S.initial+sessionClosed.reduce((s,t)=>s+t.pnl,0);
+  let eq=S.initial;
+  S.equity=[{t:(S.candles[0]||{}).t||Date.now(),eq}];
+  sessionClosed.forEach(t=>{eq+=t.pnl;S.equity.push({t:t.exitTime,eq})});
+  S.idx=idx;
+  // 4. Re-evaluar la vela actual: pendientes que cruzan entrada, SL/TP que ya toco esta vela
+  checkTrades(S.candles[idx]);
+  renderMetrics();drawEquity();renderTrades();render();
+  if(revived.length)toast("⏪ Estado revertido a la vela "+new Date(S.candles[idx].t).toLocaleString("es-ES"));
+}
 
 // ENTRY MODE
 function enterMode(type){
@@ -1419,14 +1461,17 @@ function exitMode(){
 }
 // Sizing honesto: riesgo$ = pipsSL * valorPuntoUSD * tamano → tamano = riesgo$/(pipsSL*valorPunto)
 // pipValue = valor en USD de 1 pip para 1 unidad de tamano (contrato estandar)
-function placeMarketTrade(type,{currentPrice,slPips,tpPips}){
+// Se paga spread+slippage en la entrada market (compra mas caro / venta mas barato)
+function placeMarketTrade(type,{currentPrice,slPips,tpPips,spread,slip}){
   const sym=SYM[S.symbol]||{};
   const pip=sym.pip||0.01,pipValue=sym.pipValue||1;
-  const sl=type==="LONG"?currentPrice-slPips*pip:currentPrice+slPips*pip;
-  const tp=type==="LONG"?currentPrice+tpPips*pip:currentPrice-tpPips*pip;
+  const cost=((spread||0)+(slip||0))*pip;
+  const entry=type==="LONG"?currentPrice+cost:currentPrice-cost;
+  const sl=type==="LONG"?entry-slPips*pip:entry+slPips*pip;
+  const tp=type==="LONG"?entry+tpPips*pip:entry-tpPips*pip;
   const riskAmt=S.balance*(S.riskPct/100);
   const size=slPips>0?Math.max(1,Math.floor(riskAmt/(slPips*pipValue))):1;
-  return{id:"t-"+Date.now(),type,orderType:"MARKET",entryPrice:currentPrice,entryTime:S.candles[S.idx]?.t,entryIdx:S.idx,sl,tp,slPips,tpPips,pip,pipValue,size,exitPrice:null,exitTime:null,exitIdx:null,pnl:0,status:"OPEN",reason:null};
+  return{id:"t-"+Date.now(),type,orderType:"MARKET",entryPrice:entry,entryTime:S.candles[S.idx]?.t,entryIdx:S.idx,sl,tp,slPips,tpPips,pip,pipValue,spread:spread||0,slip:slip||0,size,exitPrice:null,exitTime:null,exitIdx:null,pnl:0,status:"OPEN",reason:null};
 }
 function placeEntry(e){
   if(!S.entryMode||!chartPlot)return;
@@ -1438,28 +1483,33 @@ function placeEntry(e){
   // If Market order, use CURRENT price as entry (not where user clicked)
   const orderType=$("cfgOrderType").value;
   if(orderType==="MARKET"){
-    const type=S.entryMode;const pip=SYM[S.symbol]?.pip||0.01;
+    const type=S.entryMode;
     const currentPrice=S.candles[S.idx]?.c||price; // Use last close
     const slPips=+$("cfgSL").value||20;const tpPips=+$("cfgTP").value||40;
-    const sl=type==="LONG"?currentPrice-slPips*pip:currentPrice+slPips*pip;
-    const tp=type==="LONG"?currentPrice+tpPips*pip:currentPrice-tpPips*pip;
-    const trade=placeMarketTrade(type,{currentPrice,slPips,tpPips});
+    const spread=+$("cfgSpread").value||0,slip=+$("cfgSlippage").value||0;
+    const trade=placeMarketTrade(type,{currentPrice,slPips,tpPips,spread,slip});
     S.open.push(trade);exitMode();updateUI();renderTrades();render();
-    toast(`${type==="LONG"?"▲ LONG":"▼ SHORT"} Mercado @ ${fmtP(currentPrice)} — Arrastra SL/TP para ajustar`);
+    toast(`${type==="LONG"?"▲ LONG":"▼ SHORT"} Mercado @ ${fmtP(trade.entryPrice)} (con spread) — Arrastra SL/TP para ajustar`);
   }
 }
 function confirmTrade(){
   if(!S.entryMode||!chartPlot)return;
-  const entry=+$("cfgEntry").value;if(isNaN(entry)||entry<=0){toast("Haz click en el gráfico primero");return}
+  let entry=+$("cfgEntry").value;if(isNaN(entry)||entry<=0){toast("Haz click en el gráfico primero");return}
   const type=S.entryMode;const pip=SYM[S.symbol]?.pip||0.01;
   const orderType=$("cfgOrderType").value;
   const slPips=+$("cfgSL").value||20;const tpPips=+$("cfgTP").value||40;const size=+$("cfgSize").value||1;
+  const spread=+$("cfgSpread").value||0,slip=+$("cfgSlippage").value||0;
+  // Market confirmado paga spread+slippage en el fill; pendientes se ejecutan en su nivel
+  if(orderType==="MARKET"){
+    const cost=(spread+slip)*pip;
+    entry=type==="LONG"?entry+cost:entry-cost;
+  }
   const sl=type==="LONG"?(slPips>0?entry-slPips*pip:null):(slPips>0?entry+slPips*pip:null);
   const tp=type==="LONG"?(tpPips>0?entry+tpPips*pip:null):(tpPips>0?entry-tpPips*pip:null);
   
-  const trade={id:"t-"+Date.now(),type,orderType,entryPrice:entry,entryTime:S.candles[S.idx]?.t,entryIdx:S.idx,sl,tp,slPips,tpPips,pip,pipValue:(SYM[S.symbol]||{}).pipValue||1,size,exitPrice:null,exitTime:null,exitIdx:null,pnl:0,status:orderType==="MARKET"?"OPEN":"PENDING",reason:null};
+  const trade={id:"t-"+Date.now(),type,orderType,entryPrice:entry,entryTime:S.candles[S.idx]?.t,entryIdx:S.idx,sl,tp,slPips,tpPips,pip,pipValue:(SYM[S.symbol]||{}).pipValue||1,spread,slip,size,exitPrice:null,exitTime:null,exitIdx:null,pnl:0,status:orderType==="MARKET"?"OPEN":"PENDING",reason:null};
   S.open.push(trade);exitMode();updateUI();renderTrades();render();
-  const typeStr=orderType==="MARKET"?"Mercado":"Stop";
+  const typeStr=orderType==="MARKET"?"Mercado":orderType==="LIMIT"?"Limit":"Stop";
   toast(`${type==="LONG"?"▲ LONG":"▼ SHORT"} ${typeStr} @ ${fmtP(entry)} — Arrastra SL/TP para ajustar`);
 }
 
@@ -1525,13 +1575,18 @@ function closeTrade(id,reason){
   
   const c=S.candles[S.idx];if(!c)return;
   
-  // Usar el precio REAL de SL/TP cuando se cierra por SL o TP
+  // Usar el precio REAL de SL/TP + costos de ejecucion realistas
   if(reason==="SL"&&t.sl!==null){
-    t.exitPrice=t.sl;
+    // El SL se ejecuta como stop market: paga slippage contra el trader
+    const slip=(t.slip||0)*t.pip;
+    t.exitPrice=t.type==="LONG"?t.sl-slip:t.sl+slip;
   }else if(reason==="TP"&&t.tp!==null){
+    // El TP es limit: se ejecuta exacto
     t.exitPrice=t.tp;
   }else{
-    t.exitPrice=c.c;
+    // El cierre manual/fin de datos paga el spread de media vuelta
+    const sp=(t.spread||0)*t.pip;
+    t.exitPrice=t.type==="LONG"?c.c-sp:c.c+sp;
   }
   
   t.exitTime=c.t;t.exitIdx=S.idx;t.reason=reason||"MANUAL";t.status="CLOSED";
@@ -1555,13 +1610,27 @@ function checkTrades(c){
   const closedIds=new Set(); // Evitar cerrar el mismo trade dos veces
   
   S.open.forEach(t=>{
-    // Check pending orders (STOP) - candle must cross entry
+    // Check pending orders - activacion intrabar con manejo de gaps
     if(t.status==="PENDING"){
       if(t.orderType==="STOP"){
-        // STOP LONG: candle closes above entry (buy the breakout)
-        if(t.type==="LONG"&&c.c>=t.entryPrice)toActivate.push(t.id);
-        // STOP SHORT: candle closes below entry (sell the breakdown)
-        if(t.type==="SHORT"&&c.c<=t.entryPrice)toActivate.push(t.id);
+        // STOP: se activa al TOCAR el nivel; si la vela abre mas alla, fill en open
+        if(t.type==="LONG"){
+          if(c.o>=t.entryPrice){t.entryPrice=c.o;toActivate.push(t.id)}
+          else if(c.h>=t.entryPrice)toActivate.push(t.id);
+        }else{
+          if(c.o<=t.entryPrice){t.entryPrice=c.o;toActivate.push(t.id)}
+          else if(c.l<=t.entryPrice)toActivate.push(t.id);
+        }
+      }
+      if(t.orderType==="LIMIT"){
+        // LIMIT: se activa al tocar el nivel de rebote; gap a favor → fill en open
+        if(t.type==="LONG"){
+          if(c.o<=t.entryPrice){t.entryPrice=c.o;toActivate.push(t.id)}
+          else if(c.l<=t.entryPrice)toActivate.push(t.id);
+        }else{
+          if(c.o>=t.entryPrice){t.entryPrice=c.o;toActivate.push(t.id)}
+          else if(c.h>=t.entryPrice)toActivate.push(t.id);
+        }
       }
     }
     // Check SL/TP for open trades
@@ -1586,7 +1655,11 @@ function checkTrades(c){
   // Activate pending orders
   toActivate.forEach(id=>{
     const t=S.open.find(x=>x.id===id);
-    if(t){t.status="OPEN";t.entryTime=c.t;toast(`Orden activada: ${t.type} @ ${fmtP(t.entryPrice)}`)}
+    if(t){
+      // El fill real de una orden pendiente paga slippage contra el trader
+      const slip=(t.slip||0)*t.pip;
+      t.entryPrice=t.type==="LONG"?t.entryPrice+slip:t.entryPrice-slip;
+      t.status="OPEN";t.entryTime=c.t;toast(`Orden activada: ${t.type} @ ${fmtP(t.entryPrice)}`)}
   });
   // Close triggered trades
   toClose.forEach(x=>closeTrade(x.id,x.r));
