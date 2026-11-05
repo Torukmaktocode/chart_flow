@@ -91,14 +91,24 @@ function sendStatus() {
   if (win && win.webContents && !win.isDestroyed()) win.webContents.send("svc-status", payload);
 }
 
-// (re)verificar puertos cada 5 s para actualizar LEDs
+// (re)verificar puertos cada 5 s: actualizar LEDs y AUTOREVIVIR servicios caidos
+// (si un backend muere, se re-spawnea oculto desde la app)
 setInterval(async () => {
   for (const svc of SERVICES) {
     const up = await portBusy(svc.port);
-    const st = up ? "ACTIVO" : (children[svc.name] ? "iniciando..." : "apagado");
-    if (svc.status !== st) { svc.status = st; sendStatus(); }
+    if (!up && !childrenLock[svc.name]) {
+      childrenLock[svc.name] = true;
+      forward(svc.name, "[watchdog] servicio caido - reiniciando en background");
+      await ensureService(svc);
+      setTimeout(() => { childrenLock[svc.name] = false; }, 8000);
+    } else if (up) {
+      const st = children[svc.name] ? "ACTIVO" : "ACTIVO (externo)";
+      if (svc.status !== st) { svc.status = st; }
+    }
   }
+  sendStatus();
 }, 5000);
+const childrenLock = {};
 
 function createWindow() {
   win = new BrowserWindow({
@@ -139,7 +149,7 @@ function paneBounds() {
   if (!win) return { x: 0, y: 0, width: 0, height: 0 };
   const [w, h] = win.getContentSize();
   const TOP = 34;   // topbar html
-  const BOT = 64;   // footer html
+  const BOT = 16;   // franja de estado de 1 linea
   return { x: 0, y: TOP, width: w, height: Math.max(120, h - TOP - BOT) };
 }
 function layoutPane() {

@@ -25,11 +25,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .main{flex:1;position:relative}
 iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:var(--bg)}
 iframe.show{display:block}
-.footer{height:64px;background:var(--panel);border-top:1px solid var(--border);display:flex;overflow:hidden;padding:4px 10px;gap:10px;font:9px var(--font);color:var(--dim);flex-shrink:0}
-.col{min-width:200px;overflow:hidden}
-.col.lock{min-width:260px}
-.line{white-space:pre;display:block;line-height:12.5px;overflow:hidden;text-overflow:ellipsis}
-.col.lock .line{color:#9fb8ff}
+.footer{height:16px;background:var(--bg);border-top:1px solid var(--border);display:flex;overflow:hidden;padding:1px 8px;gap:14px;font:9px var(--font);color:var(--dim);flex-shrink:0;white-space:nowrap}
+.line{white-space:pre;display:inline;line-height:13px;overflow:hidden;text-overflow:ellipsis;margin-right:12px}
 </style>
 </head>
 <body>
@@ -48,13 +45,7 @@ iframe.show{display:block}
   <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dim);font:11px var(--font)">cargando paneles nativos...</div>
 </div>
 
-<div class="footer">
-  <div class="col lock" id="log-backtest"><span class="line">backtest: esperando logs del servicio...</span></div>
-  <div class="col" id="log-warroom"><span class="line">warroom: esperando logs del servicio...</span></div>
-  <div class="col" id="log-stock"><span class="line">stock: esperando logs del servicio...</span></div>
-  <div class="col" id="log-macro"><span class="line">macro: esperando logs del servicio...</span></div>
-  <div class="col" id="log-chartflow"><span class="line">chartflow: esperando logs del servicio...</span></div>
-</div>
+<div class="footer" id="footerBar"><span class="line">servicios listos · logs en la consola del sistema</span></div>
 
 <script>
 const PORTS = { backtest:8790, warroom:3001, stock:8765, macro:8770, chartflow:8780 };
@@ -76,16 +67,13 @@ function renderLeds(list){
 }
 window.cf.onStatus(list => renderLeds(list));
 window.cf.onLog(({name, line}) => {
-  const box = document.getElementById('log-'+name);
-  if(!box) return;
-  const first = box.querySelector('.line');
-  if (box.dataset.init !== '1') { box.innerHTML=''; box.dataset.init='1'; }
+  const bar = document.getElementById('footerBar');
+  // los logos que NO provienen de paneles emitidos: mantener aprox 4 rotando
   const el = document.createElement('span');
   el.className='line';
-  el.textContent = line;
-  box.appendChild(el);
-  while (box.children.length > 4) box.removeChild(box.firstChild);
-  box.scrollTop = box.scrollHeight;
+  el.textContent = name + ': ' + line;
+  bar.appendChild(el);
+  while (bar.children.length > 4) bar.removeChild(bar.firstChild);
 });
 
 // primer estado + refresco automatico
