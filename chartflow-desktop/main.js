@@ -111,6 +111,9 @@ setInterval(async () => {
 const childrenLock = {};
 
 function createWindow() {
+  // icono de la app (ChartCode) para la barra de tareas en dev; el instalador
+  // lleva el mismo via electron-builder (build/icon.ico)
+  const iconPath = path.join(__dirname, "build", "icon.ico");
   win = new BrowserWindow({
     width: 1680,
     height: 960,
@@ -119,6 +122,7 @@ function createWindow() {
     backgroundColor: "#0D0E0E",
     autoHideMenuBar: true,
     title: "ChartFlow Desktop",
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

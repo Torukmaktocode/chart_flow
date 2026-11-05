@@ -62,13 +62,14 @@
       "target": [
         "nsis"
       ],
-      "icon": null
+      "icon": "build/icon.ico"
     }
   },
   "allowScripts": {
     "electron@33.4.11": true
   },
   "dependencies": {
+    "png-to-ico": "^3.0.2",
     "ws": "^8.22.1"
   }
 }
