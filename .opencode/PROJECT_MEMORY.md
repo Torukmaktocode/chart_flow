@@ -107,3 +107,12 @@ cd "C:\Users\joseh\OneDrive\Documentos\CODIGO PARA FOREX"
 - `chartflow-backtest/trade-records/trades.xlsx` - Excel exportado
 - `chartflow-backtest/dashboard.html` - UI del backtest
 - `chartflow-backtest/server.js` - Servidor del backtest
+
+
+## Reglas de UX del Backtesting (requisitos del usuario - NO VIOLAR)
+
+1. Al abrir el dashboard del backtesting se muestran las velas AUTOMATICAMENTE (sin pulsar INICIAR), en pausa.
+2. Cambiar simbolo/timeframe SOLO carga las velas del activo elegido, en pausa (nunca auto-inicia el replay).
+3. INICIAR es el unico disparador del replay; con velas ya en pantalla, INICIAR reanudara sin recargar datos (no borra trades/balance de la misma sesion).
+4. stepBack debe revertir el estado real (balance/equity/trades) y los saltos procesan TODAS las velas intermedias con fills de SL/TP.
+5. Persistir configuracion de backtest (simbolo/tf/rango/balance/riesgo/velocidad) en localStorage (bt_cfg).
