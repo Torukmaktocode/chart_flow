@@ -930,7 +930,16 @@ function applyLang(){
 }
 
 const S={candles:[],idx:0,playing:false,speed:10,timer:null,balance:100000,initial:100000,riskPct:1,open:[],closed:[],equity:[],symbol:"NAS100",tf:"5m",tab:"open",loaded:false,zoom:1,panX:0,entryMode:null,dragType:null,selectedTrade:null,_dx:0,_dp:0,_dy:0,_dlo:0,_dhi:0,sessionStart:null,sessionMinutes:0};
-const SYM={NAS100:{label:"NAS100",pip:1},US500:{label:"S&P500",pip:0.1},US30:{label:"US30",pip:1},EURUSD:{label:"EURUSD",pip:0.0001},XAUUSD:{label:"XAUUSD",pip:0.01},BTCUSD:{label:"BTCUSD",pip:0.01},ETHUSD:{label:"ETHUSD",pip:0.01},SOLUSD:{label:"SOLUSD",pip:0.01}};
+const SYM={
+  NAS100:{label:"NAS100",pip:1,pipValue:1},
+  US500:{label:"S&P500",pip:0.1,pipValue:5},
+  US30:{label:"US30",pip:1,pipValue:1},
+  EURUSD:{label:"EURUSD",pip:0.0001,pipValue:10},
+  XAUUSD:{label:"XAUUSD",pip:0.01,pipValue:1},
+  BTCUSD:{label:"BTCUSD",pip:0.01,pipValue:1},
+  ETHUSD:{label:"ETHUSD",pip:0.01,pipValue:1},
+  SOLUSD:{label:"SOLUSD",pip:0.01,pipValue:1}
+};
 function $(id){return document.getElementById(id)}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2500)}
@@ -960,13 +969,8 @@ let priceCenter=0; // Center price for zoom
   $("speedSel").onchange=()=>{S.speed=+$("speedSel").value;if(S.playing)startTimer()};
   $("progBar").onclick=e=>{const r=$("progBar").getBoundingClientRect();S.idx=Math.floor(((e.clientX-r.left)/r.width)*(S.candles.length-1));checkTrades(S.candles[S.idx]);render()};
   
-  // RESET COMPLETO - limpiar TODO el localStorage al cargar
-  localStorage.removeItem("bt_trade_records");
-  localStorage.removeItem("bt_training_sessions");
-  localStorage.removeItem("bt_habits");
-  console.log("🧹 localStorage limpiado completamente");
-  
-  // Load trade records on startup
+  // Preservar datos locales: el auto-borrado destruia trades, sesiones y habitos
+  // en cada recarga de pagina. Los registros viven en localStorage + servidor.
   loadTradeRecords();
   
   $("rangePreset").onchange=()=>{
@@ -1413,6 +1417,17 @@ function exitMode(){
   $("tradeConfig").style.display="none";$("entryBanner").classList.remove("visible");
   $("chartWrap").style.cursor="crosshair";
 }
+// Sizing honesto: riesgo$ = pipsSL * valorPuntoUSD * tamano → tamano = riesgo$/(pipsSL*valorPunto)
+// pipValue = valor en USD de 1 pip para 1 unidad de tamano (contrato estandar)
+function placeMarketTrade(type,{currentPrice,slPips,tpPips}){
+  const sym=SYM[S.symbol]||{};
+  const pip=sym.pip||0.01,pipValue=sym.pipValue||1;
+  const sl=type==="LONG"?currentPrice-slPips*pip:currentPrice+slPips*pip;
+  const tp=type==="LONG"?currentPrice+tpPips*pip:currentPrice-tpPips*pip;
+  const riskAmt=S.balance*(S.riskPct/100);
+  const size=slPips>0?Math.max(1,Math.floor(riskAmt/(slPips*pipValue))):1;
+  return{id:"t-"+Date.now(),type,orderType:"MARKET",entryPrice:currentPrice,entryTime:S.candles[S.idx]?.t,entryIdx:S.idx,sl,tp,slPips,tpPips,pip,pipValue,size,exitPrice:null,exitTime:null,exitIdx:null,pnl:0,status:"OPEN",reason:null};
+}
 function placeEntry(e){
   if(!S.entryMode||!chartPlot)return;
   const rect=$("chartWrap").getBoundingClientRect();
@@ -1428,8 +1443,7 @@ function placeEntry(e){
     const slPips=+$("cfgSL").value||20;const tpPips=+$("cfgTP").value||40;
     const sl=type==="LONG"?currentPrice-slPips*pip:currentPrice+slPips*pip;
     const tp=type==="LONG"?currentPrice+tpPips*pip:currentPrice-tpPips*pip;
-    const riskAmt=S.balance*(S.riskPct/100);const size=(slPips>0&&pip>0)?Math.floor(riskAmt/(slPips*pip)):1;
-    const trade={id:"t-"+Date.now(),type,orderType:"MARKET",entryPrice:currentPrice,entryTime:S.candles[S.idx]?.t,entryIdx:S.idx,sl,tp,slPips,tpPips,pip,size,exitPrice:null,exitTime:null,exitIdx:null,pnl:0,status:"OPEN",reason:null};
+    const trade=placeMarketTrade(type,{currentPrice,slPips,tpPips});
     S.open.push(trade);exitMode();updateUI();renderTrades();render();
     toast(`${type==="LONG"?"▲ LONG":"▼ SHORT"} Mercado @ ${fmtP(currentPrice)} — Arrastra SL/TP para ajustar`);
   }
@@ -1443,7 +1457,7 @@ function confirmTrade(){
   const sl=type==="LONG"?(slPips>0?entry-slPips*pip:null):(slPips>0?entry+slPips*pip:null);
   const tp=type==="LONG"?(tpPips>0?entry+tpPips*pip:null):(tpPips>0?entry-tpPips*pip:null);
   
-  const trade={id:"t-"+Date.now(),type,orderType,entryPrice:entry,entryTime:S.candles[S.idx]?.t,entryIdx:S.idx,sl,tp,slPips,tpPips,pip,size,exitPrice:null,exitTime:null,exitIdx:null,pnl:0,status:orderType==="MARKET"?"OPEN":"PENDING",reason:null};
+  const trade={id:"t-"+Date.now(),type,orderType,entryPrice:entry,entryTime:S.candles[S.idx]?.t,entryIdx:S.idx,sl,tp,slPips,tpPips,pip,pipValue:(SYM[S.symbol]||{}).pipValue||1,size,exitPrice:null,exitTime:null,exitIdx:null,pnl:0,status:orderType==="MARKET"?"OPEN":"PENDING",reason:null};
   S.open.push(trade);exitMode();updateUI();renderTrades();render();
   const typeStr=orderType==="MARKET"?"Mercado":"Stop";
   toast(`${type==="LONG"?"▲ LONG":"▼ SHORT"} ${typeStr} @ ${fmtP(entry)} — Arrastra SL/TP para ajustar`);
@@ -1475,15 +1489,21 @@ function loadTradeRecords(){
     }
   }catch(e){}
   
-  // 2. Intentar sincronizar con servidor - NUNCA sobreescribir si servidor tiene más datos
+  // 2. Intentar sincronizar con servidor - fusionar por id real (sin dedos perder registros)
   try{
     fetch("/api/trades").then(r=>r.json()).then(d=>{
       if(d.records&&d.records.length>0){
-        // El servidor tiene trades - usar esos como fuente principal
-        if(d.records.length>=S.closed.length){
-          S.closed=d.records;
+        const byId=new Map(S.closed.map(t=>[t.id,t]));
+        d.records.forEach(t=>{
+          const local=byId.get(t.id);
+          // El servidor gana solo si su version salio despues (mismo id, exit mas nuevo)
+          if(!local||(t.exitTime||0)>=(local.exitTime||0))byId.set(t.id,t);
+        });
+        const merged=[...byId.values()];
+        if(merged.length!==S.closed.length||d.records.length>=S.closed.length){
+          S.closed=merged;
           localStorage.setItem("bt_trade_records",JSON.stringify(S.closed));
-          console.log("📥 Sync desde servidor: "+S.closed.length+" trades");
+          console.log("📥 Sync con servidor: "+S.closed.length+" trades");
         }
       }
       renderTrades();renderMetrics();drawEquity();
@@ -1515,8 +1535,8 @@ function closeTrade(id,reason){
   }
   
   t.exitTime=c.t;t.exitIdx=S.idx;t.reason=reason||"MANUAL";t.status="CLOSED";
-  t.pnl=((t.type==="LONG"?t.exitPrice-t.entryPrice:t.entryPrice-t.exitPrice)*t.size*t.pip);
-  S.balance+=t.pnl;S.open.splice(i,1);S.closed.push(t);
+  t.pnl=((t.type==="LONG"?t.exitPrice-t.entryPrice:t.entryPrice-t.exitPrice)/t.pip)*t.size*(t.pipValue||1);
+  S.balance+=t.pnl;S.equity.push({t:c.t,eq:S.balance});S.open.splice(i,1);S.closed.push(t);
   if(S.selectedTrade===i)S.selectedTrade=null;
   if(S.selectedTrade!==null&&S.selectedTrade>i)S.selectedTrade--;
   
@@ -2046,7 +2066,7 @@ function renderCalendar(calendarData){
   const allTrades=JSON.parse(localStorage.getItem("bt_trade_records")||"[]");
 
   // Métricas del mes
-  let monthPnL=0,monthTrades=0,monthWins=0,monthLosses=0,winDays=0,lossDays=0,bestDay=-Infinity,worstDay=Infinity;
+  let monthPnL=0,monthTrades=0,monthWins=0,monthLosses=0,monthWinSum=0,monthLossSum=0,winDays=0,lossDays=0,bestDay=-Infinity,worstDay=Infinity;
   const weekData={};
 
   for(let d=1;d<=lastDay.getDate();d++){
@@ -2057,7 +2077,7 @@ function renderCalendar(calendarData){
     if(dayTrades.length>0){
       tradesByDate[key]={pnl,trades:dayTrades.length,tradesList:dayTrades};
       monthPnL+=pnl;monthTrades+=dayTrades.length;
-      dayTrades.forEach(t=>{if(t.pnl>0){monthWins++;monthWins+=t.pnl}else if(t.pnl<0){monthLosses++;monthLosses+=Math.abs(t.pnl)}});
+      dayTrades.forEach(t=>{if(t.pnl>0){monthWins++;monthWinSum+=t.pnl}else if(t.pnl<0){monthLosses++;monthLossSum+=Math.abs(t.pnl)}});
       if(pnl>0){winDays++;if(pnl>bestDay)bestDay=pnl}
       if(pnl<0){lossDays++;if(pnl<worstDay)worstDay=pnl}
     }
@@ -2068,11 +2088,11 @@ function renderCalendar(calendarData){
     if(dow<5){weekData[weekNum].pnl+=pnl;weekData[weekNum].trades+=dayTrades.length;dayTrades.forEach(t=>{if(t.pnl>0)weekData[weekNum].wins++})}
   }
 
-  // Calcular métricas reales
-  const winRate=monthTrades>0?((monthWins/(monthWins+monthLosses))*100):0;
-  const avgWin=monthWins>0?(monthWins/Math.max(1,monthTrades)):0;
-  const avgLoss=monthLosses>0?(monthLosses/Math.max(1,monthTrades)):0;
-  const profitFactor=monthLosses>0?(monthWins/monthLosses):0;
+  // Calcular métricas reales (winrate por conteo; promedios y PF por dolares)
+  const winRate=monthTrades>0?((monthWins/monthTrades)*100):0;
+  const avgWin=monthWins>0?(monthWinSum/monthWins):0;
+  const avgLoss=monthLosses>0?(monthLossSum/monthLosses):0;
+  const profitFactor=monthLossSum>0?(monthWinSum/monthLossSum):(monthWinSum>0?Infinity:0);
   const expectancy=monthTrades>0?(monthPnL/monthTrades):0;
 
   // Renderizar métricas
@@ -2080,7 +2100,7 @@ function renderCalendar(calendarData){
   mets.innerHTML=`
     <div class="cal-metric"><div class="cm-label">${t("PnLMensual")}</div><div class="cm-value ${monthPnL>=0?'pos':'neg'}">${monthPnL>=0?'+':''}$${Math.abs(monthPnL).toFixed(0)}</div></div>
     <div class="cal-metric"><div class="cm-label">${t("WinRate")}</div><div class="cm-value ${winRate>=50?'pos':'neg'}">${winRate.toFixed(1)}%</div></div>
-    <div class="cal-metric"><div class="cm-label">${t("ProfitFactor")}</div><div class="cm-value ${profitFactor>=1?'pos':'neg'}">${profitFactor.toFixed(2)}</div></div>
+    <div class="cal-metric"><div class="cm-label">${t("ProfitFactor")}</div><div class="cm-value ${profitFactor>=1?'pos':'neg'}">${profitFactor===Infinity?'∞':profitFactor.toFixed(2)}</div></div>
     <div class="cal-metric"><div class="cm-label">${t("TotalTrades")}</div><div class="cm-value">${monthTrades}</div></div>
     <div class="cal-metric"><div class="cm-label">${t("DíasGanancia")}</div><div class="cm-value pos">${winDays}</div></div>
     <div class="cal-metric"><div class="cm-label">${t("DíasPérdida")}</div><div class="cm-value neg">${lossDays}</div></div>
@@ -2394,18 +2414,18 @@ function renderRRMetrics(trades){
   const wins=trades.filter(t=>t.pnl>0);
   const losses=trades.filter(t=>t.pnl<0);
   
-  // Calculate RR for each trade
+  // Calculate RR for each trade (un trade cerrado sin salida no aporta)
   const rrValues=trades.map(t=>{
-    if(!t.sl||!t.entry)return 0;
-    const risk=Math.abs(t.entry-t.sl);
-    const reward=Math.abs((t.exit||t.entry)-t.entry);
+    if(!t.sl||!t.entryPrice||t.exitPrice==null)return 0;
+    const risk=Math.abs(t.entryPrice-t.sl);
+    const reward=Math.abs(t.exitPrice-t.entryPrice);
     return risk>0?reward/risk:0;
   }).filter(v=>v>0);
   
   const idealRR=trades.map(t=>{
-    if(!t.sl||!t.entry||!t.tp)return 0;
-    const risk=Math.abs(t.entry-t.sl);
-    const reward=Math.abs(t.tp-t.entry);
+    if(!t.sl||!t.entryPrice||!t.tp)return 0;
+    const risk=Math.abs(t.entryPrice-t.sl);
+    const reward=Math.abs(t.tp-t.entryPrice);
     return risk>0?reward/risk:0;
   }).filter(v=>v>0);
   
@@ -2414,8 +2434,16 @@ function renderRRMetrics(trades){
   const avgIdeal=idealRR.length>0?idealRR.reduce((a,b)=>a+b,0)/idealRR.length:0;
   const maxIdeal=idealRR.length>0?Math.max(...idealRR):0;
   
-  // Could have = trades that hit SL but TP was also hit on same candle
-  const couldHave=trades.filter(t=>t.couldHaveBE).length;
+  // Could have BE: trades cerrados por SL cuyo recorrido posterior toco el precio de entrada
+  // (el usuario podia haber movido a Breakeven en vez de perder)
+  const couldHave=trades.filter(t=>{
+    if(t.reason!=="SL"||t.entryIdx==null||t.exitIdx==null||!t.entryPrice)return false;
+    for(let i=Math.max(0,t.entryIdx+1);i<=Math.min(t.exitIdx,S.candles.length-1);i++){
+      const c2=S.candles[i];
+      if(t.type==="LONG"?c2.h>=t.entryPrice:c2.l<=t.entryPrice)return true;
+    }
+    return false;
+  }).length;
   
   $("rrAvg").textContent=avgRR.toFixed(2);
   $("rrMax").textContent=maxRR.toFixed(2);

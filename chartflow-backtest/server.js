@@ -26,7 +26,7 @@ function sendJson(res, status, payload) {
 function serveFile(res, pathname) {
   const safePath = pathname === "/" ? "dashboard.html" : decodeURIComponent(pathname.replace(/^\/+/, ""));
   const filePath = path.normalize(path.join(ROOT, safePath));
-  if (!filePath.startsWith(ROOT)) {
+  if (!(filePath === ROOT || filePath.startsWith(ROOT + path.sep))) {
     res.writeHead(403);
     res.end("Forbidden");
     return;
@@ -512,18 +512,36 @@ function handleTradesApi(req, res) {
   sendJson(res, 405, { error: "Method not allowed" });
 }
 
+// Cache en memoria de los archivos historicos (antes se re-leia y re-parseaba
+// un JSON de ~2MB con readFileSync en CADA peticion)
+const dataCache = new Map(); // key: symbol|tf -> {mtime, candles}
+function loadYearFileCached(filePath) {
+  let entry = dataCache.get(filePath);
+  const mtime = fs.statSync(filePath).mtimeMs;
+  if (!entry || entry.mtime !== mtime) {
+    entry = { mtime, candles: JSON.parse(fs.readFileSync(filePath, "utf8")) };
+    dataCache.set(filePath, entry);
+  }
+  return entry.candles;
+}
+
 // Load local historical data for a symbol and timeframe
-function loadLocalData(symbol, tf, fromTs, toTs) {
+function loadLocalData(symbol, tf, fromTs, toTs, count) {
   try {
     const filePath = path.join(DATA_DIR, symbol, `${tf}.json`);
     if (!fs.existsSync(filePath)) return null;
     
-    let candles = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    let candles = loadYearFileCached(filePath);
     if (!candles || candles.length < 2) return null;
     
     // Filter by date range if provided
     if (fromTs) candles = candles.filter(c => c.t >= fromTs);
     if (toTs) candles = candles.filter(c => c.t <= toTs);
+    
+    // Limitar la cantidad devuelta (count = ultimas N velas del rango)
+    if (count > 0 && candles.length > count) {
+      candles = candles.slice(candles.length - count);
+    }
     
     return candles.length >= 2 ? candles : null;
   } catch (e) {
@@ -561,8 +579,8 @@ function handleChartRequest(req, res) {
   const toTs = parseInt(url.searchParams.get("to")) || 0;
   const count = parseInt(url.searchParams.get("count")) || 0;
 
-  // Try local data first
-  const localData = loadLocalData(symbol, tf, fromTs, toTs);
+  // Try local data first (count: ultimas N velas del rango; el cliente pide 5000)
+  const localData = loadLocalData(symbol, tf, fromTs, toTs, count);
   if (localData) {
     console.log(`📁 Local: ${symbol} ${tf} → ${localData.length} velas`);
     sendJson(res, 200, {
@@ -600,7 +618,12 @@ function handleDataStatus(req, res) {
       for (const f of fs.readdirSync(symDir)) {
         if (!f.endsWith(".json")) continue;
         const tf = f.replace(".json", "");
-        const data = JSON.parse(fs.readFileSync(path.join(symDir, f), "utf8"));
+        let data;
+        try {
+          data = loadYearFileCached(path.join(symDir, f));
+        } catch (e) {
+          continue;
+        }
         if (data.length > 0) {
           status[sym][tf] = {
             count: data.length,
