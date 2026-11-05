@@ -67,5 +67,8 @@
   },
   "allowScripts": {
     "electron@33.4.11": true
+  },
+  "dependencies": {
+    "ws": "^8.22.1"
   }
 }

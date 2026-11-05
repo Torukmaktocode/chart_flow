@@ -45,11 +45,7 @@ iframe.show{display:block}
 </div>
 
 <div class="main" id="panes">
-  <iframe id="pane-backtest" src="http://127.0.0.1:8790/dashboard.html"></iframe>
-  <iframe id="pane-warroom"  src="http://127.0.0.1:3001/"></iframe>
-  <iframe id="pane-stock"    src="http://127.0.0.1:8765/dashboard.html"></iframe>
-  <iframe id="pane-macro"    src="http://127.0.0.1:8770/dashboard.html"></iframe>
-  <iframe id="pane-chartflow" src="http://127.0.0.1:8780/dashboard.html"></iframe>
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dim);font:11px var(--font)">cargando paneles nativos...</div>
 </div>
 
 <div class="footer">
@@ -64,8 +60,7 @@ iframe.show{display:block}
 const PORTS = { backtest:8790, warroom:3001, stock:8765, macro:8770, chartflow:8780 };
 function activate(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===name));
-  document.querySelectorAll('.main iframe').forEach(f=>f.classList.remove('show'));
-  document.getElementById('pane-'+name).classList.add('show');
+  window.cf.activate(name); // pide al proceso principal mostrar el panel nativo
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>activate(t.dataset.tab));
 activate('backtest');

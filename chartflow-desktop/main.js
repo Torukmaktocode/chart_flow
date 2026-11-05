@@ -1,10 +1,24 @@
 // ── ChartFlow Desktop — proceso principal ────────────────────
 // Arranca los 5 backends de chart_flow como procesos internos (sin
 // consolas ni PowerShell) y muestra todo en una ventana con pestañas.
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, WebContentsView } = require("electron");
+// Fix de composicion: en Windows hay GPUs (drivers) con las que los iframes
+// cross-origin se pintan en negro; software rendering evita el blank screen
+app.disableHardwareAcceleration();
 const { spawn, execSync } = require("child_process");
 const path = require("path");
 const net = require("net");
+const http = require("http");
+const fs = require("fs");
+
+// Servir la home por http (no file://): evita el problema de composición de
+// iframes cross-origin en Electron y deja todo en un origen web real
+const HOME_PORT = 8711;
+const homeServer = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+  res.end(fs.readFileSync(path.join(__dirname, "home.html")));
+});
+homeServer.listen(HOME_PORT, "127.0.0.1");
 
 // Los backends viven en el repo raiz (modo desarrollo) o en resources/backend (empaquetado)
 const BACKEND_ROOT = app.isPackaged
@@ -101,9 +115,51 @@ function createWindow() {
       nodeIntegration: false,
     },
   });
-  win.loadFile("home.html");
+  win.loadURL(`http://127.0.0.1:${HOME_PORT}/`);
+  win.once("ready-to-show", () => { win.show(); win.focus(); });
   win.on("closed", () => { win = null; });
+  win.on("resize", layoutPane);
 }
+
+// ── PANELES NATIVOS (WebContentsView) ────────────────────────
+// Los iframes no se componian en Windows (OOPIF en negro); WebContentsView
+// es el mecanismo nativo de Electron (el mismo que usa VS Code) para embeber
+// contenido web real dentro de la ventana, cada panel renderiza SIEMPRE.
+const PANE_URLS = {
+  backtest: "http://127.0.0.1:8790/dashboard.html",
+  warroom: "http://127.0.0.1:3001/",
+  stock: "http://127.0.0.1:8765/dashboard.html",
+  macro: "http://127.0.0.1:8770/dashboard.html",
+  chartflow: "http://127.0.0.1:8780/dashboard.html",
+};
+const panes = {};
+let activePane = null;
+
+function paneBounds() {
+  if (!win) return { x: 0, y: 0, width: 0, height: 0 };
+  const [w, h] = win.getContentSize();
+  const TOP = 34;   // topbar html
+  const BOT = 64;   // footer html
+  return { x: 0, y: TOP, width: w, height: Math.max(120, h - TOP - BOT) };
+}
+function layoutPane() {
+  if (activePane && win) activePane.setBounds(paneBounds());
+}
+function activatePane(name) {
+  if (!win || !PANE_URLS[name]) return;
+  let v = panes[name];
+  if (!v) {
+    v = new WebContentsView({ webPreferences: { contextIsolation: true, nodeIntegration: false } });
+    v.setBounds(paneBounds());
+    v.webContents.loadURL(PANE_URLS[name]);
+    panes[name] = v;
+  }
+  if (activePane && activePane !== v) win.contentView.removeChildView(activePane);
+  if (v !== activePane) win.contentView.addChildView(v);
+  v.setBounds(paneBounds());
+  activePane = v;
+}
+ipcMain.on("activate-pane", (e, name) => activatePane(name));
 
 ipcMain.handle("services", () => SERVICES.map(s => ({ name: s.name, label: s.label, port: s.port, status: s.status || "-" })));
 ipcMain.handle("open-data-dir", () => { try { execSync(`explorer.exe "${path.join(BACKEND_ROOT, "chartflow-backtest", "historical-data")}"`, { shell: "cmd.exe" }); } catch (e) {} });
@@ -114,6 +170,7 @@ app.whenReady().then(async () => {
   createWindow();
   await bootAll();
   sendStatus();
+  activatePane("backtest");
 });
 
 app.on("window-all-closed", () => {
