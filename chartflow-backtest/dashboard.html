@@ -964,21 +964,40 @@ let priceCenter=0; // Center price for zoom
   $("dateFrom").value=past.toISOString().split("T")[0];
 
   $("startBtn").onclick=startBacktest;$("exitBtn").onclick=exitBacktest;
-  // Cambiar simbolo/TF con la sesion abierta = recarga instantanea (sin volver a pulsar INICIAR)
-  $("symSel").onchange=()=>{ if(S.loaded){ if(S.open.length)toast("⚠ Cambiar de activo cierra los trades abiertos en curso"); startBacktest(); } };
-  $("tfSel").onchange=()=>{ if(S.loaded){ if(S.open.length)toast("⚠ Cambiar temporalidad cierra los trades abiertos en curso"); startBacktest(); } };
+  // REQUISITO: cambiar simbolo/TF SOLO muestra las velas del activo elegido (en pausa).
+  // El replay avanza unicamente al pulsar INICIAR.
+  $("symSel").onchange=()=>{ if(S.open.length)toast("⚠ Cambiar de activo limpia los trades abiertos en curso"); loadBacktest(); };
+  $("tfSel").onchange=()=>{ if(S.open.length)toast("⚠ Cambiar de temporalidad limpia los trades abiertos en curso"); loadBacktest(); };
   $("playPause").onclick=togglePlay;$("stepFwd").onclick=stepFwd;$("stepBack").onclick=stepBack;
   $("buyBtn").onclick=()=>enterMode("LONG");$("sellBtn").onclick=()=>enterMode("SHORT");
   $("confirmBtn").onclick=confirmTrade;$("cancelBtn").onclick=exitMode;
   $("saveEditBtn").onclick=saveEdit;$("cancelEditBtn").onclick=()=>{S.selectedTrade=null;$("editSection").style.display="none";render()};
   $("breakevenBtn").onclick=setBreakeven;
-  $("speedSel").onchange=()=>{S.speed=+$("speedSel").value;if(S.playing)startTimer()};
+  $("speedSel").onchange=()=>{S.speed=+$("speedSel").value;saveBacktestConfig();if(S.playing)startTimer()};
+  $("balIn").onchange=saveBacktestConfig;
+  $("riskIn").onchange=saveBacktestConfig;
   $("progBar").onclick=e=>{if(!S.loaded)return;const r=$("progBar").getBoundingClientRect();advanceTo(Math.floor(((e.clientX-r.left)/r.width)*(S.candles.length-1)))};
   
   // Preservar datos locales: el auto-borrado destruia trades, sesiones y habitos
   // en cada recarga de pagina. Los registros viven en localStorage + servidor.
   loadTradeRecords();
-  
+
+  // Restaurar la ultima configuracion de backtest (simbolo, tf, rango, balance)
+  let hadSavedCfg=false;
+  try{
+    const cfg=JSON.parse(localStorage.getItem("bt_cfg")||"null");
+    if(cfg){
+      if(cfg.symbol&&SYM[cfg.symbol])$("symSel").value=cfg.symbol;
+      if(cfg.tf)$("tfSel").value=cfg.tf;
+      if(cfg.from)$("dateFrom").value=cfg.from;
+      if(cfg.to)$("dateTo").value=cfg.to;
+      if(cfg.bal)$("balIn").value=cfg.bal;
+      if(cfg.risk)$("riskIn").value=cfg.risk;
+      if(cfg.speed)$("speedSel").value=cfg.speed;
+      hadSavedCfg=!!(cfg.from&&cfg.to);
+    }
+  }catch{}
+
   $("rangePreset").onchange=()=>{
     const days=+$("rangePreset").value;
     if(days===0)return;
@@ -989,8 +1008,16 @@ let priceCenter=0; // Center price for zoom
     else if(days<=60)$("tfSel").value="15m";
     else if(days<=180)$("tfSel").value="30m";
     else $("tfSel").value="1h";
+    saveBacktestConfig();
   };
+  // El preset por defecto define el rango; las fechas guardadas por el usuario tienen prioridad
   $("rangePreset").dispatchEvent(new Event("change"));
+  if(hadSavedCfg){
+    try{const cfg=JSON.parse(localStorage.getItem("bt_cfg"));if(cfg.from)$("dateFrom").value=cfg.from;if(cfg.to)$("dateTo").value=cfg.to;}catch{}
+  }
+
+  // REQUISITO: al abrir, las velas se muestran automaticamente (sin INICIAR)
+  loadBacktest();
   
   document.querySelectorAll("[data-tab]").forEach(t=>t.onclick=()=>{document.querySelectorAll("[data-tab]").forEach(x=>x.classList.remove("active"));t.classList.add("active");S.tab=t.dataset.tab;renderTrades()});
   document.addEventListener("keydown",e=>{if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT")return;if(e.code==="Space"){e.preventDefault();togglePlay()}if(e.code==="ArrowRight"){e.preventDefault();stepFwd()}if(e.code==="ArrowLeft"){e.preventDefault();stepBack()}if(e.code==="Escape"){exitMode();S.selectedTrade=null;$("editSection").style.display="none";render()}});
@@ -1188,40 +1215,37 @@ function setBreakeven(){
 }
 
 // BACKTEST
-async function startBacktest(){
+// Persistir la configuracion de backtest para restaurarla al abrir
+function saveBacktestConfig(){
+  try{
+    localStorage.setItem("bt_cfg",JSON.stringify({
+      symbol:$("symSel").value,tf:$("tfSel").value,
+      from:$("dateFrom").value,to:$("dateTo").value,
+      bal:$("balIn").value,risk:$("riskIn").value,speed:$("speedSel").value
+    }));
+  }catch{}
+}
+// REQUISITO: al abrir la pagina se muestran las velas automaticamente
+// (loadBacktest solo carga datos; la sesion de entrenamiento arranca al pulsar INICIAR)
+async function loadBacktest(){
   const sym=$("symSel").value,tf=$("tfSel").value;
   S.balance=+$("balIn").value||100000;S.initial=S.balance;S.riskPct=+$("riskIn").value||1;S.symbol=sym;S.tf=tf;
   S.open=[];S.equity=[{t:Date.now(),eq:S.balance}];S.zoom=1;S.panX=0;S.selectedTrade=null;vPanOffset=0;priceScale=1;
-  
+
   // Cargar trades anteriores guardados en vez de borrarlos
   try{
     const r=await fetch("/api/trades");const d=await r.json();
     S.closed=d.records||[];
   }catch(e){S.closed=[]}
-  
-  $("startBtn").style.display="none";$("exitBtn").style.display="";
-  $("wm").textContent=`${SYM[sym]?.label||sym} · ${tf}`;
 
-  // Iniciar timer de entrenamiento
-  S.sessionStart=Date.now();
-  S.sessionMinutes=0;
-  startSessionTimer();
-  
-  // Iniciar cronómetro regresivo si está seleccionado
-  initCountdown();
-  
-  // Registrar fecha de entrenamiento
-  const todayKey=new Date().toISOString().split("T")[0];
-  const habits=JSON.parse(localStorage.getItem("bt_habits")||"{}");
-  if(!habits[todayKey])habits[todayKey]={};
-  habits[todayKey].trained=true;
-  localStorage.setItem("bt_habits",JSON.stringify(habits));
+  $("wm").textContent=`${SYM[sym]?.label||sym} · ${tf}`;
+  saveBacktestConfig();
 
   const fromStr=$("dateFrom").value;const toStr=$("dateTo").value;
   let url=`/api/chart?tf=${tf}&symbol=${sym}&count=5000`;
   if(fromStr){const from=new Date(fromStr);from.setHours(0,0,0,0);url+=`&from=${from.getTime()}`;}
   if(toStr){const to=new Date(toStr);to.setHours(23,59,59,999);url+=`&to=${to.getTime()}`;}
-  
+
   try{
     const r=await fetch(url);const d=await r.json();
     if(!d.candles||d.candles.length<2){
@@ -1230,7 +1254,9 @@ async function startBacktest(){
         const f=new Date(d.coverage.first),l=new Date(d.coverage.last);
         extra=` — historial disponible: ${f.toLocaleDateString("es-ES")} → ${l.toLocaleDateString("es-ES")} (${d.coverage.total.toLocaleString("es-ES")} velas)`;
       }
-      toast("Sin datos para ese rango"+extra);exitBacktest();return}
+      toast("Sin datos para ese rango"+extra);
+      if(S.loaded)exitBacktest();
+      return false}
     S.candles=d.candles;S.idx=Math.min(60,d.candles.length-1);S.playing=false;
     $("cTotal").textContent=S.candles.length;$("playPause").textContent="▶";$("playPause").classList.remove("playing");
     S.loaded=true;
@@ -1240,7 +1266,35 @@ async function startBacktest(){
     $("dateTo").value=last.toISOString().split("T")[0];
     render();
     toast(`${d.candles.length} velas · ${SYM[sym]?.label||sym} · ${first.toLocaleDateString("es-ES")} → ${last.toLocaleDateString("es-ES")}`);
-  }catch(e){toast("Error: "+e.message);exitBacktest()}
+    return true;
+  }catch(e){toast("Error: "+e.message);return false}
+}
+async function startBacktest(){
+  const sym=$("symSel").value,tf=$("tfSel").value;
+  // Si las velas de este activo/TF ya estan en pantalla, INICIAR solo reanuda el replay
+  const sameSession=S.loaded&&S.symbol===sym&&S.tf===tf;
+  const ok=sameSession?true:(await loadBacktest());
+  if(!ok)return;
+
+  $("startBtn").style.display="none";$("exitBtn").style.display="";
+
+  // Iniciar timer de entrenamiento
+  S.sessionStart=Date.now();
+  S.sessionMinutes=0;
+  startSessionTimer();
+
+  // Iniciar cronómetro regresivo si está seleccionado
+  initCountdown();
+
+  // Registrar fecha de entrenamiento
+  const todayKey=new Date().toISOString().split("T")[0];
+  const habits=JSON.parse(localStorage.getItem("bt_habits")||"{}");
+  if(!habits[todayKey])habits[todayKey]={};
+  habits[todayKey].trained=true;
+  localStorage.setItem("bt_habits",JSON.stringify(habits));
+
+  // REQUISITO: al pulsar INICIAR el replay avanza las velas automaticamente
+  if(!S.playing&&S.idx<S.candles.length-1)togglePlay();
 }
 function exitBacktest(){
   S.playing=false;clearInterval(S.timer);S.timer=null;S.loaded=false;exitMode();
