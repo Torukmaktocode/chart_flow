@@ -37,6 +37,17 @@ let lastMktFetch  = 0;
 const NEWS_TTL    = 90 * 1000;
 const MKT_TTL     = 20 * 1000;
 
+// ── FEED HEALTH (una fuente muerta deja de ser invisible) ─────
+// feedHealth: { [src]: { ok, okAt, err, fetched, articles } }
+const feedHealth = {};
+function markFeedHealth(src, ok, articles, err) {
+  const h = feedHealth[src] || (feedHealth[src] = { fetched: 0, articles: 0 });
+  h.fetched++;
+  h.ok = ok;
+  if (ok) { h.okAt = Date.now(); h.articles = articles; h.err = null; }
+  else { h.err = String(err || 'sin datos').slice(0, 120); }
+}
+
 // ── FEEDS RSS 100% GRATUITOS ──────────────────────────────────
 const RSS_FEEDS = [
   // Reuters (vía Google News — los RSS directos de Reuters están muertos)
@@ -458,7 +469,7 @@ function generateTradingSignal(newsItem, marketPrices) {
 async function fetchOne(feed) {
   try {
     const parsed = await parser.parseURL(feed.url);
-    return (parsed.items || []).slice(0, 14).map(item => {
+    const items = (parsed.items || []).slice(0, 14).map(item => {
       const title = (item.title || '').trim();
       const body  = (item.contentSnippet || item.summary || item.content || '')
                       .replace(/<[^>]+>/g, '').trim().slice(0, 400);
@@ -487,7 +498,10 @@ async function fetchOne(feed) {
         nasEn:       nas.en,
       };
     });
-  } catch {
+    markFeedHealth(feed.src, items.length > 0, items.length);
+    return items;
+  } catch (e) {
+    markFeedHealth(feed.src, false, 0, e && e.message);
     return [];
   }
 }
@@ -503,19 +517,27 @@ async function fetchOne(feed) {
 // ─────────────────────────────────────────────────────────────
 
 const NITTER_INSTANCES = [
+  // Las que se sabe que siguen vivas van primero (xcancel es un Nitter
+  // moderno con RSS); el resto queda como red de respaldo
+  'https://xcancel.com',
+  'https://n.opnxng.com',
+  'https://twiiit.com',         // redirector: resuelve una instancia viva
   'https://nitter.net',
   'https://nitter.privacydev.net',
   'https://nitter.poast.org',
-  'https://nitter.cz',
   'https://nitter.1d4.us',
-  'https://twiiit.com',
-  'https://nitter.unixfox.eu',
-  'https://nitter.lunar.icu',
   'https://bird.trom.tf',
   'https://nitter.rawbit.ninja',
-  'https://n.opnxng.com',
-  'https://xcancel.com',
 ];
+
+// Rotacion round-robin: cada ciclo de fetch arranca por una instancia distinta
+// para repartir la carga y no martillar siempre la misma
+let nitterCursor = 0;
+function nitterOrder() {
+  const i = nitterCursor % NITTER_INSTANCES.length;
+  nitterCursor++;
+  return NITTER_INSTANCES.slice(i).concat(NITTER_INSTANCES.slice(0, i));
+}
 
 // Cuentas Squawk
 const SQUAWK_ACCOUNTS = [
@@ -576,8 +598,8 @@ async function findWorkingNitter(handle) {
       return { base: workingNitter, xml };
     } catch { workingNitter = ''; }
   }
-  // Rotar por todas las instancias
-  for (const inst of NITTER_INSTANCES) {
+  // Rotar por todas las instancias (comenzando por la del cursor actual)
+  for (const inst of nitterOrder()) {
     try {
       const xml = await probeNitter(inst, handle);
       workingNitter = inst;
@@ -714,10 +736,10 @@ async function fetchAllSquawk() {
   }
 
   if (all.length > 0) {
-    // Deduplicar y ordenar
+    // Deduplicar por clave honesta (URL o titulo completo) y ordenar
     const seen = new Set();
     const unique = all.filter(n => {
-      const k = n.title.slice(0,40).toLowerCase().replace(/\s+/g,'');
+      const k = dedupeKey(n);
       if (seen.has(k)) return false;
       seen.add(k); return true;
     });
@@ -732,19 +754,34 @@ async function fetchAllSquawk() {
 }
 
 // ── AGREGAR TODOS LOS FEEDS ───────────────────────────────────
+// Clave de dedup honesta: URL real del articulo;
+// para tweets sin link propio se usa el titulo completo (antes 40-50 chars mataban titulares distintos)
+function dedupeKey(n) {
+  if (n.url && !n.url.startsWith('https://x.com')) return 'u:' + n.url;
+  return 't:' + n.title.toLowerCase().replace(/\s+/g, '');
+}
 async function fetchAllNews() {
   console.log(`[${new Date().toISOString().slice(11,19)}] Actualizando ${RSS_FEEDS.length} feeds RSS...`);
   const results = await Promise.allSettled(RSS_FEEDS.map(f => fetchOne(f)));
-  let all = [];
-  results.forEach(r => { if (r.status === 'fulfilled') all.push(...r.value); });
+  // Solo articulos RSS (sin squawk): si TODAS las fuentes fallan, se conserva
+  // la cache anterior en lugar de vaciar el panel
+  let articles = [];
+  results.forEach(r => { if (r.status === 'fulfilled') articles.push(...r.value); });
+  articles.sort((a, b) => b.ts - a.ts);
+
+  if (articles.length === 0) {
+    console.warn(`[NEWS] Ningun feed devolvio articulos — CONSERVANDO cache anterior (${newsCache.length} items)`);
+    lastNewsFetch = Date.now();
+    return newsCache;
+  }
 
   // Incluir squawk en el cache general también
-  all.push(...squawkCache);
+  let all = [...articles, ...squawkCache];
 
-  // Deduplicar
+  // Deduplicar (por URL o titulo completo)
   const seen = new Set();
   all = all.filter(n => {
-    const key = n.title.slice(0, 50).toLowerCase().replace(/\s+/g, '');
+    const key = dedupeKey(n);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -755,7 +792,8 @@ async function fetchAllNews() {
   lastNewsFetch = Date.now();
 
   const srcs = [...new Set(newsCache.map(n => n.src))].length;
-  console.log(`[OK] ${newsCache.length} artículos de ${srcs} fuentes activas`);
+  const okFeeds = Object.values(feedHealth).filter(h => h.ok).length;
+  console.log(`[OK] ${newsCache.length} artículos de ${srcs} fuentes activas (${okFeeds} feeds saludables)`);
   return newsCache;
 }
 
@@ -913,7 +951,13 @@ async function scrapeEconWeek(weekParam) {
       if (dateCell.length) {
         const dateText = dateCell.text().trim();
         if (dateText) {
-          const parsed = new Date(dateText + ' 2026');
+          // El año real (no hardcodeado): si la fecha queda a meses de futuro
+          // es un calendario del año proximo, si no, usa el año actual
+          const yy = new Date().getFullYear();
+          let parsed = new Date(dateText + ' ' + yy);
+          if (!isNaN(parsed.getTime()) && parsed.getTime() > Date.now() + 60 * 86400000) {
+            parsed = new Date(dateText + ' ' + (yy + 1));
+          }
           if (!isNaN(parsed.getTime())) {
             currentDate = parsed.toISOString().split('T')[0];
             dateFound = true;
@@ -1021,17 +1065,38 @@ app.get('/api/intelligence', async (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
+  const feedsOk = Object.values(feedHealth).filter(h => h.ok).length;
   res.json({
     ok:          true,
     articles:    newsCache.length,
     squawk:      squawkCache.length,
     sources:     [...new Set(newsCache.map(n => n.src))].length,
     feedCount:   RSS_FEEDS.length,
+    feedsOk,
     nitter:      workingNitter || 'sin instancia activa',
     lastNews:    new Date(lastNewsFetch).toISOString(),
     lastSquawk:  lastSquawkFetch ? new Date(lastSquawkFetch).toISOString() : 'nunca',
     lastMarket:  new Date(lastMktFetch).toISOString(),
     cost:        '$0/mes — 100% gratuito',
+  });
+});
+
+// ── API: SALUD DE CADA FUENTE (fin de los fallos silenciosos) ──
+app.get('/api/feed-health', (req, res) => {
+  const feeds = RSS_FEEDS.map(f => {
+    const h = feedHealth[f.src] || {};
+    return { src: f.src, url: f.url.length > 90 ? f.url.slice(0, 90) + '…' : f.url,
+      ok: h.ok === undefined ? null : h.ok, okAt: h.okAt || null, err: h.err || null,
+      articles: h.articles || 0, fetched: h.fetched || 0 };
+  });
+  const okCount = feeds.filter(f => f.ok === true).length;
+  res.json({
+    ok: true,
+    total: feeds.length,
+    okCount,
+    dead: feeds.filter(f => f.ok === false).map(f => f.src),
+    neverFetched: feeds.filter(f => f.ok === null).map(f => f.src),
+    feeds,
   });
 });
 
@@ -1945,6 +2010,8 @@ async function fetchPrices() {
 }
 
 // ── API: BROKER ORDER FLOW (Simulated institutional flow) ─────
+// DATOS SIMULADOS — no existe feed gratuito de flujos de brokers reales.
+// El panel correspondiente lleva badge SIM en la UI.
 app.get('/api/brokerflow', (req, res) => {
   const brokers = [
     { name: 'JP Morgan', tier: 'Bulge Bracket' },
@@ -1997,6 +2064,8 @@ app.get('/api/brokerflow', (req, res) => {
 });
 
 // ── API: DELTA & GAMMA (Options positioning) ──────────────────
+// DATOS SIMULADOS — un feed real de opciones requiere suscripcion de pago.
+// El panel correspondiente lleva badge SIM en la UI.
 app.get('/api/deltagamma', (req, res) => {
   const now = new Date();
   const spxPrice = 5542 + (Math.random() - 0.5) * 30;
