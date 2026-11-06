@@ -29,7 +29,27 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .lbtn{background:var(--bg3);border:1px solid var(--bd2);border-radius:4px;padding:3px 9px;font-size:10px;font-weight:600;color:var(--tx2);cursor:pointer;transition:all .15s}
 .lbtn:hover{background:var(--bd)}.lbtn.on{background:var(--am);color:#000;border-color:var(--am)}
 .free-badge{font-size:9px;background:#052e16;color:var(--gn);padding:2px 6px;border-radius:3px;border:1px solid #166534}
-.src-info{font-size:9px;color:var(--tx4)}
+.src-info{font-size:9px;color:var(--tx4);flex-shrink:0}
+
+/* SESIONES GLOBALES — relojes digitales (Asia · Londres · NY) */
+.sesrow{display:flex;gap:10px;padding:8px 14px;background:var(--bg);border-bottom:1px solid var(--bd);flex-shrink:0;overflow-x:auto}
+.sesclock{display:flex;gap:12px;align-items:center;justify-content:space-between;flex:1;min-width:215px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;transition:border-color .3s}
+.sesclock.abierto{border-color:rgba(34,197,94,.4)}
+.sesclock.cerrada{opacity:.75}
+.sesclock .sesnom{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--tx2)}
+.sesclock.abierto .sesnom{color:var(--gn)}
+.sesclock .sesciudad{font-size:9px;color:var(--tx4)}
+.sesdig{font-family:'Consolas','Courier New',monospace;font-size:23px;font-weight:600;color:#f8fafc;font-variant-numeric:tabular-nums;letter-spacing:.03em;line-height:1.2}
+.sesdig small{font-size:11px;color:var(--tx4);font-weight:400}
+.sesdif{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.sesst{font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.04em;white-space:nowrap}
+.sesst.so{background:#052e16;color:var(--gn)}
+.sesst.sc{background:#1c0000;color:#fca5a5}
+.sescnt{font-size:10px;color:var(--am);font-weight:700;letter-spacing:.02em}
+.seshz{font-size:10.5px;font-weight:500;color:#8a939b;white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.seshz b{color:#d8e0e6;font-weight:600}
+.seshz2{font-size:12.5px;font-weight:700;color:#c9d2da;white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.seshz2 i{font-style:normal;color:#fbbf24}
 
 /* BANNER */
 .banner{background:#1a1a1a;border-bottom:1px solid #333333;padding:6px 14px;display:none;align-items:center;gap:8px;font-size:11px;color:#cccccc;flex-shrink:0}
@@ -215,6 +235,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
+<!-- SESIONES GLOBALES: relojes digitales en vivo (hora local de la plaza + tu zona horaria) -->
+<div class="sesrow" id="sesRow"></div>
+
 <!-- ALERT BANNER -->
 <div class="banner" id="banner">
   <div class="bdot"></div>
@@ -327,21 +350,31 @@ async function api(ep, qs=''){
   return r.json();
 }
 
+let newsFails = 0; // fallas consecutivas: una sola no congela el feed
 async function loadNews(){
   try {
     setDot('loading');
     const d = await api('/news');
     allNews  = d.items || [];
     serverOk = true;
+    newsFails = 0;
     setDot('live');
     document.getElementById('srcInfo').textContent = allNews.length + (lang==='es'?' artículos · ':' articles · ') + [...new Set(allNews.map(n=>n.src))].length + (lang==='es'?' fuentes':' sources');
     renderFeed();
     checkBreaking();
     if(lang==='es') translateNewsProgressive();
   } catch {
-    serverOk = false;
-    setDot('error');
-    document.getElementById('flist').innerHTML = t('noServer');
+    // Un timeout aislado (red lenta / un feed pesado) NO debe congelar la UI:
+    // se conserva lo ya renderizado y se reintenta en el próximo poll.
+    newsFails++;
+    console.warn('[NEWS] carga falló (' + newsFails + ' veces), manteniendo datos en pantalla');
+    if (newsFails >= 3) {
+      serverOk = false;
+      setDot('error');
+      document.getElementById('flist').innerHTML = t('noServer');
+    } else {
+      setDot('error'); // punto rojo, pero el feed sigue visible
+    }
   }
 }
 
@@ -900,15 +933,133 @@ function showBanner(txt, isDirect=false){
   setTimeout(()=>b.classList.remove('show'),18000);
 }
 
+// ── SESIONES GLOBALES — relojes digitales (Asia · Londres · NY) ──
+// Horario de cada bolsa en SU hora local (el DST lo resuelve Intl automáticamente):
+// Tokio (TSE) 09:00–18:00 · Londres (LSE) 08:00–16:30 · Nueva York (NYSE) 09:30–16:00
+const SESIONES = [
+  { key:'asia',    nom:'ASIA',       ciudad:'Tokio',      tz:'Asia/Tokyo',       open:[9,0],   close:[18,0]  },
+  { key:'londres', nom:'LONDRES',    ciudad:'Londres',    tz:'Europe/London',    open:[8,0],   close:[16,30] },
+  { key:'ny',      nom:'NUEVA YORK', ciudad:'Nueva York', tz:'America/New_York', open:[9,30],  close:[16,0]  },
+];
+
+// Hora de pared en una zona horaria (respeta horario de verano vía Intl)
+function tzParts(tz, date = new Date()){
+  const p = {};
+  new Intl.DateTimeFormat('en-US', { timeZone: tz, hour12:false, weekday:'short',
+    year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' })
+    .formatToParts(date).forEach(x => p[x.type] = x.value);
+  return { y:+p.year, mo:+p.month, d:+p.day, wd:p.weekday, h:(+p.hour)%24, m:+p.minute, s:+p.second };
+}
+function tzOffsetMs(tz, date){
+  const ms = (typeof date === 'number') ? date : date.getTime();
+  const p = tzParts(tz, ms);
+  return Date.UTC(p.y, p.mo-1, p.d, p.h, p.m, p.s) - Math.floor(ms/1000)*1000;
+}
+// Instante UTC que corresponde a una hora de pared en tz (pasadas de corrección DST)
+function wallToUTC(tz, y, mo, d, h, mi){
+  const guess = Date.UTC(y, mo-1, d, h, mi, 0);
+  let t = guess;
+  for (let i=0; i<3; i++) t = guess - tzOffsetMs(tz, t);
+  return t;
+}
+function fmtFalta(ms){
+  if (ms <= 0) return null;
+  const s  = Math.round(ms/1000);
+  const d  = Math.floor(s/86400);
+  const h  = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  if (s >= 86400) return d + 'd ' + h + 'h';
+  return h >= 1 ? h + 'h ' + String(m).padStart(2,'0') + 'm'
+       : m >= 1 ? m + 'm ' + String(sec).padStart(2,'0') + 's'
+       : sec + 's';
+}
+// Estado de la sesión: {abierta, faltaMs, abre|cierra (instante UTC)}
+function sesionEstado(s, now = Date.now()){
+  const p = tzParts(s.tz);
+  const dow  = {Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}[p.wd];
+  const o    = s.open[0]*60 + s.open[1];
+  const c    = s.close[0]*60 + s.close[1];
+  const nm   = p.h*60 + p.m;
+  if (dow >= 1 && dow <= 5 && nm >= o && nm < c){
+    const cierra = wallToUTC(s.tz, p.y, p.mo, p.d, s.close[0], s.close[1]);
+    return { abierta:true, faltaMs: cierra - now, cierra };
+  }
+  // próxima apertura: salta fines de semana (hasta 9 días de recorrido)
+  for (let k = 0; k < 9; k++){
+    const wd = new Date(Date.UTC(p.y, p.mo-1, p.d + k)).getUTCDay();
+    if (wd === 0 || wd === 6) continue;
+    const t = wallToUTC(s.tz, p.y, p.mo, p.d + k, s.open[0], s.open[1]);
+    if (t > now) return { abierta:false, faltaMs: t - now, abre: t };
+  }
+  return { abierta:false, faltaMs: 0 };
+}
+
+// Transición a ABIERTA → aviso una vez por sesión y día (banner)
+const sesAvisoDia = new Map(); // key sesion|fechaWall → true
+function renderSesiones(){
+  const row = document.getElementById('sesRow'); if(!row) return;
+  // Zona horaria elegida del calendario (ET/CL/ES); default = tu hora local
+  const fx = (() => {
+    let eff = (typeof calTZName === 'function') ? calTZName() : null;
+    try { new Intl.DateTimeFormat('es-ES', { timeZone: eff || 'UTC' }); }
+    catch { eff = Intl.DateTimeFormat().resolvedOptions().timeZone; }
+    eff = eff || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return { znEff: eff, label: ({'America/New_York':'ET','Europe/Madrid':'ES'}[eff] || 'CL') };
+  })();
+  const fmtMiZona = ms => new Intl.DateTimeFormat('es-ES', { hour:'2-digit', minute:'2-digit', timeZone:fx.znEff }).format(ms);
+  row.innerHTML = SESIONES.map(s => {
+    const st = sesionEstado(s);
+    const p  = tzParts(s.tz);
+    const dig = String(p.h).padStart(2,'0') + ':' + String(p.m).padStart(2,'0') + ':' + String(p.s).padStart(2,'0');
+    const falta = fmtFalta(st.faltaMs);
+    const cnt = !falta ? '' : (st.abierta
+      ? (lang==='es' ? '⏳ cierra en ' : '⏳ closes in ') + falta
+      : (lang==='es' ? '🕒 abre en '   : '🕒 opens in ')  + falta);
+    // Horario de apertura/cierre: hora LOCAL de la plaza + hora del usuario (zona elegida)
+    const abreUTC0   = wallToUTC(s.tz, p.y, p.mo, p.d, s.open[0],  s.open[1]);
+    const cierraUTC0 = wallToUTC(s.tz, p.y, p.mo, p.d, s.close[0], s.close[1]);
+    const hhmm = ([h, m2]) => String(h).padStart(2,'0') + ':' + String(m2).padStart(2,'0');
+    const abreLocal  = hhmm(s.open);
+    const cierraLocal = hhmm(s.close);
+    const lv = lang==='es' ? 'L-V' : 'M-F';
+    const abreTxt  = lang==='es' ? 'abre' : 'opens';
+    const cierraTxt = lang==='es' ? 'cierra' : 'closes';
+    const hzLocal  = abreTxt + ' <b>' + abreLocal + '</b> · ' + cierraTxt + ' <b>' + cierraLocal + '</b>';
+    const hzMiZona = '<i>' + lv + '</i> ' + fmtMiZona(abreUTC0) + '–' + fmtMiZona(cierraUTC0) + ' <i>' + fx.label + '</i>';
+    const estTx = st.abierta ? (lang==='es'?'ABIERTA':'OPEN') : (lang==='es'?'CERRADA':'CLOSED');
+    // Aviso de apertura en el cruce de hora
+    const diaWall = p.y + '-' + p.mo + '-' + p.d;
+    const avKey = s.key + '|' + diaWall;
+    if (st.abierta && !sesAvisoDia.has(avKey)){
+      sesAvisoDia.set(avKey, true);
+      showBanner((lang==='es' ? '🔔 Abre la sesión de ' : '🔔 Session opens: ') + s.ciudad + ' (' + s.nom + ')', false);
+    }
+    return `<div class="sesclock ${st.abierta?'abierto':'cerrada'}" title="${esc(s.ciudad)} (${esc(s.tz)}) · horario local de la bolsa ${s.open[0]}:${esc(String(s.open[1]).padStart(2,'0'))}–${s.close[0]}:${esc(String(s.close[1]).padStart(2,'0'))}">
+      <div class="sesid">
+        <div class="sesnom">${esc(s.nom)}</div>
+        <div class="sesciudad">${esc(s.ciudad)} · ${esc(s.tz.split('/')[1].replace(/_/g,' '))}</div>
+        <div class="sesdig">${dig}<small> ${esc(s.tz.split('/')[1].replace(/_/g,' '))}</small></div>
+      </div>
+      <div class="sesdif">
+        <span class="sesst ${st.abierta?'so':'sc'}">${estTx}</span>
+        <span class="sescnt">${cnt}</span>
+        <span class="seshz">${hzLocal}</span>
+        <span class="seshz2">${hzMiZona}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ── CLOCK ─────────────────────────────────────────────────
 function updateClock(){
   const et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
   const h=String(et.getHours()).padStart(2,'0'),m=String(et.getMinutes()).padStart(2,'0'),s=String(et.getSeconds()).padStart(2,'0');
   document.getElementById('clk').textContent=`${h}:${m}:${s} ET`;
-  const isNY=et.getHours()>=9&&(et.getHours()<11||(et.getHours()===11&&et.getMinutes()===0));
+  // Badge NY del header: horario real de NYSE (09:30–16:00 con DST) en vez del cálculo viejo
+  const stNY = sesionEstado(SESIONES[2]);
   const nb=document.getElementById('nyBadge');
-  nb.textContent=isNY?t('nyOpen'):t('nyClosed');
-  nb.className='badge '+(isNY?'bg':'br');
+  nb.textContent=stNY.abierta?t('nyOpen'):t('nyClosed');
+  nb.className='badge '+(stNY.abierta?'bg':'br');
+  renderSesiones();
 }
 
 async function hardRefresh(){

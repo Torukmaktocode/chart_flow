@@ -29,6 +29,29 @@ app.use(express.json());
 app.use(express.static(__dirname, { maxAge: 0, etag: false }));
 app.use((req, res, next) => { res.set('Cache-Control', 'no-store, no-cache, must-revalidate'); res.set('Pragma', 'no-cache'); res.set('Expires', '0'); next(); });
 
+// ── RESILIENCIA DEL FEED ─────────────────────────────────────
+// Las fuentes RSS/Nitter/translate fallan a menudo: un rechazo no capturado
+// en segundo plano NO puede matar el servidor (una muerte silenciosa congela el feed)
+process.on('uncaughtException', e => console.log('[GUARDA] uncaughtException:', e && (e.message || e)));
+process.on('unhandledRejection', e => console.log('[GUARDA] unhandledRejection:', e && (e.message || e)));
+
+// Fetch en marcha: evita que las rondas RSS se amontonen cuando una tarda más que el TTL
+let newsFetching = null, squawkFetching = null;
+function kickNews(){
+  if (newsFetching) return newsFetching;
+  newsFetching = fetchAllNews()
+    .catch(e => console.log('[NEWS] ronda fallida:', e.message))
+    .finally(() => { newsFetching = null; });
+  return newsFetching;
+}
+function kickSquawk(){
+  if (squawkFetching) return squawkFetching;
+  squawkFetching = fetchAllSquawk()
+    .catch(e => console.log('[SQUAWK] ronda fallida:', e.message))
+    .finally(() => { squawkFetching = null; });
+  return squawkFetching;
+}
+
 // Compatibilidad: news.html era la portada temporaria; ahora vive en / (index.html)
 app.get('/news.html', (req, res) => res.redirect('/'));
 
@@ -531,6 +554,69 @@ function generateTradingSignal(newsItem, marketPrices) {
 }
 
 // ── FETCH UN FEED ─────────────────────────────────────────────
+// ── MEMORIA DE TIMESTAMPS (anti "noticia fantasma") ──────────
+// Algunos feeds (Investing.com sobre todo) re-emiten artículos viejos SIN fecha
+// o re-enviados tras una edición; el fallback Date.now() los presentaba como
+// recién publicados y volvían al tope del feed en cada ronda. Se recuerda por
+// URL la primera hora confirmada y el feed nunca la puede "rejuvenecer".
+const TS_STORE     = path.join(__dirname, 'news-ts-cache.json');
+const tsMemory     = new Map(); // url → { ts: primera vez visto, pub: pubDate confirmada }
+let tsStoreDirty   = false;
+let tsStoreSavedTs = 0;
+
+try {
+  if (fs.existsSync(TS_STORE)) {
+    const arr = JSON.parse(fs.readFileSync(TS_STORE, 'utf8'));
+    (arr || []).forEach(kv => tsMemory.set(kv.u, { ts: kv.t, pub: kv.p || null }));
+    console.log(`[NEWS] memoria de timestamps cargada del disco (${(arr || []).length} URLs)`);
+  }
+} catch (e) { console.log('[NEWS] memoria ts: lectura fallida:', e.message); }
+
+function saveTsStore(force) {
+  if (!tsStoreDirty) return;
+  const now = Date.now();
+  if (!force && now - tsStoreSavedTs < 60000) return; // persistir máx. 1/min
+  tsStoreSavedTs = now;
+  tsStoreDirty = false;
+  try {
+    let entries = [...tsMemory.entries()];
+    if (entries.length > 20000) { // tope: conservar las URLs tocadas más recientemente
+      entries.sort((a, b) => b[1].ts - a[1].ts);
+      entries = entries.slice(0, 20000);
+      tsMemory.clear();
+      entries.forEach(([u, v]) => tsMemory.set(u, v));
+    }
+    fs.writeFileSync(TS_STORE, JSON.stringify(entries.map(([u, v]) => ({ u, t: v.ts, p: v.pub }))));
+  } catch {}
+}
+
+// Timestamp honesto del artículo: fecha del feed si es creíble; si no,
+// la hora de la PRIMERA vez que lo vimos (memoria); "ahora" solo la primera vez.
+function resolveItemTs(item, url, title) {
+  const now = Date.now();
+  const raw = item.isoDate || item.pubDate || item.updated || item['dc:date'] || null;
+  let pub = raw ? Date.parse(raw) : NaN;
+  if (Number.isFinite(pub)) {
+    if (pub > now + 120000) pub = now;                       // skew futuro (Google News)
+    if (pub < now - 30 * 86400000) pub = NaN;                // absurdo de hace meses: sin fecha creíble
+  }
+  const key = url || ('t:' + String(title || '').toLowerCase().replace(/\s+/g, ''));
+  let mem = tsMemory.get(key);
+  if (mem && !(mem.ts > 0 && mem.ts <= now + 120000)) mem = null; // memoria corrupta: ignorar
+  let ts;
+  if (Number.isFinite(pub)) ts = pub;
+  else if (mem) ts = mem.ts;                                  // conocido y sin fecha: su hora original
+  else ts = now;                                              // nuevo sin fecha: "ahora" solo la primera vez
+  const pubRec = Number.isFinite(pub) ? pub : (mem ? mem.pub : null);
+  // Devolver SIEMPRE la hora estable conocida (la más vieja): el feed no decide la edad.
+  // Así, un artículo re-mandado con pubDate reescrita NO vuelve a "1m" en el tope.
+  const firstTs = mem ? Math.min(mem.ts, ts) : (Number.isFinite(pub) ? Math.min(pub, now) : now);
+  tsMemory.set(key, { ts: firstTs, pub: pubRec });
+  tsStoreDirty = true;
+  saveTsStore(false);
+  return firstTs;
+}
+
 async function fetchOne(feed) {
   try {
     const parsed = await parser.parseURL(feed.url);
@@ -542,11 +628,10 @@ async function fetchOne(feed) {
       const tags  = extractTags(full);
       const cat   = feed.trump ? 'trump' : categorize(full);
       const nas   = analyzeNas(title, body, cat, tags);
-      // Anticlock-skew: algunos feeds (Google News sobre todo) publican
-      // timestamps en el futuro; eso rompe el orden del feed y lo hace
-      // parecer congelado. Se amarra al presente.
-      let itemTs = item.pubDate ? new Date(item.pubDate).getTime() : Date.now();
-      if (!Number.isFinite(itemTs) || itemTs > Date.now() + 120000) itemTs = Date.now();
+      // Anti clock-skew + memoria por URL: los feeds que re-mandan artículos
+      // viejos sin fecha (o re-editados) no pueden "rejuvenecerlos" a ahora.
+      const link = item.link || '';
+      const itemTs = resolveItemTs(item, link, title);
       return {
         id:          Buffer.from(title).toString('base64').slice(0, 18),
         src:         feed.src,
@@ -588,17 +673,11 @@ async function fetchOne(feed) {
 // ─────────────────────────────────────────────────────────────
 
 const NITTER_INSTANCES = [
-  // Las que se sabe que siguen vivas van primero (xcancel es un Nitter
-  // moderno con RSS); el resto queda como red de respaldo
+  // X mató legalmente la mayoría de Nitter (451/403). Quedan los 3 posibles;
+  // se prueban EN PARALELO como último recurso (Jina Reader es la fuente primaria)
   'https://xcancel.com',
   'https://n.opnxng.com',
-  'https://twiiit.com',         // redirector: resuelve una instancia viva
-  'https://nitter.net',
-  'https://nitter.privacydev.net',
-  'https://nitter.poast.org',
-  'https://nitter.1d4.us',
-  'https://bird.trom.tf',
-  'https://nitter.rawbit.ninja',
+  'https://nitter.tiekoetter.com',
 ];
 
 // Rotacion round-robin: cada ciclo de fetch arranca por una instancia distinta
@@ -660,25 +739,28 @@ async function probeNitter(base, handle) {
   return text;
 }
 
-// Encontrar instancia de Nitter que funcione
+// Encontrar instancia de Nitter que funcione — TODAS en paralelo (deadline único)
 async function findWorkingNitter(handle) {
-  // Primero intenta la que funcionó antes
   if (workingNitter) {
     try {
       const xml = await probeNitter(workingNitter, handle);
       return { base: workingNitter, xml };
     } catch { workingNitter = ''; }
   }
-  // Rotar por todas las instancias (comenzando por la del cursor actual)
-  for (const inst of nitterOrder()) {
-    try {
-      const xml = await probeNitter(inst, handle);
-      workingNitter = inst;
-      console.log(`[SQUAWK] Nitter OK: ${inst}`);
-      return { base: inst, xml };
-    } catch { /* siguiente */ }
-  }
-  throw new Error('Ninguna instancia de Nitter disponible');
+  // Onda paralela: la primera que devuelva RSS válido gana (no 9 intentos secuenciales)
+  const race = Promise.any(nitterOrder().map(async inst => {
+    const xml = await probeNitter(inst, handle);
+    return { base: inst, xml };
+  }));
+  try {
+    const win = await Promise.race([
+      race,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('deadline nitter')), 6000)),
+    ]);
+    workingNitter = win.base;
+    console.log(`[SQUAWK] Nitter OK: ${win.base}`);
+    return win;
+  } catch { throw new Error('Ninguna instancia de Nitter disponible'); }
 }
 
 // Parsear el XML de Nitter y convertir a formato estándar
@@ -743,21 +825,18 @@ function parseNitterXML(xml, account) {
 }
 
 // Fuente alternativa: LiveSquawk.com tiene su propio feed
+// 1 URL, 1 fetch, 5s: hoy suele devolver 403 (Cloudflare) — que falle RÁPIDO
 async function fetchLiveSquawkDirect() {
-  const urls = [
-    'https://www.livesquawk.com/feed/',
-    'https://www.livesquawk.com/rss.xml',
-    'https://livesquawk.com/feed/',
-  ];
-  for (const url of urls) {
-    try {
-      const res = await fetch(url, {
-        timeout: 7000,
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/rss+xml,*/*' }
-      });
-      if (!res.ok) continue;
-      const parsed = await parser.parseURL(url);
-      return (parsed.items || []).slice(0, 15).map(item => {
+  const url = 'https://www.livesquawk.com/feed/';
+  const res = await fetch(url, {
+    timeout: 5000,
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'application/rss+xml,*/*' }
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const text = await res.text();
+  if (!text.includes('<item') && !text.includes('<entry')) throw new Error('feed sin items (403 page)');
+  const parsed = await parser.parseString(text);
+  return (parsed.items || []).slice(0, 15).map(item => {
         const title = (item.title || '').trim();
         const body  = (item.contentSnippet || '').slice(0, 300);
         const full  = title + ' ' + body;
@@ -776,16 +855,164 @@ async function fetchLiveSquawkDirect() {
           cross: crossAssetContext(nas.key),
         };
       });
-    } catch { continue; }
-  }
-  return [];
 }
 
-// Fetch principal de todas las cuentas Squawk
+// ── FUENTE PRIMARIA SQUAWK: JINA READER (proxy de lectura de x.com) ──
+// Nitter está muerto legalmente (451/403 en todas sus instancias). Jina Reader
+// (r.jina.ai, gratuito) devuelve la página del perfil en ~1-4s. X sirve DOS
+// formatos: lista "*  [![Image N...](...)] TEXT" y bloque con antigüedad real
+// "[46m](https://x.com/.../status/NNN)  TEXTO". El parser cubre ambos.
+const SQUAWK_META_WORDS = /\b(Log in|sign up|Continue with|Opens in new tab|Following|Followers|Joined|Mention|compose\/post|profile banner|header_photo)\b/gi;
+function parseJinaSquawk(md, account) {
+  const now = Date.now();
+  // Recortar el markdown en los avatares de TWEET (profile_images, no banner/foto)
+  const markerRx = /\[!\[Image\s*\d+:\s*@[^\]]*\]\(https:\/\/pbs\.twimg\.com\/profile_images\/[^)]*\)\]\(https:\/\/x\.com\/[^)]*\)/g;
+  const chunks = [];
+  let m, prevEnd = -1;
+  while ((m = markerRx.exec(md)) !== null) {
+    if (prevEnd >= 0) chunks.push(md.slice(prevEnd, m.index));
+    prevEnd = m.index + m[0].length;
+  }
+  if (prevEnd >= 0) chunks.push(md.slice(prevEnd));
+  // También cubre el formato LISTA: "*   [![Image ...](pbs)](x.com/cuenta) TEXTO"
+  const clean = t => String(t || '')
+    .replace(SQUAWK_META_WORDS, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')                    // imágenes markdown
+    .replace(/\]\((https?:\/[^)]*)\)/g, ' ')                  // lincas restantes
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')                  // [texto](url) → texto
+    .replace(/https?:\/\/\S+/g, ' ')
+    .replace(/\[(\d+)([smhd])\]/gi, ' ')                      // restos de edad "[46m"
+    .replace(/\[@?\w{1,20}\]/g, ' ')                          // restos "[@handle]"
+    .replace(/[*_`>#]/g, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+  const items = [];
+  const seen = new Set();
+  chunks.forEach(chunk => {
+    const statusM = chunk.match(/https:\/\/x\.com\/\w+\/status\/\d+/);
+    const relM    = chunk.match(/\[(\d+)([smhd])\]\(https:\/\/x\.com/);
+    let ts = null;
+    if (relM) {
+      const n = parseInt(relM[1], 10);
+      ts = now - n * { s: 1000, m: 60000, h: 3600000, d: 86400000 }[relM[2]];
+    }
+    let text = clean(chunk);
+    // Recorte honesto: hasta la cola de métricas del tweet (compose/likes/reposts)
+    const tailM = text.match(/\s*(?:\d+(?:\.\d+)?[KM]?)?\s*\d+(?:\.\d+)?[KM]?\s*$/);
+    if (tailM && statusM) text = text.slice(0, tailM.index).trim();
+    const recorta = 'https://x.com/' + account.handle;
+    // Limpiar cabeceras de X: nombre de cuenta repetido, @handle, edad "46m"
+    text = text
+      .replace(new RegExp(`^(?:${account.handle}\\s*)+`, 'i'), '')
+      .replace(/^(?:@\w+\s*)+/, '')
+      .replace(/^(?:\d+[smhd]\s*)+/i, '')
+      .trim();
+    if (text.length < 6) return; // fragmento no útil
+    const key = text.toLowerCase().slice(0, 120);
+    if (seen.has(key)) return;
+    seen.add(key);
+    const full = text;
+    const tags = extractTags(full);
+    const nas  = analyzeNas(text, '', 'squawk', tags);
+    // Fecha: real de X ([46m](status)) si está; si no, memoria del titular
+    const keyMem = 't:' + text.toLowerCase().replace(/\s+/g, ' ');
+    if (!ts) ts = squawkTsMemory.get(keyMem) || now;
+    squawkTsMemory.set(keyMem, ts);
+    items.push({
+      id:          Buffer.from(text).toString('base64').slice(0, 18),
+      src:         account.src,
+      cls:         account.cls,
+      imp:         scoreImpact(full),
+      cat:         'squawk',
+      squawk:      true,
+      squawkMeta:  { handle: account.handle, color: account.color, label: account.label },
+      ts,
+      title:       text,
+      body:        '',
+      tags,
+      trump:       false,
+      trumpDirect: false,
+      url:         statusM ? statusM[0] : recorta,
+      nasDir:      nas.dir,
+      nasKey:      nas.key,
+      nasMag:      nas.mag,
+      conf:        nas.conf,
+      nasEs:       nas.es,
+      nasEn:       nas.en,
+      cross:       crossAssetContext(nas.key),
+    });
+  });
+  return items;
+}
+const squawkTsMemory = new Map(); // titular → primera vez visto
+async function fetchSquawkViaJina(account) {
+  const url = `https://r.jina.ai/https://x.com/${account.handle}`;
+  const res = await fetch(url, {
+    timeout: 8000,
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'text/plain, */*' },
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const md = await res.text();
+  if (!md.includes('posts') && !md.includes('Image')) throw new Error('contenido sin tweets');
+  return parseJinaSquawk(md, account);
+}
+
+// ── RESPALDO REAL: FOREXLIVE RSS (breaking de mercado, vivo) ──
+// Si todas las vías de X fallan, la sección nunca queda vacía ni en "cargando..."
+async function fetchForexLiveFallback() {
+  try {
+    const parsed = await parser.parseURL('https://www.forexlive.com/feed/news');
+    return (parsed.items || []).slice(0, 15).map(item => {
+      const title = (item.title || '').trim();
+      const body  = (item.contentSnippet || item.content || '').replace(/<[^>]+>/g, '').trim().slice(0, 300);
+      const full  = title + ' ' + body;
+      const tags  = extractTags(full);
+      const nas   = analyzeNas(title, body, 'squawk', tags);
+      return {
+        id: Buffer.from(title).toString('base64').slice(0, 18),
+        src: 'FOREXLIVE', cls: 'sq-live',
+        imp: scoreImpact(full), cat: 'squawk', squawk: true,
+        squawkMeta: { handle: 'ForexLive', color: '#ef4444', label: 'BREAKING' },
+        ts: item.pubDate ? new Date(item.pubDate).getTime() : Date.now(),
+        title, body, tags, trump: false, trumpDirect: false,
+        url: item.link || 'https://www.forexlive.com',
+        nasDir: nas.dir, nasKey: nas.key, nasMag: nas.mag, conf: nas.conf,
+        nasEs: nas.es, nasEn: nas.en,
+        cross: crossAssetContext(nas.key),
+      };
+    });
+  } catch (e) {
+    console.log('[SQUAWK] respaldo ForexLive falló:', e.message);
+    return [];
+  }
+}
+
+// ── CACHÉ DE SQUAWK EN DISCO (la pestaña no queda vacía tras reinicios) ──
+const SQUAWK_CACHE_FILE = path.join(__dirname, 'squawk-cache.json');
+function loadSquawkCacheDisk() {
+  try {
+    if (fs.existsSync(SQUAWK_CACHE_FILE)) {
+      const arr = JSON.parse(fs.readFileSync(SQUAWK_CACHE_FILE, 'utf8'));
+      if (Array.isArray(arr) && arr.length) {
+        squawkCache = arr;
+        lastSquawkFetch = Date.now() - 20 * 60000; // medio-viejo: el siguiente tick refresca
+        console.log(`[SQUAWK] cache cargada del disco (${arr.length} posts)`);
+      }
+    }
+  } catch (e) { console.log('[SQUAWK] lectura cache fallida:', e.message); }
+}
+function saveSquawkCacheDisk() {
+  try { fs.writeFileSync(SQUAWK_CACHE_FILE, JSON.stringify(squawkCache.slice(0, 60))); } catch {}
+}
+
+// ── Fetch principal de todas las cuentas Squawk — TODO en paralelo, <10s ──
 async function fetchAllSquawk() {
+  const t0  = Date.now();
   const all = [];
 
-  // Intentar LiveSquawk.com directo primero (sin Nitter)
+  // 1) LiveSquawk.com directo (rápido; un intento de ~5s)
   try {
     const ls = await fetchLiveSquawkDirect();
     if (ls.length) {
@@ -794,21 +1021,36 @@ async function fetchAllSquawk() {
     }
   } catch {}
 
-  // Fetch de cada cuenta via Nitter
-  for (const account of SQUAWK_ACCOUNTS) {
-    // LiveSquawk ya se obtuvo arriba si hubo feed directo
-    if (account.handle === 'LiveSquawk' && all.some(n => n.src === '@LiveSquawk')) continue;
-    try {
+  // 2) Jina Reader: las 3 cuentas EN PARALELO (una sola ola, ~1-3s)
+  if (all.length < 10) {
+    const jina = await Promise.allSettled(SQUAWK_ACCOUNTS.map(a => fetchSquawkViaJina(a)));
+    jina.forEach((r, i) => {
+      if (r.status === 'fulfilled' && r.value.length) {
+        all.push(...r.value);
+        console.log(`[SQUAWK] ${SQUAWK_ACCOUNTS[i].src} via Jina: ${r.value.length} posts`);
+      }
+    });
+  }
+
+  // 3) Nitter clásico (onda paralela) solo si Jina/LiveSquawk no dieron nada
+  if (!all.length) {
+    const results = await Promise.allSettled(SQUAWK_ACCOUNTS.filter(a => !(a.handle === 'LiveSquawk' && all.some(n => n.src === '@LiveSquawk'))).map(async account => {
       const { xml } = await findWorkingNitter(account.handle);
-      const items   = parseNitterXML(xml, account);
-      all.push(...items);
+      const items = parseNitterXML(xml, account);
       console.log(`[SQUAWK] ${account.src}: ${items.length} posts via Nitter`);
-    } catch (e) {
-      console.warn(`[SQUAWK] ${account.src} falló: ${e.message}`);
-    }
+      return items;
+    }));
+    results.forEach(r => { if (r.status === 'fulfilled') all.push(...(r.value || [])); });
+  }
+
+  // 4) Respaldo real: ForexLive RSS breaking (nunca deja la sección vacía)
+  if (!all.length) {
+    const fb = await fetchForexLiveFallback();
+    if (fb.length) { all.push(...fb); console.log(`[SQUAWK] respaldo ForexLive: ${fb.length} posts`); }
   }
 
   if (all.length > 0) {
+    console.log(`[SQUAWK] ronda completada en ${Math.round(Date.now() - t0) / 1000}s`);
     // Deduplicar por clave honesta (URL o titulo completo) y ordenar
     const seen = new Set();
     const unique = all.filter(n => {
@@ -831,6 +1073,7 @@ async function fetchAllSquawk() {
       }
     });
     console.log(`[SQUAWK] Total: ${squawkCache.length} posts`);
+    saveSquawkCacheDisk();
   } else {
     console.warn('[SQUAWK] Sin datos de ninguna fuente — manteniendo caché');
   }
@@ -880,6 +1123,7 @@ async function fetchAllNews() {
   const srcs = [...new Set(newsCache.map(n => n.src))].length;
   const okFeeds = Object.values(feedHealth).filter(h => h.ok).length;
   console.log(`[OK] ${newsCache.length} artículos de ${srcs} fuentes activas (${okFeeds} feeds saludables)`);
+  saveTsStore(true); // persistir la memoria de timestamps tras cada ronda
   // Titulares y cuerpos en español: adjuntar de caché o encolar para traducción de fondo
   newsCache.forEach(n => {
     const tEs = transCache.get('es:' + n.title);
@@ -897,7 +1141,13 @@ async function fetchAllNews() {
 // ── ROUTE /api/squawk ─────────────────────────────────────────
 // ── ROUTES ────────────────────────────────────────────────────
 app.get('/api/news', async (req, res) => {
-  if (Date.now() - lastNewsFetch > NEWS_TTL) await fetchAllNews();
+  // Responder SIEMPRE al instante desde la cache; el refresco corre en segundo plano.
+  // (antes se esperaba el fetch completo dentro de la petición: si los feeds tardaban
+  // >10s, el cliente abortaba y la UI quedaba congelada)
+  const stale = (Date.now() - lastNewsFetch > NEWS_TTL) || !newsCache.length;
+  if (stale && !newsFetching) kickNews();
+  // Arranque en frío (cache vacía): ventana corta para traer algo de datos
+  if (!newsCache.length && newsFetching) await Promise.race([newsFetching, new Promise(r => setTimeout(r, 8000))]);
   let items = [...newsCache];
   const { cat, imp, q } = req.query;
   if (cat && cat !== 'all') items = items.filter(n => n.cat === cat);
@@ -910,7 +1160,10 @@ app.get('/api/news', async (req, res) => {
 });
 
 app.get('/api/squawk', async (req, res) => {
-  if (Date.now() - lastSquawkFetch > SQUAWK_TTL) await fetchAllSquawk();
+  // Misma estrategia que /api/news: cache instantánea + refresco en segundo plano
+  const staleSq = (Date.now() - lastSquawkFetch > SQUAWK_TTL) || !squawkCache.length;
+  if (staleSq && !squawkFetching) kickSquawk();
+  if (!squawkCache.length && squawkFetching) await Promise.race([squawkFetching, new Promise(r => setTimeout(r, 8000))]);
   res.json({
     ok:         true,
     count:      squawkCache.length,
@@ -1753,7 +2006,7 @@ setInterval(() => {
 }, 15000);
 
 app.get('/api/trump', async (req, res) => {
-  if (Date.now() - lastNewsFetch > NEWS_TTL) await fetchAllNews();
+  if (Date.now() - lastNewsFetch > NEWS_TTL && !newsFetching) kickNews();
   const items = newsCache.filter(n => n.trump || n.cat === 'trump');
   res.json({ ok: true, count: items.length, items });
 });
@@ -1774,7 +2027,7 @@ app.get('/api/impact', (req, res) => {
 });
 
 app.get('/api/intelligence', async (req, res) => {
-  if (Date.now() - lastNewsFetch > NEWS_TTL) await fetchAllNews();
+  if (Date.now() - lastNewsFetch > NEWS_TTL && !newsFetching) kickNews();
   const recent = newsCache.filter(n => Date.now() - n.ts < 3600000);
   const signals = recent.map(n => ({ ...n, signal: generateTradingSignal(n, mktCache) }));
   const activeSignals = signals.filter(s => s.signal.action !== 'HOLD');
@@ -2407,16 +2660,17 @@ app.listen(PORT, async () => {
   console.log(`  http://localhost:${PORT}/api/status\n`);
 
   loadTransStore();
-  // Fetch paralelo inicial
+  loadSquawkCacheDisk();
+  // Fetch paralelo inicial (los intervalos usan kick* para no amontonar rondas)
   await Promise.allSettled([
-    fetchAllSquawk(),
-    fetchAllNews(),
+    kickSquawk(),
+    kickNews(),
     fetchPrices(),
     econInjectionTick(),
   ]);
 
-  setInterval(fetchAllSquawk, SQUAWK_TTL);
-  setInterval(fetchAllNews,   NEWS_TTL);
+  setInterval(kickSquawk, SQUAWK_TTL);
+  setInterval(kickNews,   NEWS_TTL);
   setInterval(fetchPrices,    MKT_TTL);
   setInterval(econInjectionTick, ECON_TICK);
 });
