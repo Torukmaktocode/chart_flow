@@ -819,6 +819,17 @@ async function fetchAllSquawk() {
     unique.sort((a,b) => b.ts - a.ts);
     squawkCache     = unique.slice(0, 60);
     lastSquawkFetch = Date.now();
+    // SQUAWK también en español: adjuntar de caché o encolar (títulos y cuerpos)
+    squawkCache.forEach(n => {
+      const tEs = transCache.get('es:' + n.title);
+      if (tEs) n.titleEs = tEs;
+      else queueTranslate('squawk', n.id, n.title);
+      if (n.body && n.body.trim()) {
+        const bEs = transCache.get('es:' + n.body);
+        if (bEs) n.bodyEs = bEs;
+        else queueTranslate('squawk-body', n.id, n.body);
+      }
+    });
     console.log(`[SQUAWK] Total: ${squawkCache.length} posts`);
   } else {
     console.warn('[SQUAWK] Sin datos de ninguna fuente — manteniendo caché');
@@ -870,7 +881,6 @@ async function fetchAllNews() {
   const okFeeds = Object.values(feedHealth).filter(h => h.ok).length;
   console.log(`[OK] ${newsCache.length} artículos de ${srcs} fuentes activas (${okFeeds} feeds saludables)`);
   // Titulares y cuerpos en español: adjuntar de caché o encolar para traducción de fondo
-  // (los cuerpos también se traducen a furto ANT@S de que el usuario abra la noticia)
   newsCache.forEach(n => {
     const tEs = transCache.get('es:' + n.title);
     if (tEs) n.titleEs = tEs;
@@ -1540,15 +1550,53 @@ function gtxThrottle(text, from, to) {
   return transQ;
 }
 
+// ── TRADUCCIÓN CON RESPALDOS ──────────────────────────────────
+// Cadena: (1) Google gtx → (2) Google dict-chrome-ex → (3) MyMemory.
+// Si el principal falla o devuelve anti-bot, la noticia NO se pierde:
+// se prueba la vía alternativa y, si sigue fallando, la cola reintenta 2 veces.
+const UA_TRANS = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+function _pickGoogle(j) {
+  if (!Array.isArray(j)) return null;
+  if (typeof j[0] === 'string') return j.filter(x => typeof x === 'string').join(' ');
+  if (Array.isArray(j[0])) {
+    if (typeof j[0][0] === 'string') return j[0].filter(x => typeof x === 'string').join('');
+    if (j[0][0] && typeof j[0][0][0] === 'string') return (j[0][0] || []).map(s => s[0]).filter(Boolean).join('');
+  }
+  return null;
+}
+
 async function doGtx(text, from, to) {
-  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
-  const r = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-    timeout: 8000
-  });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  const data = await r.json();
-  return (data[0] || []).map(s => s[0]).join('');
+  const errs = [];
+  // 1) endpoint principal gtx
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
+    const r = await fetch(url, { headers: { 'User-Agent': UA_TRANS }, timeout: 8000 });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const out = _pickGoogle(await r.json());
+    if (out) return out;
+    errs.push('gtx:respuesta rara');
+  } catch (e) { errs.push('gtx:' + e.message); }
+  // 2) respaldo: dict-chrome-ex (otro endpoint gratuito de Google)
+  try {
+    const url = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=${from}&tl=${to}&q=${encodeURIComponent(text)}`;
+    const r = await fetch(url, { headers: { 'User-Agent': UA_TRANS }, timeout: 8000 });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const out = _pickGoogle(await r.json());
+    if (out) return out;
+    errs.push('c5:respuesta rara');
+  } catch (e) { errs.push('c5:' + e.message); }
+  // 3) respaldo: MyMemory (gratuito; suficiente para el goteo de noticias nuevas)
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 480))}&langpair=${from}|${to}`;
+    const r = await fetch(url, { headers: { 'User-Agent': UA_TRANS }, timeout: 10000 });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    const t = d && d.responseData && d.responseData.translatedText;
+    if (t) return t;
+    errs.push('mm:vacio');
+  } catch (e) { errs.push('mm:' + e.message); }
+  throw new Error('todos los traductores fallaron [' + errs.join('; ') + ']');
 }
 
 app.get('/api/translate', async (req, res) => {
@@ -1561,7 +1609,7 @@ app.get('/api/translate', async (req, res) => {
     const text = await gtxThrottle(q, 'en', to);
     if (text && text !== q) {
       transCache.set(key, text);
-      if (transCache.size > 3000) transCache.delete(transCache.keys().next().value);
+      if (transCache.size > 8000) transCache.delete(transCache.keys().next().value);
     }
     res.json({ ok: true, text: text || q });
   } catch (e) {
@@ -1593,7 +1641,7 @@ function saveTransStore() {
   try {
     const arr = [];
     transCache.forEach((t, k) => { if (k.startsWith('es:')) arr.push({ q: k.slice(3), t }); });
-    fs.writeFileSync(TRANSLATE_STORE, JSON.stringify(arr.slice(-2000)));
+    fs.writeFileSync(TRANSLATE_STORE, JSON.stringify(arr.slice(-5000)));
   } catch {}
 }
 
@@ -1610,7 +1658,7 @@ setInterval(async () => {
   const job = transQueue.shift();
   if (!job) return;
   try {
-    const t = await doGtx(job.text, 'en', 'es');
+    const t = await gtxThrottle(job.text, 'en', 'es');
     if (t && t !== job.text) {
       transCache.set(job.key, t);
       saveTransStore();
@@ -1622,19 +1670,47 @@ setInterval(async () => {
           if (s && !ev.sigla) ev.sigla = s;
         }
       } else {
-        const n = newsCache.find(x => x.id === job.id);
+        const n = newsCache.find(x => x.id === job.id)
+               || (squawkCache ? squawkCache.find(x => x.id === job.id) : null);
         if (n) {
-          if (job.kind === 'news-body') n.bodyEs = t;
+          if (job.kind === 'news-body' || job.kind === 'squawk-body') n.bodyEs = t;
           else n.titleEs = t;
         }
       }
     }
   } catch (e) {
     if (String(e.message).includes('429')) transResume = Date.now() + 8000;
+    console.log('[TRANSLATE] fallo, reintento programado:', String(e.message).slice(0, 120));
+    // Reintentar hasta 2 veces: el endpoint alterna gtx → clients5 → MyMemory ya
+    // dentro de doGtx; si los tres fallan, vuelve a la cola para otra ronda
+    if ((job.attempts || 0) < 2) transQueue.push({ ...job, attempts: (job.attempts || 0) + 1 });
   } finally {
     transPending.delete(job.key);
   }
 }, 300);
+
+// ── ASEGURADOR AUTOMÁTICO DE TRADUCCIÓN ───────────────────────
+// Cada 15 s recorre noticias, cuerpos y calendario y re-encola lo que falte.
+// Así TODO el contenido está en español sin que el cliente haga nada.
+setInterval(() => {
+  if (Date.now() < transResume) return;
+  newsCache.forEach(n => {
+    if (n.econ) return;
+    if (n.title) queueTranslate('news', n.id, n.title);
+    if (n.body && n.body.trim()) queueTranslate('news-body', n.id, n.body);
+  });
+  if (squawkCache) {
+    squawkCache.forEach(n => {
+      if (n.title) queueTranslate('squawk', n.id, n.title);
+      if (n.body && n.body.trim()) queueTranslate('squawk-body', n.id, n.body);
+    });
+  }
+  if (econCache && econCache.events) {
+    econCache.events.forEach(ev => {
+      if (ev.event) queueTranslate('econ', ev.id, ev.event);
+    });
+  }
+}, 15000);
 
 app.get('/api/trump', async (req, res) => {
   if (Date.now() - lastNewsFetch > NEWS_TTL) await fetchAllNews();

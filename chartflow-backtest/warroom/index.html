@@ -116,7 +116,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .ib{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px}
 .ibc{background:var(--rd);color:#fff}.ibh{background:var(--am);color:#000}
 .ibm{background:var(--bl);color:#fff}.ibl{background:var(--bd);color:var(--tx3)}
-.ago{font-size:9px;color:var(--tx4);margin-left:auto}
+.ago{font-size:11px;color:var(--tx2);margin-left:auto;font-weight:600;white-space:nowrap}
 .nc-title{font-size:12.5px;color:#e2e8f0;line-height:1.5;font-weight:600;margin-bottom:4px}
 .nc-body{font-size:11px;color:var(--tx3);line-height:1.55;margin-bottom:5px}
 .nc-imp{display:flex;align-items:flex-start;gap:5px;background:var(--bg3);border-radius:4px;padding:4px 7px;margin:4px 0;border:1px solid var(--bd)}
@@ -300,7 +300,8 @@ async function translateText(text, from, to) {
     return text;
   } catch { return text; }
 }
-// Titulares via titleEs del server (cola de fondo); solo los cuerpos traduce el cliente
+// Titulares via titleEs del server (cola de fondo); cuerpos ya traducidos por el
+// servidor (instantáneo) con respaldo del cliente por si falta alguno
 let translatingRun = false;
 async function translateNewsProgressive() {
   if (translatingRun) return;
@@ -310,7 +311,7 @@ async function translateNewsProgressive() {
       const batch = allNews.filter(n => !n._translatedEs && !n.econ && n.body && n.body.trim()).slice(0, 20);
       if (!batch.length) break;
       await Promise.allSettled(batch.map(async (n) => {
-        if (n.bodyEs) { n._origBody ||= n.body; n.body = n.bodyEs; }                       // ya traducido por el servidor (instantáneo)
+        if (n.bodyEs) { n._origBody ||= n.body; n.body = n.bodyEs; }
         else if (n.body && !n._origBody) { n._origBody = n.body; n.body = await translateText(n.body, 'en', 'es'); }
         n._translatedEs = true;
       }));
@@ -343,6 +344,13 @@ async function loadNews(){
     document.getElementById('flist').innerHTML = t('noServer');
   }
 }
+
+// LOOP AUTOMÁTICO: cada 12 s traduce por su cuenta todo lo que aún esté en inglés
+setInterval(() => {
+  if (!serverOk || lang !== 'es') return;
+  translateNewsProgressive();
+  translateEconTitles();
+}, 12000);
 
 async function loadMarkets(){
   try {
@@ -397,6 +405,12 @@ function ago(ts){
   if(d<1) return t('now');
   if(d<60) return d+t('m');
   return Math.floor(d/60)+t('h');
+}
+// Antigüedad + HORA EXACTA de publicación (hora local del equipo, bien legible)
+function agoHora(ts){
+  if(!ts || isNaN(ts)) return ago(ts);
+  const h = new Date(ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  return ago(ts) + ' · ' + h;
 }
 function ibadge(i){
   const m={c:[t('crit'),'ibc'],h:[t('high'),'ibh'],m:[t('med'),'ibm'],l:[t('low'),'ibl']};
@@ -490,12 +504,12 @@ function renderFeed(){
           <div class="sq-av ${cls}" style="background:${color}">${initials}</div>
           <div style="flex:1;min-width:0">
             <div class="sq-name" style="color:${color}">@${hdl}</div>
-            <div class="sq-handle" style="color:${color}">${label} · ${ago(n.ts)}</div>
+            <div class="sq-handle" style="color:${color}">${label} · ${agoHora(n.ts)}</div>
           </div>
           <span class="sq-badge ${cls}">${xLogo} X · LIVE</span>
           ${ibadge(n.imp)}
         </div>
-        <div class="sq-body ${cls}">${n.title||''}</div>
+        <div class="sq-body ${cls}">${tTitle(n)}</div>
         ${crossRail(n)}
         <div class="sq-foot" style="color:${color}">
           <a href="https://x.com/${hdl}" target="_blank" style="color:${color};font-size:9px;text-decoration:none;display:flex;align-items:center;gap:3px">${xLogo} ver en X</a>
@@ -553,12 +567,12 @@ function renderFeed(){
           <div class="tc-av ${avatarCls}" style="font-size:${isDirect?'16':'11'}px">${avatarContent}</div>
           <div style="flex:1;min-width:0">
             <div class="tc-name ${nameCls}">Donald J. Trump</div>
-            <div class="tc-handle ${handleCls}">@realDonaldTrump · ${ago(n.ts)}</div>
+            <div class="tc-handle ${handleCls}">@realDonaldTrump · ${agoHora(n.ts)}</div>
           </div>
           ${officialBadge}
           ${ibadge(n.imp)}
         </div>
-        <div class="tc-body ${bodyCls}">${n.title||''}</div>
+        <div class="tc-body ${bodyCls}">${tTitle(n)}</div>
         ${crossRail(n)}
         <div class="tc-foot ${footCls}">
           <a href="${profileUrl}" target="_blank" class="nc-link" style="color:${isDirect?'#3b82f6':'#f97316'}">→ perfil oficial</a>
@@ -585,12 +599,12 @@ function renderFeed(){
           <div class="tc-av direct" style="font-size:16px">🇺🇸</div>
           <div style="flex:1;min-width:0">
             <div class="tc-name direct">Donald J. Trump</div>
-            <div class="tc-handle direct">@realDonaldTrump · ${ago(n.ts)}</div>
+            <div class="tc-handle direct">@realDonaldTrump · ${agoHora(n.ts)}</div>
           </div>
           <span class="tc-official direct">🇺🇸 DIRECTO · Truth Social</span>
           ${ibadge(n.imp)}
         </div>
-        <div class="tc-body direct">${n.title||''}</div>
+        <div class="tc-body direct">${tTitle(n)}</div>
         ${crossRail(n)}
         <div class="tc-foot direct">
           <a href="https://truthsocial.com/@realDonaldTrump" target="_blank" class="nc-link" style="color:#3b82f6">→ perfil oficial</a>
@@ -603,9 +617,9 @@ function renderFeed(){
       d.innerHTML=`<div class="nc-top">
         <span class="src ${n.cls||'sr'}">${n.src||'NEWS'}</span>
         ${ibadge(n.imp||'l')}
-        <span class="ago">${ago(n.ts)}</span>
+        <span class="ago">${agoHora(n.ts)}</span>
       </div>
-      <div class="nc-title">${n.title||''}</div>
+      <div class="nc-title">${tTitle(n)}</div>
       ${n.body?`<div class="nc-body">${n.body.slice(0,260)}${n.body.length>260?'…':''}</div>`:''}
       ${crossRail(n)}
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;align-items:center">
