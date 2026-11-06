@@ -83,6 +83,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .caltime{color:var(--tx3);font-variant-numeric:tabular-nums;font-size:11px}
 .calcur{background:#1a1a2e;color:#a0a8c0;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;text-align:center}
 .calname{min-width:0;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calname .sigla{display:inline-block;margin-left:5px;padding:0 5px;border:1px solid #3d3d3d;border-radius:3px;font-size:9px;font-weight:700;color:#e5c84b;font-style:normal;vertical-align:middle}
 .calrow.sp .calname{color:var(--tx3);font-style:italic}
 .mic{width:15px;height:15px;vertical-align:-2.5px;pointer-events:none;flex-shrink:0}
 .calcol{color:var(--tx3);font-variant-numeric:tabular-nums;font-size:11.5px}
@@ -92,7 +93,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .calimp{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;text-align:center}
 .ih{background:#7f1d1d;color:#fca5a5}.im{background:#78350f;color:#fdba74}.il{background:#1a1a1a;color:#6b7280}
 .calstate{text-align:right}
-.calcnt{font-size:10px;color:#fbbf24}
+.calcnt{font-size:10px;color:#22c55e}
+.cntwarn{color:#fde68a}
+.cnturgent{color:#ef4444;font-weight:700}
+.cntblink{animation:cntblink .35s steps(2,start) infinite}
+@keyframes cntblink{0%{opacity:1}50%{opacity:0.1}100%{opacity:1}}
 .caldone{color:var(--tx3);font-size:11px}
 .cwait{color:var(--tx3);animation:blink 1.2s infinite}
 .calsempty{padding:12px;font-size:11px;color:var(--tx3)}
@@ -305,7 +310,8 @@ async function translateNewsProgressive() {
       const batch = allNews.filter(n => !n._translatedEs && !n.econ && n.body && n.body.trim()).slice(0, 20);
       if (!batch.length) break;
       await Promise.allSettled(batch.map(async (n) => {
-        if (n.body && !n._origBody) { n._origBody = n.body; n.body = await translateText(n.body, 'en', 'es'); }
+        if (n.bodyEs) { n._origBody ||= n.body; n.body = n.bodyEs; }                       // ya traducido por el servidor (instantáneo)
+        else if (n.body && !n._origBody) { n._origBody = n.body; n.body = await translateText(n.body, 'en', 'es'); }
         n._translatedEs = true;
       }));
       renderFeed();
@@ -656,10 +662,12 @@ async function translateEconTitles(){
 function calCountdown(ts){
   const diff = ts - Date.now();
   if(diff <= 0) return null;
-  const m = Math.floor(diff/60000), h = Math.floor(m/60), d = Math.floor(h/24);
-  if(d >= 1) return 'en ' + d + 'd ' + (h%24) + 'h';
-  if(h >= 1) return 'en ' + h + 'h ' + (m%60) + 'm';
-  return 'en ' + Math.max(m,1) + 'm';
+  const s = Math.floor(diff/1000);
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  if(h >= 1) return 'en ' + h + 'h ' + String(m).padStart(2,'0') + 'm';
+  if(m >= 15) return 'en ' + m + 'm';
+  if(m >= 1) return 'en ' + m + 'm ' + String(sec).padStart(2,'0') + 's';
+  return 'en ' + (s<10 ? '0'+s : s) + 's';
 }
 
 const CALGRID = '58px 48px minmax(150px,1fr) 80px 88px 88px 74px 62px';
@@ -681,12 +689,12 @@ function calRowHTML(e){
   const pn = s => { const m = String(s||'').replace(',','.').match(/-?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : null; };
   const av = pn(e.actual), fv = pn(e.forecast);
   const mark = (av!=null && fv!=null && av!==fv) ? (av>fv?'<i class="mkup">▲</i> ':'<i class="mkdn">▼</i> ') : '';
-  const state = cnt ? `<span class="calcnt">${cnt}</span>` : ((e.actual||(e.time<=Date.now()&&e.time>0)) ? '<span class="caldone">✓</span>' : '');
+  const state = cnt ? `<span class="calcnt ucnt" data-ts="${e.time}">${cnt}</span>` : ((e.actual||(e.time<=Date.now()&&e.time>0)) ? '<span class="caldone">✓</span>' : '');
   const mic = e.isSpeech ? ICON_SPEAK + ' ' : '';
   return `<div class="calrow${rowCls}${e.isSpeech?' sp':''}">
     <span class="caltime">${calTime(e)}</span>
     <span class="calcur">${esc(e.currency||'ALL')}</span>
-    <span class="calname">${mic}${esc(lang==='es' && e.eventEs && e.eventEs!==(e.event||'') ? e.eventEs : (e.event||''))}</span>
+    <span class="calname">${mic}${esc(lang==='es' && e.eventEs && e.eventEs!==(e.event||'') ? e.eventEs : (e.event||''))}${e.sigla ? ` <span class="sigla" title="Sigla oficial">${esc(e.sigla)}</span>` : ''}</span>
     <span class="calcol cact">${e.actual?mark+esc(e.actual):(e.time<=Date.now()&&!e.actual?'<span class="cwait">…</span>':'')}</span>
     <span class="calcol">${e.forecast!=null?esc(e.forecast):''}</span>
     <span class="calcol">${e.previous!=null?esc(e.previous):''}</span>
@@ -921,6 +929,28 @@ async function watchUi(){
 }
 watchUi();
 setInterval(watchUi, 60000);
+
+// Cuenta atrás por segundo (como Reuters): urgency por color y PARPADEO en los últimos 10s
+setInterval(() => {
+  if(activeTab !== 6) return;
+  const now = Date.now();
+  let released = false;
+  document.querySelectorAll('.ucnt').forEach(sp => {
+    const ts = Number(sp.dataset.ts);
+    const rem = ts - now;
+    if(rem <= 0){
+      if(!sp.dataset.done){ sp.dataset.done = '1'; sp.className = 'calcnt cnturgent'; sp.textContent = lang==='es' ? 'PUBLICANDO…' : 'PUBLISHING…'; released = true; }
+      return;
+    }
+    if(sp.dataset.done){ delete sp.dataset.done; }
+    sp.textContent = calCountdown(ts);
+    sp.classList.toggle('cntwarn',  rem <= 60*60000);
+    sp.classList.toggle('cnturgent', rem <= 15*60000);
+    sp.classList.toggle('cntblink', rem <= 10000);
+  });
+  // un dato acaba de cruzar la hora → refresco de datos para traer el REAL ya
+  if(released) setTimeout(loadCalendar, 800);
+}, 1000);
 </script>
 </body>
 </html>

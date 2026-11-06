@@ -81,7 +81,7 @@ Start-Process -WindowStyle Hidden -WorkingDirectory $warroomDir -FilePath $NODE 
 # Esperar a que los servicios estén listos
 Write-Host ""
 Write-Host "3. Esperando servicios..." -ForegroundColor Magenta
-Start-Sleep -Seconds 2
+Start-Sleep -Seconds 6
 
 # Verificar servicios
 $services = @(

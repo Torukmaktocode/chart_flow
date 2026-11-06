@@ -869,11 +869,17 @@ async function fetchAllNews() {
   const srcs = [...new Set(newsCache.map(n => n.src))].length;
   const okFeeds = Object.values(feedHealth).filter(h => h.ok).length;
   console.log(`[OK] ${newsCache.length} artículos de ${srcs} fuentes activas (${okFeeds} feeds saludables)`);
-  // Titulares en español: adjuntar de caché o encolar para traducción de fondo
+  // Titulares y cuerpos en español: adjuntar de caché o encolar para traducción de fondo
+  // (los cuerpos también se traducen a furto ANT@S de que el usuario abra la noticia)
   newsCache.forEach(n => {
     const tEs = transCache.get('es:' + n.title);
     if (tEs) n.titleEs = tEs;
     else if (!n.econ) queueTranslate('news', n.id, n.title);
+    if (n.body && n.body.trim()) {
+      const bEs = transCache.get('es:' + n.body);
+      if (bEs) n.bodyEs = bEs;
+      else if (!n.econ) queueTranslate('news-body', n.id, n.body);
+    }
   });
   return newsCache;
 }
@@ -1192,6 +1198,42 @@ async function fetchTECalendar() {
 
 function econEventKey(e) { return String(e.event) + '|' + (e.currency || ''); }
 
+// SIGLAS del mercado: el usuario quiere identificar cada dato por su sigla en inglés
+const ACR_PATTERNS = [
+  [/\bnon[- ]?farm\b|breve nómina/i, 'NFP'],
+  [/initial jobless|jobless claims|unemployment claims|continuing jobless/i, 'CLAIMS'],
+  [/\bcpi\b|inflation|inflación/i, 'CPI'],
+  [/\bppi\b/i, 'PPI'],
+  [/\bgdp\b|\bpetróleo\b|production|pib/i, 'GDP'],
+  [/\bpce\b/i, 'PCE'],
+  [/\bism\b/i, 'ISM'],
+  [/\bjolts\b/i, 'JOLTS'],
+  [/\badp\b/i, 'ADP'],
+  [/\bfomc\b/i, 'FOMC'],
+  [/\bfed\b|federal reserve|bank of governors/i, 'FED'],
+  [/\becb\b|banco central europeo/i, 'ECB'],
+  [/\bcanada\b|\^/i, null],
+  [/\bboe\b|bank of england/i, 'BoE'],
+  [/\bboj\b|bank of japan/i, 'BoJ'],
+  [/michigan/i, 'UoM'],
+  [/\beia\b|natural gas|crude oil|petróleo/i, 'EIA'],
+  [/auction|subasta/i, 'AUCTION'],
+  [/retail sales/i, 'RETAIL'],
+  [/trade balance|balanza/i, 'TBAL'],
+  [/\brba\b/i, 'RBA'],
+  [/\bsnb\b/i, 'SNB'],
+  [/\bpmi\b/i, 'PMI'],
+  [/\bunemployment\b|desempleo/i, 'U-RATE'],
+  [/\bmortgage\b/i, 'MTG'],
+];
+function econAcronym(text) {
+  if (!text) return null;
+  for (const [re, tag] of ACR_PATTERNS) {
+    if (tag && re.test(text)) return tag;
+  }
+  return null;
+}
+
 async function enrichEconActuals() {
   if (Date.now() - econActualsTs < 60000) return;
   econActualsTs = Date.now();
@@ -1392,11 +1434,16 @@ async function refreshEconCalendar() {
     } catch (err) { console.log('[ECON] lectura cache fallida:', err.message); }
   }
   // Títulos del calendario en español: adjuntar de caché o encolar para fondo
+  // (los eventos importantes conservan su SIGLA oficial aparte de la traducción)
   if (econCache && econCache.events) {
     econCache.events.forEach(ev => {
       const tEs = transCache.get('es:' + ev.event);
       if (tEs) ev.eventEs = tEs;
       else queueTranslate('econ', ev.id, ev.event);
+      if (!ev.sigla) {
+        const s = econAcronym(ev.event);
+        if (s) ev.sigla = s;
+      }
     });
   }
   return econCache || { count: 0, events: [], ts: Date.now() };
@@ -1567,12 +1614,19 @@ setInterval(async () => {
     if (t && t !== job.text) {
       transCache.set(job.key, t);
       saveTransStore();
-      if (job.kind === 'econ' && econCache) {
+      if (job.kind === 'econ' && econCache && econCache.events) {
         const ev = econCache.events.find(e => e.id === job.id);
-        if (ev) ev.eventEs = t;
+        if (ev) {
+          ev.eventEs = t;
+          const s = econAcronym(ev.event);
+          if (s && !ev.sigla) ev.sigla = s;
+        }
       } else {
         const n = newsCache.find(x => x.id === job.id);
-        if (n) n.titleEs = t;
+        if (n) {
+          if (job.kind === 'news-body') n.bodyEs = t;
+          else n.titleEs = t;
+        }
       }
     }
   } catch (e) {
@@ -1580,7 +1634,7 @@ setInterval(async () => {
   } finally {
     transPending.delete(job.key);
   }
-}, 400);
+}, 300);
 
 app.get('/api/trump', async (req, res) => {
   if (Date.now() - lastNewsFetch > NEWS_TTL) await fetchAllNews();
