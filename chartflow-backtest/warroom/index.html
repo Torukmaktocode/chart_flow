@@ -924,7 +924,15 @@ loadNews(); loadMarkets(); loadSquawk(); loadCalendar();
 setInterval(loadNews,    90000);
 setInterval(loadMarkets, 60000);   // ticker + % de los chips de contexto
 setInterval(loadSquawk,  60000);
-setInterval(loadCalendar, 60000);  // calendario económico
+setInterval(loadCalendar, 15000);  // calendario económico (15s para detectar el REAL al vuelo)
+
+// Ráfaga de refrescos tras la publicación: el "real" puede tardar unos segundos
+// en aparecer en la fuente; sondear bien durante el primer minuto y medio
+let calBurstTimers = [];
+function scheduleReleaseBurst(){
+  calBurstTimers.forEach(t => clearTimeout(t));
+  calBurstTimers = [3, 20, 45, 70, 100].map(s => setTimeout(loadCalendar, s * 1000));
+}
 
 // Auto-recarga de la UI cuando el servidor se actualiza (evita scripts viejos)
 async function watchUi(){
@@ -962,8 +970,8 @@ setInterval(() => {
     sp.classList.toggle('cnturgent', rem <= 15*60000);
     sp.classList.toggle('cntblink', rem <= 10000);
   });
-  // un dato acaba de cruzar la hora → refresco de datos para traer el REAL ya
-  if(released) setTimeout(loadCalendar, 800);
+  // un dato acaba de cruzar la hora → ráfaga de refrescos para traer el REAL ya
+  if(released){ setTimeout(loadCalendar, 800); scheduleReleaseBurst(); }
 }, 1000);
 </script>
 </body>

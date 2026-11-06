@@ -1028,10 +1028,13 @@ app.get('/api/liveprices', async (req, res) => {
 });
 
 // ── ECONOMIC CALENDAR — FOREX FACTORY ─────────────────────────
-const ECON_CACHE_TTL     = 300000;
+const ECON_CACHE_TTL     = 60000;    // refresco normal del calendario: 1 min
+const ECON_FAST_TTL      = 15000;    // modo rápido: hay datos recién salidos aún sin "real"
+const ECON_SENTINEL_MIN  = 15 * 60 * 1000; // ventana tras la publicación en la que se vigila el REAL
 const ECON_INJECT_WINDOW = 6 * 60 * 1000;   // se emite como noticia durante 6 min tras el dato
 const ECON_TICK          = 30 * 1000;
 let econCache = null; let econCacheTs = 0;
+let teCache = null; let teCacheTs = 0;   // cache propia de Trading Economics (página pesada)
 const econInjected = new Set();
 const econPreAlerted = new Set();
 
@@ -1085,7 +1088,7 @@ async function fetchEconFFJson() {
           impact: ev.impact === 'High' ? 'High' : ev.impact === 'Medium' ? 'Medium' : ev.impact === 'Holiday' ? 'Holiday' : 'Low',
           forecast: ev.forecast || null,
           previous: ev.previous || null,
-          actual: null,
+          actual: (typeof ev.actual === 'string' && ev.actual.trim()) ? ev.actual.trim() : null,
           isPast: time <= Date.now(),
         });
       });
@@ -1208,6 +1211,18 @@ async function fetchTECalendar() {
 
 function econEventKey(e) { return String(e.event) + '|' + (e.currency || ''); }
 
+// ¿Hay datos High/Medium USD publicados hace menos de 15 min que aún no tienen "real"?
+// Si es así, el calendario y los scrapes pasan a modo rápido (15s) para mostrar
+// el valor real casi al instante en que la fuente lo publica.
+function econConfirmationsPending() {
+  if (!econCache || !Array.isArray(econCache.events)) return false;
+  const now = Date.now();
+  return econCache.events.some(e =>
+    (e.impact === 'High' || e.impact === 'Medium') &&
+    e.currency === 'USD' &&
+    e.time <= now && (now - e.time) < ECON_SENTINEL_MIN && !e.actual);
+}
+
 // SIGLAS del mercado: el usuario quiere identificar cada dato por su sigla en inglés
 const ACR_PATTERNS = [
   [/\bnon[- ]?farm\b|breve nómina/i, 'NFP'],
@@ -1244,8 +1259,41 @@ function econAcronym(text) {
   return null;
 }
 
+// Propagación del "real" confirmado a las noticias del feed y al mapa de actuals
+// Se alimenta del scrape de ForexFactory Y de los eventos ya enriquecidos (Trading Economics)
+function patchNewsActuals() {
+  if (!econCache || !Array.isArray(econCache.events)) return;
+  const parseNum = s => {
+    const m = String(s || '').replace(',', '.').match(/-?\d+(\.\d+)?/);
+    return m ? parseFloat(m[0]) : null;
+  };
+  econCache.events.forEach(e => {
+    if (e.actual) econActuals.set(econEventKey(e), e.actual);
+  });
+  newsCache.forEach(n => {
+    if (!n.econ || n._conf) return;
+    const actual = econActuals.get(n.econKey || '');
+    if (actual) {
+      n._conf = true;
+      // Marcador ▲/▼ comparando el real con la previsión
+      const a = parseNum(actual), f = parseNum(n.econForecast);
+      const marker = (a != null && f != null && a !== f)
+        ? (a > f ? ' ▲' : ' ▼')
+        : '';
+      const parts = ['real ' + actual];
+      if (n.econForecast) parts.push('prev. ' + n.econForecast);
+      if (n.econPrevious) parts.push('ant. ' + n.econPrevious);
+      n.title = (n.econCurrency || 'USD') + ' — ' + n.econEvent + ': ' + parts.join(' · ') + marker;
+      n.body = 'Calendario Económico USD · impacto ' + n.econImpact + ' · dato confirmado';
+      console.log(`[ECON] resultado confirmado: ${n.econEvent} = ${actual}${marker.trim()}`);
+    }
+  });
+}
+
 async function enrichEconActuals() {
-  if (Date.now() - econActualsTs < 60000) return;
+  // En ventana crítica (dato recién salido esperando el real): reintentos cada 15s
+  const throttle = econConfirmationsPending() ? 15000 : 60000;
+  if (Date.now() - econActualsTs < throttle) return;
   econActualsTs = Date.now();
   try {
     const rows = await scrapeEconWeek('this');
@@ -1257,28 +1305,7 @@ async function enrichEconActuals() {
       const actual = econActuals.get(econEventKey(e));
       if (actual && !e.actual) e.actual = actual;
     });
-    newsCache.forEach(n => {
-      if (!n.econ || n._conf) return;
-      const actual = econActuals.get(n.econKey || '');
-      if (actual) {
-        n._conf = true;
-        // Marcador ▲/▼ comparando el real con la previsión
-        const parseNum = s => {
-          const m = String(s || '').replace(',', '.').match(/-?\d+(\.\d+)?/);
-          return m ? parseFloat(m[0]) : null;
-        };
-        const a = parseNum(actual), f = parseNum(n.econForecast);
-        const marker = (a != null && f != null && a !== f)
-          ? (a > f ? ' ▲' : ' ▼')
-          : '';
-        const parts = ['real ' + actual];
-        if (n.econForecast) parts.push('prev. ' + n.econForecast);
-        if (n.econPrevious) parts.push('ant. ' + n.econPrevious);
-        n.title = (n.econCurrency || 'USD') + ' — ' + n.econEvent + ': ' + parts.join(' · ') + marker;
-        n.body = 'Calendario Económico USD · impacto ' + n.econImpact + ' · dato confirmado';
-        console.log(`[ECON] resultado confirmado: ${n.econEvent} = ${actual}${marker.trim()}`);
-      }
-    });
+    patchNewsActuals();
   } catch (e) {
     // scrape silencioso; se reintenta en el próximo tick
   }
@@ -1357,7 +1384,9 @@ async function econInjectionTick() {
 }
 
 async function refreshEconCalendar() {
-  if (econCache && Date.now() - econCacheTs < ECON_CACHE_TTL) return econCache;
+  // TTL adaptativo: si hay datos de hace <15 min sin "real", refrescar cada 15s
+  const ttl = econConfirmationsPending() ? ECON_FAST_TTL : ECON_CACHE_TTL;
+  if (econCache && Date.now() - econCacheTs < ttl) return econCache;
   let events = await fetchEconFFJson();
   if (!events.length) {
     try {
@@ -1377,8 +1406,17 @@ async function refreshEconCalendar() {
   // Trading Economics: cobertura suplementaria tipo Investing (actual incluido).
   // En cada franja fecha+divisa+minuto, si TE tiene datos, TE gana (más granular);
   // FF conserva los suyos donde TE no llega (menos riesgo de duplicados).
+  // TE se cachea aparte (30s): es una página pesada y en modo rápido se consulta a menudo
   try {
-    const teRows = await fetchTECalendar();
+    let teRows = [];
+    const TE_CACHE_TTL = 30000;
+    if (teCache && Date.now() - teCacheTs < TE_CACHE_TTL) {
+      teRows = teCache;
+    } else {
+      teRows = await fetchTECalendar();
+      if (teRows.length) { teCache = teRows; teCacheTs = Date.now(); }
+      else if (teCache) teRows = teCache; // TE no respondió: conservar la última copia válida
+    }
     if (teRows.length) {
       const teSlots = new Set(teRows.map(e => e.currency + '|' + Math.floor(e.time / 60000)));
       events = events.filter(e => !teSlots.has(e.currency + '|' + Math.floor(e.time / 60000)));
@@ -1428,6 +1466,8 @@ async function refreshEconCalendar() {
   events.sort((a, b) => a.time - b.time);
     econCache = { count: events.length, events, ts: Date.now() };
     econCacheTs = Date.now();
+    // Publicar de inmediato en el feed cualquier "real" que ya venga en la fuente
+    patchNewsActuals();
     try { fs.writeFileSync(path.join(__dirname, 'econ-cache.json'), JSON.stringify(econCache)); } catch {}
   } else if (!econCache) {
     // Arranque en frio con FF limitado: recuperar la ultima copia valida del disco
