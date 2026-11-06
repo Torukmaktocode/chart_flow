@@ -148,3 +148,6 @@ jspm_packages/
 # caches en runtime del calendario economico
 chartflow-backtest/warroom/econ-cache.json
 chartflow-backtest/warroom/translate-cache.json
+# caches en runtime de noticias/squawk
+chartflow-backtest/warroom/news-ts-cache.json
+chartflow-backtest/warroom/squawk-cache.json
