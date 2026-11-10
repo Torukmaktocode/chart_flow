@@ -228,10 +228,10 @@ canvas{position:absolute;top:0}
 .charts.grid-layout .loading,.charts.two .loading{inset:0}
 .charts.grid-layout .indicator-collapse,.charts.two .indicator-collapse{left:8px}
 .charts.grid-layout .indicator-strip,.charts.two .indicator-strip{left:8px}
-.main-title{position:absolute;top:11px;left:8px;right:72px;z-index:7;color:var(--title-color,#1a1a22);font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;overflow:hidden;white-space:nowrap;font-family:var(--font-mono)}
-.indicator-title{position:absolute;top:35px;left:8px;right:72px;z-index:7;color:var(--strategy-color,#1a1a22);font-size:13px;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.main-title{position:absolute;top:11px;left:8px;right:72px;z-index:7;color:var(--title-color,#f4f4f5);font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;overflow:hidden;white-space:nowrap;font-family:var(--font-mono)}
+.indicator-title{position:absolute;top:35px;left:8px;right:72px;z-index:7;color:var(--strategy-color,#f4f4f5);font-size:13px;display:flex;align-items:center;gap:8px;white-space:nowrap}
 .indicator-stack{position:absolute;top:35px;left:8px;right:72px;z-index:9;display:grid;gap:2px;justify-items:start}
-.indicator-chip{height:22px;display:flex;align-items:center;gap:6px;color:var(--strategy-color,#1a1a22);font-size:13px;white-space:nowrap}
+.indicator-chip{height:22px;display:flex;align-items:center;gap:6px;color:var(--strategy-color,#f4f4f5);font-size:13px;white-space:nowrap}
 .indicator-chip.hidden{opacity:.45}
 .indicator-chip .indicator-eye,.indicator-chip .indicator-gear,.indicator-chip .indicator-remove{opacity:.9}
 .indicator-eye{width:22px;height:20px;border:0;background:transparent;color:var(--text-dim);border-radius:4px;font-size:14px;line-height:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s}
@@ -1284,7 +1284,7 @@ body{background:var(--bg)}
             <div class="design-note">Marca de agua</div>
             <div class="option-line"><input class="check" id="designWmVisible" type="checkbox" checked><label>Mostrar marca de agua</label></div>
             <div class="design-row"><label>Color símbolo</label><input class="color-mini" type="color" id="designWmColor"></div>
-            <div class="design-row"><label>Opacidad símbolo</label><select class="select" id="designWmOpacity"><option value="0.03">3%</option><option value="0.05">5%</option><option value="0.07" selected>7%</option><option value="0.10">10%</option><option value="0.14">14%</option><option value="0.20">20%</option></select></div>
+            <div class="design-row"><label>Opacidad símbolo</label><select class="select" id="designWmOpacity"><option value="0.05">5%</option><option value="0.08">8%</option><option value="0.10">10%</option><option value="0.12">12%</option><option value="0.16" selected>16%</option><option value="0.25">25%</option><option value="0.40">40%</option><option value="0.55">55%</option></select></div>
           </div>
           <div class="design-tab hidden" data-tab="4"></div>
           <div class="design-tab hidden" data-tab="5"></div>
@@ -1413,8 +1413,8 @@ const designSettings = {
   axisText: "#92939a",
   axisLine: "#2b2c31",
   timeSepColor: "#2b2c31",
-  titleColor: "#1a1a22",
-  strategyColor: "#1a1a22",
+  titleColor: "#f4f4f5",
+  strategyColor: "#f4f4f5",
   axisSize: 12,
   navButtons: "hover",
   panelButtons: "hidden",
@@ -1432,8 +1432,8 @@ const designSettings = {
   priceLineOpacity: 92,
   priceBadgeBg: "#898989",
   priceBadgeText: "#111214",
-  wmColor: "#24262b",
-  wmOpacity: 0.10,
+  wmColor: "#54565e",
+  wmOpacity: 0.16,
   wmVisible: true,
 };
 let designTemplates = [];
@@ -1463,8 +1463,8 @@ const DARK_NEON_BLUE_TEMPLATE = {
     axisText: "#92939a",
     axisLine: "#2b2c31",
     timeSepColor: "#2b2c31",
-    titleColor: "#1a1a22",
-    strategyColor: "#1a1a22",
+    titleColor: "#f4f4f5",
+    strategyColor: "#f4f4f5",
     axisSize: 12,
     navButtons: "hover",
     panelButtons: "hidden",
@@ -1482,8 +1482,8 @@ const DARK_NEON_BLUE_TEMPLATE = {
     priceLineOpacity: 95,
     priceBadgeBg: "#898989",
     priceBadgeText: "#0D0E0E",
-    wmColor: "#7a7b82",
-    wmOpacity: 0.06,
+    wmColor: "#8a8b92",
+    wmOpacity: 0.12,
     wmVisible: true,
   }
 };
@@ -3814,8 +3814,11 @@ class ChartPanel {
   updateHeader(last, prev){
     const diff = last.c - (prev ? prev.c : last.o);
     const pct = prev ? diff / prev.c * 100 : 0;
-    this.$("ohlc").textContent = `O ${fmtPrice(last.o)} H ${fmtPrice(last.h)} L ${fmtPrice(last.l)} C ${fmtPrice(last.c)}`;
+    const ohlc = this.$("ohlc");
+    if(ohlc.style.display !== "grid"){ ohlc.style.display = "grid"; }
+    ohlc.textContent = `O ${fmtPrice(last.o)} H ${fmtPrice(last.h)} L ${fmtPrice(last.l)} C ${fmtPrice(last.c)}`;
     const chg = this.$("chg");
+    if(chg.style.display) chg.style.display = "";
     chg.textContent = `${diff >= 0 ? "+" : ""}${fmtPrice(diff)} (${diff >= 0 ? "+" : ""}${pct.toFixed(2).replace(".",",")}%)`;
     chg.className = "change " + (diff >= 0 ? "up" : "dn");
   }
@@ -5491,6 +5494,18 @@ function loadDesignSettings(){
   try {
     const saved = JSON.parse(localStorage.getItem("nas100DesignSettings") || "null");
     if(saved?.settings) Object.assign(designSettings, saved.settings);
+    // migración: marca de agua ilegible (valores viejos muy oscuros) -> legible
+    if(saved?.settings){
+      if(saved.settings.wmColor === "#24262b" || saved.settings.wmColor === "#7a7b82"){
+        if(!saved.settings.__wmMigrated){
+          designSettings.wmColor = "#54565e";
+          designSettings.wmOpacity = designSettings.wmOpacity < 0.14 ? 0.16 : designSettings.wmOpacity;
+          designSettings.__wmMigrated = true;
+        } else { designSettings.wmColor = saved.settings.wmColor; }
+      } else if(saved.settings.wmColor) { designSettings.wmColor = saved.settings.wmColor; }
+      if(saved.settings.titleColor === "#1a1a22"){ designSettings.titleColor = "#f4f4f5"; designSettings.__titleMigrated = true; }
+      if(saved.settings.strategyColor === "#1a1a22"){ designSettings.strategyColor = "#f4f4f5"; designSettings.__strategyMigrated = true; }
+    }
     if(Array.isArray(saved?.templates)) designTemplates = saved.templates.filter(item => item?.name && item?.settings);
     layoutPresetId = designSettings.layoutPreset || String(designSettings.layoutCells || layoutMode);
     layoutMode = presetFor(layoutPresetId).cells;
@@ -5618,7 +5633,7 @@ function hydrateDesignSettingsPanel(){
   set("designPriceBadgeBg", designSettings.priceBadgeBg);
   set("designPriceBadgeText", designSettings.priceBadgeText);
   set("designWmColor", designSettings.wmColor);
-  set("designWmOpacity", String(designSettings.wmOpacity ?? 0.07));
+  set("designWmOpacity", String(designSettings.wmOpacity ?? 0.16));
   set("designWmVisible", designSettings.wmVisible !== false, "checked");
   renderLayoutMenus();
   renderDesignTemplates();
@@ -5659,7 +5674,7 @@ function readDesignSettingsPanel(){
     priceBadgeBg: value("designPriceBadgeBg") || designSettings.priceBadgeBg,
     priceBadgeText: value("designPriceBadgeText") || designSettings.priceBadgeText,
     wmColor: value("designWmColor") || designSettings.wmColor,
-    wmOpacity: clamp(Number(value("designWmOpacity")) || 0.07, 0.01, 0.30),
+    wmOpacity: clamp(Number(value("designWmOpacity")) || 0.16, 0.01, 0.50),
     wmVisible: checked("designWmVisible"),
   });
   applyDesignToDom();
