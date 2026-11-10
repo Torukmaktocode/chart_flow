@@ -525,7 +525,7 @@ body{background:var(--bg)}
 .pine-console{min-height:20px;max-height:74px;overflow-y:auto;padding:3px 12px;border-top:1px solid var(--border);font:400 11px/1.5 var(--font-mono);color:var(--text-dim);white-space:pre-wrap}
 .pine-console .err{color:#e5484d}
 .pine-console .ok{color:#46d79e}
-.app.pine-open .charts{bottom:284px;position:relative}
+.app.pine-open .charts{margin-bottom:284px}
 
 /* settings de scripts Pine dinámicos */
 .pine-settings-body .setting-row{display:grid;grid-template-columns:130px 1fr 20px;align-items:center;gap:10px;padding:7px 0;font-size:13px}
@@ -2334,6 +2334,7 @@ function indicatorName(item){
     const s = getMacdProSettingsFor(item);
     return `MACD Pro (${s.fastLength},${s.slowLength},${s.sigLength})`;
   }
+  if(item.type === "pine") return pineTitleFor(item);
   return "ICT Killzones & Pivots [TFO]";
 }
 function syncIndicatorState(){
@@ -2341,7 +2342,7 @@ function syncIndicatorState(){
   showEMA = hasVisibleIndicator("ema");
   showMACDPro = hasVisibleIndicator("macdPro");
 }
-function addIndicator(type){
+function addIndicator(type, opts = {}){
   const item = {id:`${type}-${Date.now()}-${indicatorSeq++}`, type, visible:true};
   if(type === "ema") {
     item.settings = cloneEmaSettings({
@@ -2363,6 +2364,25 @@ function addIndicator(type){
     item.settings = cloneRtcStoch6Settings();
   } else if(type === "macdPro") {
     item.settings = cloneMacdProSettings();
+  } else if(type === "pine") {
+    ensurePineDemoScripts();
+    const script = pineScripts.find(s => s.id === opts.scriptId) || pineScripts[0];
+    if(script){
+      item.scriptId = script.id;
+      const probe = pineMetaFor(script.source);
+      if(probe.ok){
+        item.settings = {};
+        pineHydrateSettingsFromMeta(item, probe.meta);
+        item._title = probe.meta.title || script.name;
+      } else {
+        item.settings = {};
+        item._pineError = `Línea ${probe.line}: ${probe.error}`;
+        showToast(`Script Pine con errores: línea ${probe.line}`);
+      }
+    } else {
+      item.scriptId = null;
+      item.settings = {};
+    }
   }
   activeIndicators.push(item);
   syncIndicatorState();
@@ -3688,6 +3708,7 @@ class ChartPanel {
         else if(item?.type === "strategyJrV8") openStrategyJrSettings(item.id);
         else if(item?.type === "macdPro") openMacdProSettings(item.id);
         else if(item?.type === "rtcStrategy" || item?.type === "rtcScreener" || item?.type === "rtcStoch" || item?.type === "rtcStoch6") openRtcSettings(item.id);
+        else if(item?.type === "pine") openPineSettings(item.id);
         else openSettings();
       };
       row.querySelector('[data-action="remove"]').onclick = event => {
@@ -5092,14 +5113,18 @@ class ChartPanel {
     const stoch6Count = visibleRtcItems("rtcStoch6").length;
     const bibiruVolItems = visibleBibiruItems().filter(item => getBibiruSettingsFor(item).showVwap);
     const macdProCount = visibleMacdProItems().length;
-    const stochPaneCount = stoch6Count + bibiruVolItems.length + macdProCount;
+    const pinePaneItems = (() => {
+      try { return visiblePineItems().filter(item => pineMetaOverlay(item) === false); }
+      catch { return []; }
+    })();
+    const stochPaneCount = stoch6Count + bibiruVolItems.length + macdProCount + pinePaneItems.length;
     const hasStochPane = stochPaneCount > 0;
     const stochPaneUnit = hasStochPane
       ? (bibiruVolItems.length > 0
         ? getBibiruSettingsFor(bibiruVolItems[0]).vwapHeight || 80
         : macdProCount > 0
           ? (getMacdProSettingsFor(visibleMacdProItems()[0]).panelHeight || 130)
-          : clamp(Math.round(totalH * .18), 112, 166))
+          : pinePaneItems.length > 0 ? clamp(Math.round(totalH * .22), 110, 180) : clamp(Math.round(totalH * .18), 112, 166))
       : 0;
     const stochPaneH = Math.min(Math.round(totalH * .45), stochPaneUnit * stochPaneCount);
     const mainW = this.el.clientWidth - left - right - yW;
@@ -5109,7 +5134,7 @@ class ChartPanel {
     const scale = this.scaleFor(data);
     this.lastScale = {...scale, mainH, totalH};
     const plotLeftPad = 0;
-    this.lastChart = {left, right, top, xH, yW, mainW, mainH, totalH, data, plotLeftPad, stochPane: stochPaneH ? {y0: mainH, h: stochPaneH, count: stochPaneCount} : null};
+    this.lastChart = {left, right, top, xH, yW, mainW, mainH, totalH, data, plotLeftPad, pineBase: stoch6Count + bibiruVolItems.length + macdProCount, stochPane: stochPaneH ? {y0: mainH, h: stochPaneH, count: stochPaneCount} : null};
     const y = v => mainH - ((v - scale.lo) / scale.range) * mainH;
     const rightBars = clamp(Number(designSettings.rightBars) || 0, 0, 40);
     const isMultiPanel = layoutMode > 1;
@@ -5154,6 +5179,8 @@ class ChartPanel {
         });
       });
     }
+    try { this.drawPineBarColorPrepass(data); } catch(e) { this._pineBarColors = []; }
+    const pineBarColors = this._pineBarColors || [];
     data.forEach((p,i) => {
       const xx = x(i), yo = y(p.o), yc = y(p.c), yh = y(p.h), yl = y(p.l);
       const style = {...candleStyle(p, data[i - 1])};
@@ -5162,6 +5189,12 @@ class ChartPanel {
         style.body = macdProBarColors[i];
         style.border = macdProBarColors[i];
         style.wick = macdProBarColors[i];
+      }
+      // Aplicar barcolor() de scripts Pine
+      else if(pineBarColors[i]) {
+        style.body = pineBarColors[i];
+        style.border = pineBarColors[i];
+        style.wick = pineBarColors[i];
       }
       if(designSettings.wickEnabled) {
         ctx.strokeStyle = style.wick;
@@ -5189,6 +5222,7 @@ class ChartPanel {
     this.drawMACDProOverlay(ctx, data, x, y, mainW);
     this.drawDisplacementOverlay(ctx, data, x, y, mainW, candleW);
     this.drawSmartSignalOverlay(ctx, data, x, y, mainW);
+    this.drawPineOverlays(ctx, data, x, y, mainW, candleW);
     this.drawAlertLines(data, y, mainH, mainW);
     const last = data[data.length - 1], prev = data.length > 1 ? data[data.length - 2] : last;
     this.updateHeader(last, prev);
@@ -6556,7 +6590,7 @@ function loadIndicatorSettings(){
     const saved = JSON.parse(localStorage.getItem("nas100IndicatorSettings") || "null");
     if(!saved) return;
     if(Array.isArray(saved.activeIndicators)) {
-      activeIndicators = saved.activeIndicators.filter(item => item && (item.type === "ict" || item.type === "ema" || item.type === "bibiru" || item.type === "displacement" || item.type === "smartSignal" || item.type === "smf" || item.type === "rtcStrategy" || item.type === "rtcScreener" || item.type === "rtcStoch" || item.type === "strategyJrV8" || item.type === "rtcStoch6" || item.type === "macdPro"));
+      activeIndicators = saved.activeIndicators.filter(item => item && (item.type === "ict" || item.type === "ema" || item.type === "bibiru" || item.type === "displacement" || item.type === "smartSignal" || item.type === "smf" || item.type === "rtcStrategy" || item.type === "rtcScreener" || item.type === "rtcStoch" || item.type === "strategyJrV8" || item.type === "rtcStoch6" || item.type === "macdPro" || item.type === "pine"));
     } else {
       const legacy = [];
       if(saved.showKillzones !== false) legacy.push({id:"ict-default", type:"ict"});
@@ -6587,6 +6621,9 @@ function loadIndicatorSettings(){
         normalized.settings = cloneRtcStoch6Settings(item.settings || {});
       } else if(normalized.type === "macdPro") {
         normalized.settings = cloneMacdProSettings(item.settings || {});
+      } else if(normalized.type === "pine") {
+        if(!normalized.settings || typeof normalized.settings !== 'object') normalized.settings = {};
+        if(!pineScriptFor(normalized)) console.warn("[Pine] script no encontrado para indicador cargado:", normalized.scriptId);
       }
       return normalized;
     });
@@ -8303,6 +8340,7 @@ function pineRun(source, settings, data){
   const N = data.length;
   const R = {
     data, N, bar:0,
+    settings: settings || null,
     env: { map: new Map(), parent:null },
     outputs: new Array(comp.slots || 0).fill(null),
     meta: { title:'Pine', shorttitle:null, overlay:true, isStrategy:false, inputs:[], inputsRecorded:new Set(), inputValues:{}, declared:false },
@@ -9206,6 +9244,1007 @@ function pineProbeMeta(source){
     }
   };
 }
+
+
+// ===================================================================
+// ===== UI EDITOR PINE + INTEGRACION DE RENDER =====
+// ===================================================================
+const PINE_STORE_KEY = "chartflow_pine_scripts";
+let pineScripts = (() => {
+  try {
+    const arr = JSON.parse(localStorage.getItem(PINE_STORE_KEY) || "null");
+    if(Array.isArray(arr)) return arr.some(s => s && s.id && typeof s.source === "string") ? arr : [];
+  } catch {}
+  return [];
+})();
+const PINE_DEMO_EMA = String.raw`//@version=5
+indicator('EMA Doble (demo)', overlay=true)
+fastLen = input.int(9, 'EMA rapida', minval=1, maxval=500)
+slowLen = input.int(21, 'EMA lenta', minval=1, maxval=500)
+
+fastEma = ta.ema(close, fastLen)
+slowEma = ta.ema(close, slowLen)
+
+plot(fastEma, 'EMA rapida', color=color.blue, linewidth=2)
+plot(slowEma, 'EMA lenta', color=color.orange, linewidth=2)
+plotshape(ta.crossover(fastEma, slowEma), 'Cruce alcista', style=shape.triangleup, location=location.belowbar, color=color.teal, size=size.small)
+plotshape(ta.crossunder(fastEma, slowEma), 'Cruce bajista', style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small)`;
+const PINE_DEMO_RSI = String.raw`//@version=5
+indicator('Momentum RSI (demo)', overlay=false)
+len = input.int(14, 'Longitud RSI', minval=2)
+nivelSup = input.float(70, 'Sobrecompra', minval=50, maxval=100)
+nivelInf = input.float(30, 'Sobreventa', minval=0, maxval=50)
+
+n = ta.rsi(close, len)
+plot(n, 'RSI', color=color.blue, linewidth=1)
+hline(nivelSup, 'Sobrecompra', color=color.new(color.red, 30), linestyle=dashed, linewidth=1)
+hline(nivelInf, 'Sobreventa', color=color.new(color.teal, 30), linestyle=dashed)
+bgcolor(n > nivelSup ? color.new(color.red, 85) : n < nivelInf ? color.new(color.teal, 85) : na)
+
+if ta.crossunder(n, nivelSup)
+    plotshape(high, 'Reversion baja', style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small)
+if ta.crossover(n, nivelInf)
+    plotshape(low, 'Reversion alta', style=shape.triangleup, location=location.belowbar, color=color.teal, size=size.small)`;
+const PINE_DEMO_STRATEGY = String.raw`//@version=5
+strategy('Cruce EMAs (demo)', overlay=true)
+rapidaLen = input.int(9, 'EMA rapida')
+lentaLen = input.int(30, 'EMA lenta')
+eF = ta.ema(close, rapidaLen)
+eS = ta.ema(close, lentaLen)
+plot(eF, 'EMA rapida', color=color.blue, linewidth=2)
+plot(eS, 'EMA lenta', color=color.orange, linewidth=2)
+condLarga = ta.crossover(eF, eS)
+condCorta = ta.crossunder(eF, eS)
+if condLarga
+    strategy.entry('LARGO', strategy.long)
+plotshape(condCorta, 'Cerrar corto', style=shape.xcross, location=location.abovebar, color=color.red)`;
+const PINE_DEMOS = [
+  { id: "pine-demo-1", name: "EMA Doble (demo)", source: PINE_DEMO_EMA },
+  { id: "pine-demo-2", name: "Momentum RSI (demo)", source: PINE_DEMO_RSI },
+  { id: "pine-demo-3", name: "Cruce EMAs estrategia (demo)", source: PINE_DEMO_STRATEGY },
+];
+function savePineStore(){ localStorage.setItem(PINE_STORE_KEY, JSON.stringify(pineScripts)); }
+function ensurePineDemoScripts(){
+  let added = false;
+  PINE_DEMOS.forEach(demo => {
+    if(!pineScripts.some(s => s.id === demo.id)){ pineScripts.push({ ...demo }); added = true; }
+  });
+  if(added) savePineStore();
+}
+function pineScriptFor(item){ return pineScripts.find(s => s.id === item?.scriptId) || null; }
+function pineItems(){ return activeIndicators.filter(it => it?.type === "pine"); }
+function visiblePineItems(){ return pineItems().filter(it => it.visible !== false); }
+
+// ---- comando/consola del editor
+function pineConsoleLog(msg, cls){
+  const el = document.getElementById("pineConsole");
+  if(!el) return;
+  const time = new Date().toLocaleTimeString("es-ES", { hour12: false });
+  const row = document.createElement("div");
+  row.className = cls || "";
+  row.textContent = `[${time}] ${msg}`;
+  el.appendChild(row);
+  while(el.children.length > 60) el.removeChild(el.firstChild);
+  el.scrollTop = el.scrollHeight;
+}
+
+// ---- cache/compilación util
+function pineMetaFor(scriptSource){
+  const comp = compilePineSource(scriptSource);
+  if(!comp.ok) return comp;
+  const cache = compilePineSource.cache || (compilePineSource.cache = new Map());
+  if(cache.has(scriptSource)) return cache.get(scriptSource);
+  const probe = pineProbeMeta(scriptSource);
+  cache.set(scriptSource, probe);
+  return probe;
+}
+function pineRunAndCache(item, fullData){
+  const script = pineScriptFor(item);
+  if(!script) return { ok:false, error:"script no encontrado" };
+  const last = fullData[fullData.length - 1];
+  const sig = `s:${fullData.length}|${last?.t}|${last?.c}|${JSON.stringify(item.settings || {})}|${item._bump || 0}`;
+  if(!item._pineCache || item._pineCache.sig !== sig){
+    item._pineCache = { sig, res: pineRun(script.source, item.settings || {}, fullData) };
+  }
+  return item._pineCache.res;
+}
+function pineMetaForItem(item){
+  const script = pineScriptFor(item);
+  if(!script) return null;
+  if(item._pineCache?.res?.ok) return item._pineCache.res.meta;
+  const probe = pineMetaFor(script.source);
+  return probe.ok ? probe.meta : null;
+}
+function pineMetaOverlay(item){
+  const meta = pineMetaForItem(item);
+  return meta ? meta.overlay : null;
+}
+function pineTitleFor(item){
+  return item._title || pineScriptFor(item)?.name || "Pine";
+}
+
+// ---- selecciones activas
+let pineActiveScriptId = null;
+let pineEditingIndicatorId = null;
+function pineEl(id){ return document.getElementById(id); }
+
+function openPineEditor(){
+  ensurePineDemoScripts();
+  refreshPineScriptSelect();
+  if(!pineActiveScriptId || !pineScripts.some(s => s.id === pineActiveScriptId)){
+    pineActiveScriptId = pineScripts[0]?.id || null;
+  }
+  loadPineScriptToEditor();
+  pineEl("pinePanel").classList.add("open");
+  document.querySelector(".app").classList.add("pine-open");
+  const src = pineEl("pineSource");
+  if(src && pineScripts.length){ src.focus(); }
+}
+function closePineEditor(){
+  pineEl("pinePanel").classList.remove("open");
+  document.querySelector(".app").classList.remove("pine-open");
+}
+function refreshPineScriptSelect(){
+  const sel = pineEl("pineScriptSelect");
+  if(!sel) return;
+  const prev = pineActiveScriptId;
+  sel.innerHTML = pineScripts.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("") || '<option value="">— sin scripts —</option>';
+  if(prev && pineScripts.some(s => s.id === prev)) sel.value = prev;
+  else if(pineScripts.length) pineActiveScriptId = pineScripts[0].id;
+}
+function currentPineScript(){ return pineScripts.find(s => s.id === pineActiveScriptId) || null; }
+function loadPineScriptToEditor(){
+  const script = currentPineScript();
+  const src = pineEl("pineSource");
+  if(!src) return;
+  src.value = script ? script.source : "";
+  pineEl("pinePanelTitle").textContent = script ? script.name : "Editor Pine";
+  updatePineLineNumbers();
+  pineLiveCheck();
+}
+function updatePineLineNumbers(){
+  const src = pineEl("pineSource");
+  const lines = pineEl("pineLineNumbers");
+  if(!src || !lines) return;
+  const n = src.value.split("\n").length;
+  lines.textContent = Array.from({ length: n }, (_, i) => i + 1).join("\n");
+  lines.scrollTop = src.scrollTop;
+}
+let pineLiveTimer = null;
+function pineLiveCheck(){
+  clearTimeout(pineLiveTimer);
+  pineLiveTimer = setTimeout(() => {
+    const script = currentPineScript();
+    const src = pineEl("pineSource");
+    if(!src || !script || src.value === script.source){
+      if(!src) return;
+    }
+    const comp = compilePineSource(src.value);
+    if(comp.ok) pineConsoleLog("✓ script compilado sin errores de sintaxis", "ok");
+    else pineConsoleLog(`Línea ${comp.line}: ${comp.error}`, "err");
+  }, 500);
+}
+function pineSrcText(){ return pineEl("pineSource").value || ""; }
+
+function pineSaveCurrent(saveAsNew = false){
+  ensurePineDemoScripts();
+  const src = pineSrcText();
+  const comp = pineProbeMeta(src);
+  let script = currentPineScript();
+  if(!comp.ok){
+    pineConsoleLog(`✗ no guardado — Línea ${comp.line}: ${comp.error}`, "err");
+    return null;
+  }
+  if(!script || saveAsNew){
+    let baseName = "Script Pine";
+    try { baseName = (src.match(/indicator\(\s*['"]([^'"]+)['"]/) || src.match(/strategy\(\s*['"]([^'"]+)['"]/) || [])[1] || baseName; } catch {}
+    script = { id: "pine-" + Date.now() + "-" + Math.round(Math.random() * 9999), name: baseName, source: src };
+    pineScripts.push(script);
+    pineActiveScriptId = script.id;
+  } else {
+    script.source = src;
+    const oldName = script.name;
+    let baseName = oldName.replace(/ \(demo\)$/, "");
+    try { baseName = (src.match(/indicator\(\s*['"]([^'"]+)['"]/) || src.match(/strategy\(\s*['"]([^'"]+)['"]/) || [])[1] || baseName; } catch {}
+    script.name = baseName;
+    pineItems().forEach(it => { if(it.scriptId === script.id){ it._pineCache = null; it._bump = (it._bump || 0) + 1; it._title = comp.meta.title || it._title; } });
+  }
+  savePineStore();
+  refreshPineScriptSelect();
+  loadPineScriptToEditor();
+  pineConsoleLog(`✓ guardado: ${script.name}`, "ok");
+  return script;
+}
+
+function addPineScriptToChart(script){
+  if(!script) return;
+  addIndicator("pine", { scriptId: script.id });
+  pineConsoleLog(`✓ añadido al gráfico: ${script.name}`, "ok");
+}
+
+// ---- biblioteca estilo TradingView
+const PINE_LIBRARY_BUILTINS = [
+  { type: "ict", label: "ICT Killzones & Pivots [TFO]", desc: "Sesiones y pivotes" },
+  { type: "ema", label: "Moving Average Exponential", desc: "EMA configurable" },
+  { type: "bibiru", label: "Bibiru SMA", desc: "Doble SMA + volumen" },
+  { type: "displacement", label: "Institutional Displacement & Volume Delta", desc: "Desplazamiento institucional" },
+  { type: "smartSignal", label: "Smart Reversal & Breakout Assistant", desc: "Zonas Smart Money" },
+  { type: "smf", label: "Smart Money Flow Cloud [BOSWaves]", desc: "Flujo Smart Money" },
+  { type: "rtcStrategy", label: "RTC Strategy V8", desc: "Estrategia RTC" },
+  { type: "rtcScreener", label: "RTC Screener", desc: "Screener RTC" },
+  { type: "rtcStoch", label: "RTC Estocástico RSI", desc: "Oscilador RSI" },
+  { type: "strategyJrV8", label: "Strategy JR V8", desc: "Smart Money Concepts" },
+  { type: "rtcStoch6", label: "RTC Estocástico v6", desc: "Oscilador v6" },
+  { type: "macdPro", label: "MACD Pro", desc: "MACD avanzado en panel" },
+];
+function openPineLibrary(){
+  ensurePineDemoScripts();
+  renderPineLibrary();
+  pineEl("pineLibraryBackdrop").classList.add("open");
+  const search = pineEl("pineLibrarySearch");
+  if(search){ search.value = ""; search.focus(); }
+}
+function closePineLibrary(){
+  pineEl("pineLibraryBackdrop").classList.remove("open");
+}
+function renderPineLibrary(){
+  const body = pineEl("pineLibraryBody");
+  const q = (pineEl("pineLibrarySearch").value || "").toLowerCase().trim();
+  const match = s => !q || s.toLowerCase().includes(q);
+  let html = "";
+  const addedTypes = new Set(activeIndicators.map(it => it.type));
+  const addedScripts = new Set(pineItems().map(it => it.scriptId));
+  const builtinRows = PINE_LIBRARY_BUILTINS.filter(b => match(b.label)).map(b => `
+    <button class="pine-modal-row" data-add-type="${b.type}">
+      <span>${escapeHtml(b.label)}</span>
+      <span class="desc">${escapeHtml(b.desc)}</span>
+      ${addedTypes.has(b.type) ? '<span class="tag">Añadido</span>' : ""}
+    </button>`).join("");
+  const pineRows = pineScripts.filter(s => match(s.name)).map(s => {
+    const meta = pineMetaFor(s.source);
+    const desc = meta.ok ? (meta.meta.overlay ? "overlay · en velas" : "panel · bajo el gráfico") : "error: " + s.source.split("\n").length + " líneas";
+    return `
+    <button class="pine-modal-row" data-add-pine="${s.id}">
+      <span>${escapeHtml(s.name)}</span>
+      <span class="desc">${escapeHtml(desc)}</span>
+      <span class="tag pine">Pine</span>
+    </button>`;
+  }).join("");
+  html += `<div class="pine-modal-section">Indicadores integrados</div>`;
+  html += builtinRows || "";
+  if(pineRows){
+    html += `<div class="pine-modal-section">Mis scripts Pine</div>`;
+    html += pineRows;
+  }
+  if(!builtinRows && !pineRows) html += `<div style="padding:18px;text-align:center;color:var(--text-dim);font-size:13px">Sin resultados para “${escapeHtml(q)}”</div>`;
+  body.innerHTML = html;
+  body.querySelectorAll("[data-add-type]").forEach(btn => {
+    btn.onclick = () => { addIndicator(btn.dataset.addType); renderPineLibrary(); };
+  });
+  body.querySelectorAll("[data-add-pine]").forEach(btn => {
+    btn.onclick = () => {
+      const script = pineScripts.find(s => s.id === btn.dataset.addPine);
+      if(script) addPineScriptToChart(script);
+      renderPineLibrary();
+    };
+  });
+}
+
+// ---- settings dinámicos de un Pine añadido
+function pineHydrateSettingsFromMeta(item, meta){
+  item.settings = item.settings || {};
+  (meta.inputs || []).forEach(inp => {
+    if(item.settings[inp.id] === undefined) item.settings[inp.id] = inp.defval;
+  });
+}
+function openPineSettings(indicatorId = null){
+  ensurePineDemoScripts();
+  const item = indicatorId ? pineItems().find(it => it.id === indicatorId) : pineItems()[0];
+  if(!item){ openPineEditor(); return; }
+  pineEditingIndicatorId = item.id;
+  const script = pineScriptFor(item);
+  if(!script){ showToast("El script Pine ya no existe"); return; }
+  const probe = pineMetaFor(script.source);
+  if(!probe.ok){
+    showToast(`Script Pine con errores: línea ${probe.line}`);
+    pineConsoleLog(`✗ ${script.name} — Línea ${probe.line}: ${probe.error}`, "err");
+    return;
+  }
+  pineHydrateSettingsFromMeta(item, probe.meta);
+  const meta = probe.meta;
+  pineEl("pineSettingsTitle").innerHTML = `${escapeHtml(pineTitleFor(item))}<button class="settings-close" id="pineSettingsClose">×</button>`;
+  const body = pineEl("pineSettingsBody");
+  const groups = {};
+  (meta.inputs).forEach(i => {
+    const g = i.group || "";
+    (groups[g] = groups[g] || []).push(i);
+  });
+  let html = "";
+  Object.keys(groups).forEach(g => {
+    if(g) html += `<div class="settings-section">${escapeHtml(g)}</div>`;
+    groups[g].forEach(inp => {
+      const val = item.settings[inp.id];
+      if(inp.kind === "bool"){
+        html += `<div class="setting-row compact"><input class="check" data-inp="${inp.id}" type="checkbox" ${pineTruth(val) ? "checked" : ""}><label>${escapeHtml(inp.title)}</label></div>`;
+      } else if(inp.kind === "color"){
+        html += `<div class="setting-row"><label>${escapeHtml(inp.title)}</label><input class="color-box" data-inp="${inp.id}" type="color" value="${escapeHtml(String(val || "#787B86"))}"><span></span></div>`;
+      } else if(inp.kind === "string" && Array.isArray(inp.options)){
+        html += `<div class="setting-row"><label>${escapeHtml(inp.title)}</label><select class="select" data-inp="${inp.id}">${inp.options.map(o => `<option value="${escapeHtml(String(o))}" ${String(val) === String(o) ? "selected" : ""}>${escapeHtml(String(o))}</option>`).join("")}</select><span></span></div>`;
+      } else if(inp.kind === "source"){
+        html += `<div class="setting-row"><label>${escapeHtml(inp.title)}</label><select class="select" data-inp="${inp.id}">${["close","open","high","low","hl2","hlc3","ohlc4"].map(o => `<option value="${o}" ${String(val || inp.defval) === o ? "selected" : ""}>${o.toUpperCase()}</option>`).join("")}</select><span></span></div>`;
+      } else if(inp.kind === "int"){
+        html += `<div class="setting-row"><label>${escapeHtml(inp.title)}</label><input class="field" data-inp="${inp.id}" type="number" ${inp.min !== undefined ? `min="${inp.min}"` : ""} ${inp.max !== undefined ? `max="${inp.max}"` : ""} ${inp.step !== undefined ? `step="${inp.step}"` : "step=1"} value="${escapeHtml(String(val ?? ""))}"><span></span></div>`;
+      } else {
+        html += `<div class="setting-row"><label>${escapeHtml(inp.title)}</label><input class="field" data-inp="${inp.id}" type="number" ${inp.min !== undefined ? `min="${inp.min}"` : ""} ${inp.max !== undefined ? `max="${inp.max}"` : ""} ${inp.step !== undefined ? `step="${inp.step}"` : "step=any"} value="${escapeHtml(String(val ?? ""))}"><span></span></div>`;
+      }
+    });
+  });
+  if(!meta.inputs.length) html = `<div style="padding:14px;color:var(--text-dim);font-size:13px">Este script no tiene entradas config (input()).</div>`;
+  body.innerHTML = html;
+  const closeBtn = pineEl("pineSettingsClose");
+  if(closeBtn) closeBtn.onclick = closePineSettings;
+  pineEl("pineSettingsBackdrop").classList.add("open");
+}
+function closePineSettings(){
+  pineEl("pineSettingsBackdrop").classList.remove("open");
+  pineEditingIndicatorId = null;
+}
+function applyPineSettings(){
+  const item = pineItems().find(it => it.id === pineEditingIndicatorId);
+  if(item){
+    const script = pineScriptFor(item);
+    const meta = script ? pineMetaFor(script.source) : null;
+    const inputs = meta.ok ? meta.meta.inputs : [];
+    item.settings = item.settings || {};
+    document.querySelectorAll("#pineSettingsBody [data-inp]").forEach(el => {
+      const id = el.dataset.inp;
+      const def = inputs.find(i => i.id === id);
+      let val;
+      if(el.type === "checkbox") val = el.checked ? 1 : 0;
+      else if(el.type === "number") val = Number(el.value);
+      else val = el.value;
+      if(def && (def.kind === "float" || def.kind === "int")){
+        if(def.min !== undefined) val = Math.max(def.min, val);
+        if(def.max !== undefined) val = Math.min(def.max, val);
+      }
+      item.settings[id] = val;
+    });
+    item._pineCache = null;
+    item._bump = (item._bump || 0) + 1;
+    saveIndicatorSettings();
+    redrawAll();
+  }
+  closePineSettings();
+}
+
+// ===================================================================
+// ===== RENDER: dibujo de resultados Pine =====
+// ===================================================================
+ChartPanel.prototype.pineWindow = function(data){
+  const useFull = this.candles.length >= data.length && this.candles.length > 0;
+  return { fullData: useFull ? this.candles : data, dataStart: useFull ? Math.max(0, this.candles.indexOf(data[0])) : 0 };
+};
+const PINE_SIZE_PX = { tiny: 6, small: 8, normal: 10, large: 12, huge: 16 };
+ChartPanel.prototype.drawPineBarColorPrepass = function(data){
+  this._pineBarColors = [];
+  const items = visiblePineItems();
+  if(!items.length) return;
+  const { fullData, dataStart } = this.pineWindow(data);
+  items.forEach(item => {
+    const res = pineRunAndCache(item, fullData);
+    if(!res.ok){ item._pineError = `Línea ${res.line}: ${res.error}`; return; }
+    item._pineError = null;
+    for(let i = 0; i < data.length; i++){
+      const c = res.bars[dataStart + i];
+      if(c) this._pineBarColors[i] = c;
+    }
+  });
+};
+ChartPanel.prototype.drawPineOverlays = function(ctx, data, x, y, mainW, candleW){
+  const items = visiblePineItems();
+  if(!items.length || data.length < 2) return;
+  const mainH = this.lastScale?.mainH || this.el.clientHeight;
+  // errores visibles
+  items.forEach(item => {
+    if(item._pineError){
+      ctx.save();
+      ctx.font = "600 10px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "rgba(229,72,77,.95)";
+      ctx.textAlign = "left";
+      ctx.fillText("Pine error: " + item._pineError.slice(0, 90), 8, 14);
+      ctx.restore();
+    }
+  });
+  const { fullData, dataStart } = this.pineWindow(data);
+  const sl = arr => arr.slice(dataStart, dataStart + data.length);
+  items.forEach(item => {
+    const res = pineRunAndCache(item, fullData);
+    if(!res.ok || !res.meta) return;
+    if(res.meta.overlay) this.drawPineMainPane(ctx, data, sl, x, y, mainW, mainH, candleW, item, res);
+    else this.drawPineSubPane(ctx, data, sl, x, mainW, item, res);
+  });
+};
+// colores por barra para plots/formas
+ChartPanel.prototype.pineDrawSeries = function(ctx, data, values, colors, x, y, width, style, offset, mainH){
+  const lineColor = "#787B86";
+  if(style === "histogram" || style === "columns"){
+    const base = y(0) >= 0 && y(0) <= mainH ? y(0) : mainH;
+    const w = Math.max(1, Math.min(10, (this.lastChart?.plotW || 100) / Math.max(1, data.length) * .66));
+    data.forEach((_, i) => {
+      const v = values[i + 0];
+      const c = colors[i] || lineColor;
+      if(v === undefined || !Number.isFinite(v)) return;
+      const xx = x(i + (offset || 0));
+      const yy = y(v);
+      ctx.fillStyle = c;
+      if(v >= 0) ctx.fillRect(xx - w / 2, yy, w, Math.max(1, base - yy));
+      else ctx.fillRect(xx - w / 2, base, w, Math.max(1, yy - base));
+    });
+    return;
+  }
+  if(style === "stepline"){
+    let prevX = null, prevY = null, prevC = null;
+    for(let i = 0; i < data.length; i++){
+      const v = values[i];
+      if(!Number.isFinite(v)){ prevX = prevY = null; continue; }
+      const xx = x(i + (offset || 0));
+      const yy = clamp(y(v), -50, mainH + 50);
+      const c = colors[i] || lineColor;
+      if(prevX !== null){
+        ctx.strokeStyle = prevC || c;
+        ctx.lineWidth = width;
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(xx, prevY);
+        ctx.lineTo(xx, yy);
+        ctx.stroke();
+      }
+      prevX = xx; prevY = yy; prevC = c;
+    }
+    return;
+  }
+  if(style === "line"){
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    let open = false, prevPx = 0, prevPy = 0;
+    for(let i = 0; i < data.length; i++){
+      const v = values[i];
+      if(!Number.isFinite(v)){ open = false; continue; }
+      const xx = x(i + (offset || 0));
+      const yy = clamp(y(v), -100, mainH + 100);
+      const c = colors[i] || colors[i - 1] || lineColor;
+      if(open){
+        ctx.strokeStyle = colors[i - 1] || c;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(prevPx, prevPy);
+        ctx.lineTo(xx, yy);
+        ctx.stroke();
+      }
+      prevPx = xx; prevPy = yy; open = true;
+    }
+    return;
+  }
+  if(style === "circles" || style === "cross"){
+    data.forEach((_, i) => {
+      const v = values[i];
+      if(!Number.isFinite(v)) return;
+      const xx = x(i + (offset || 0));
+      const yy = y(v);
+      const c = colors[i] || lineColor;
+      ctx.strokeStyle = c;
+      ctx.fillStyle = c;
+      ctx.lineWidth = width;
+      if(style === "circles"){
+        ctx.beginPath(); ctx.arc(xx, yy, Math.max(1.2, width * .8), 0, Math.PI * 2); ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(xx - 3, yy); ctx.lineTo(xx + 3, yy);
+        ctx.moveTo(xx, yy - 3); ctx.lineTo(xx, yy + 3);
+        ctx.stroke();
+      }
+    });
+    return;
+  }
+  // fallback: línea simple
+  const yyMap = v => clamp(pineNum(v), -100, mainH + 100);
+  this.drawSeriesLine(ctx, data, values, x, yyMap, lineColor, width, offset || 0);
+};
+ChartPanel.prototype.drawPineMainPane = function(ctx, data, sl, x, y, mainW, mainH, candleW, item, res){
+  ctx.save();
+  // 1) bgcolor columnas
+  const bgs = sl(res.bgcolors);
+  bgs.forEach((c, i) => {
+    if(!c) return;
+    const alphaInfo = pineCssAlpha(c);
+    ctx.globalAlpha = alphaInfo < 0.98 ? 1 : 0.09;
+    const halfW = Math.max(1, candleW * 0.8);
+    ctx.fillStyle = c;
+    ctx.fillRect(x(i) - halfW, 0, halfW * 2, mainH);
+  });
+  ctx.globalAlpha = 1;
+  // 2) fills
+  res.fills.forEach(fill => {
+    const A = res.outputs[fill.a], B = res.outputs[fill.b];
+    if(!A || !B) return;
+    const va = sl(A.values), vb = sl(B.values);
+    const vc = sl(fill.colors);
+    for(let i = 1; i < data.length; i++){
+      if(!vc[i]) continue;
+      if(!Number.isFinite(va[i]) || !Number.isFinite(vb[i])) continue;
+      ctx.fillStyle = vc[i];
+      const x0 = x(i - 1), x1 = x(i);
+      const yyA = y(va[i - 1]), yyB = y(vb[i - 1]);
+      ctx.fillRect(x0, Math.min(yyA, yyB), x1 - x0 + 1, Math.max(1, Math.abs(yyA - yyB)));
+    }
+  });
+  // 3) hlines
+  res.hlines.forEach(hl => {
+    if(!hl || !Number.isFinite(hl.price)) return;
+    const yy = y(hl.price);
+    if(yy < 0 || yy > mainH) return;
+    ctx.strokeStyle = hl.color || "#787B86";
+    ctx.lineWidth = hl.width || 1;
+    if(hl.style === "dashed") ctx.setLineDash([4, 3]);
+    else if(hl.style === "dotted") ctx.setLineDash([1.5, 3]);
+    ctx.beginPath();
+    ctx.moveTo(0, yy);
+    ctx.lineTo(mainW, yy);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if(hl.title){
+      ctx.font = "600 9px 'JetBrains Mono', monospace";
+      ctx.fillStyle = hl.color || "#787B86";
+      ctx.textAlign = "left";
+      ctx.fillText(String(hl.title), 6, yy - 3);
+    }
+  });
+  // 4) plots
+  res.outputs.forEach(o => {
+    if(!o || o.kind !== "plot" || o.hidden) return;
+    this.pineDrawSeries(ctx, data, sl(o.values), sl(o.colors), x, y, o.width, o.style, o.offset, mainH);
+  });
+  // 5) arrows + shapes
+  res.outputs.forEach(o => {
+    if(!o) return;
+    if(o.kind === "arrow") { this.drawPineArrows(ctx, data, sl(o.values), sl(o.colors), x, y); return; }
+    if(o.kind === "shape") { this.drawPineShapes(ctx, data, sl(o.values), o, x, y); }
+  });
+  // 6) marcas strategy
+  this.drawPineMarks(ctx, data, res.marks, x, y);
+  ctx.restore();
+};
+ChartPanel.prototype.drawPineShapes = function(ctx, data, values, o, x, y){
+  const sizePx = PINE_SIZE_PX[o.size] || 10;
+  data.forEach((bar, i) => {
+    const v = values[i];
+    if(v === undefined || !pineTruth(v)) return;
+    const c = o.colors[i] || "#787B86";
+    const yy0 = o.location === "abovebar" ? y(bar.h) - sizePx : o.location === "belowbar" ? y(bar.l) + sizePx : o.location === "top" ? 14 : o.location === "bottom" ? (this.lastScale?.mainH || 100) - 14 : y(Number.isFinite(v) && v ? v : bar.c);
+    const yy = clamp(yy0, 6, (this.lastScale?.mainH || 100) - 6);
+    const xx = x(i + (o.offset || 0));
+    if(xx < -12 || xx > (this.lastChart?.plotW || 100) + 12) return;
+    ctx.fillStyle = c;
+    ctx.strokeStyle = c;
+    ctx.lineWidth = 1.6;
+    pineDrawGlyph(ctx, o.style, xx, yy, sizePx, o.char);
+    const txt = o.texts[i];
+    if(txt && typeof txt === "string" && txt.length){
+      ctx.font = "600 9px 'JetBrains Mono', monospace";
+      ctx.textAlign = "center";
+      ctx.fillStyle = (o.textColor && pineCssAlpha(o.textColor) > 0.01) ? o.textColor : "#e8e8ec";
+      ctx.fillText(txt, xx, o.location === "abovebar" ? yy - 10 : yy + 15);
+      ctx.textAlign = "left";
+    }
+  });
+  ctx.textAlign = "left";
+};
+function pineDrawGlyph(ctx, style, x, y, s, char){
+  const t = s * 0.9;
+  switch(style){
+    case "triangleup": case "arrowup": {
+      ctx.beginPath();
+      ctx.moveTo(x, y - t);
+      ctx.lineTo(x - t, y + t);
+      ctx.lineTo(x + t, y + t);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    }
+    case "triangledown": case "arrowdown": {
+      ctx.beginPath();
+      ctx.moveTo(x, y + t);
+      ctx.lineTo(x - t, y - t);
+      ctx.lineTo(x + t, y - t);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    }
+    case "labelup": case "labeldown": {
+      ctx.beginPath();
+      if(style === "labelup"){
+        ctx.moveTo(x, y - t); ctx.lineTo(x + t * .8, y); ctx.lineTo(x + t * .8, y + t); ctx.lineTo(x - t * .8, y + t); ctx.lineTo(x - t * .8, y);
+      } else {
+        ctx.moveTo(x, y + t); ctx.lineTo(x + t * .8, y); ctx.lineTo(x + t * .8, y - t); ctx.lineTo(x - t * .8, y - t); ctx.lineTo(x - t * .8, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      break;
+    }
+    case "xcross": {
+      ctx.beginPath();
+      ctx.moveTo(x - t, y - t); ctx.lineTo(x + t, y + t);
+      ctx.moveTo(x + t, y - t); ctx.lineTo(x - t, y + t);
+      ctx.stroke();
+      break;
+    }
+    case "cross": {
+      ctx.beginPath();
+      ctx.moveTo(x - t, y); ctx.lineTo(x + t, y);
+      ctx.moveTo(x, y - t); ctx.lineTo(x, y + t);
+      ctx.stroke();
+      break;
+    }
+    case "circle": {
+      ctx.beginPath(); ctx.arc(x, y, t * .8, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+    case "square": {
+      ctx.fillRect(x - t * .7, y - t * .7, t * 1.4, t * 1.4);
+      break;
+    }
+    case "diamond": {
+      ctx.beginPath();
+      ctx.moveTo(x, y - t); ctx.lineTo(x + t, y); ctx.lineTo(x, y + t); ctx.lineTo(x - t, y);
+      ctx.closePath(); ctx.fill();
+      break;
+    }
+    case "flag": {
+      ctx.beginPath();
+      ctx.moveTo(x - t, y - t); ctx.lineTo(x + t, y - t); ctx.lineTo(x + t, y); ctx.lineTo(x - t, y);
+      ctx.closePath(); ctx.fill();
+      break;
+    }
+    case "char": {
+      if(char && char.length){
+        ctx.font = `${s}px 'JetBrains Mono', monospace`;
+        ctx.textAlign = "center";
+        ctx.fillText(char.slice(0, 3), x, y + s * 0.35);
+        ctx.textAlign = "left";
+      }
+      break;
+    }
+    default: {
+      ctx.beginPath(); ctx.arc(x, y, Math.max(1.4, t * .5), 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+ChartPanel.prototype.drawPineArrows = function(ctx, data, values, colors, x, y){
+  data.forEach((bar, i) => {
+    const v = values[i];
+    if(v === undefined || !Number.isFinite(v)) return;
+    if(Math.abs(v) < 1e-9) return;
+    const up = v > 0;
+    const c = colors[i] || (up ? "#089981" : "#F23645");
+    ctx.fillStyle = c;
+    const xx = x(i);
+    const yy = up ? y(bar.l) + 12 : y(bar.h) - 12;
+    pineDrawGlyph(ctx, up ? "arrowup" : "arrowdown", xx, yy, 9, "");
+  });
+};
+ChartPanel.prototype.drawPineMarks = function(ctx, data, marks, x, y){
+  if(!marks || !marks.length) return;
+  marks.forEach(m => {
+    if(m.bar < 0 || m.bar >= data.length) return;
+    const bar = data[m.bar];
+    const xx = x(m.bar);
+    const isEntry = m.type === "entry";
+    const c = isEntry ? (m.dir === "long" ? "#089981" : "#F23645") : "#C0C0C0";
+    const styleGlyph = isEntry ? (m.dir === "long" ? "labelup" : "labeldown") : "xcross";
+    const yy = isEntry ? (m.dir === "long" ? y(bar.l) + 14 : y(bar.h) - 14) : y(bar.c);
+    ctx.fillStyle = c;
+    ctx.strokeStyle = c;
+    pineDrawGlyph(ctx, styleGlyph, xx, yy, 9, "");
+    if(isEntry && m.text){
+      ctx.font = "700 8px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "#0e0f11";
+      ctx.textAlign = "center";
+      ctx.fillText(String(m.text).slice(0, 8), xx, yy + (m.dir === "long" ? 3 : 3));
+      ctx.textAlign = "left";
+    }
+  });
+};
+// ================= dibujo de paneles (overlay=false) =================
+ChartPanel.prototype.pinePaneGeom = function(item){
+  const pane = this.lastChart?.stochPane;
+  if(!pane) return null;
+  const base = (visibleRtcItems("rtcStoch6").length) + (visibleBibiruItems().filter(it => getBibiruSettingsFor(it).showVwap)).length + visibleMacdProItems().length;
+  const list = visiblePineItems();
+  const idx = list.findIndex(it => it.id === item.id);
+  if(idx < 0) return null;
+  const h = pane.h / Math.max(1, pane.count || 1);
+  return { y0: pane.y0 + (base + idx) * h, h, pane };
+};
+ChartPanel.prototype.drawPineSubPane = function(ctx, data, sl, x, mainW, item, res){
+  const geom = this.pinePaneGeom(item);
+  if(!geom) return;
+  const { y0, h } = geom;
+  const plots = res.outputs.filter(o => o && o.kind === "plot" && !o.hidden);
+  if(!plots.length && !res.bgcolors.some(Boolean) && !res.hlines.length) return;
+  let lo = Infinity, hi = -Infinity;
+  plots.forEach(o => {
+    sl(o.values).forEach(v => { if(Number.isFinite(v)){ lo = Math.min(lo, v); hi = Math.max(hi, v); } });
+  });
+  res.hlines.forEach(hl => { if(Number.isFinite(hl.price)){ lo = Math.min(lo, hl.price); hi = Math.max(hi, hl.price); } });
+  if(!Number.isFinite(lo) || !Number.isFinite(hi)){ lo = 0; hi = 1; }
+  if(res.bgcolors.some(Boolean) && !plots.length){ lo = 0; hi = 1; }
+  const pad = (hi - lo) * 0.08 || 1;
+  lo -= pad; hi += pad;
+  const sy = v => y0 + 4 + (1 - (v - lo) / (hi - lo)) * (h - 8);
+  const x0 = this.lastChart?.plotLeftPad ?? 0;
+  const w = this.lastChart?.plotW ?? mainW;
+  const mapX = i => x0 + (i / Math.max(1, data.length - 1)) * w;
+  ctx.save();
+  ctx.fillStyle = rgba(designSettings.bgColor, .97);
+  ctx.fillRect(0, y0, mainW, h);
+  ctx.strokeStyle = "rgba(137,137,137,.2)";
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, y0 + .5); ctx.lineTo(mainW, y0 + .5); ctx.stroke();
+  // bg columns
+  const bgs = sl(res.bgcolors);
+  bgs.forEach((c, i) => {
+    if(!c) return;
+    const alphaInfo = pineCssAlpha(c);
+    ctx.globalAlpha = alphaInfo < 0.98 ? 1 : 0.10;
+    const halfW = Math.max(1, (w / Math.max(1, data.length)) * 0.8);
+    ctx.fillStyle = c;
+    ctx.fillRect(mapX(i) - halfW, y0, halfW * 2, h);
+  });
+  ctx.globalAlpha = 1;
+  // hlines dentro del panel
+  res.hlines.forEach(hl => {
+    if(!hl || !Number.isFinite(hl.price)) return;
+    const yy = sy(hl.price);
+    ctx.strokeStyle = hl.color || "#787B86";
+    ctx.lineWidth = hl.width || 1;
+    if(hl.style === "dashed") ctx.setLineDash([4, 3]);
+    else if(hl.style === "dotted") ctx.setLineDash([1.5, 3]);
+    ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x0 + w, yy); ctx.stroke();
+    ctx.setLineDash([]);
+  });
+  // fills en paneles con las dos series resueltas
+  res.fills.forEach(fill => {
+    const A = res.outputs[fill.a], B = res.outputs[fill.b];
+    if(!A || !B) return;
+    const va = sl(A.values), vb = sl(B.values);
+    const vc = sl(fill.colors);
+    for(let i = 1; i < data.length; i++){
+      if(!vc[i] || !Number.isFinite(va[i]) || !Number.isFinite(vb[i])) continue;
+      ctx.fillStyle = vc[i];
+      ctx.fillRect(mapX(i - 1), sy(vb[i - 1]), mapX(i) - mapX(i - 1) + 1, Math.max(1, Math.abs(sy(vb[i - 1]) - sy(va[i - 1]))));
+    }
+  });
+  // plots
+  plots.forEach(o => {
+    const syWrap = o.style === "histogram" || o.style === "columns" ? (v => { const zero = 0 >= lo && 0 <= hi ? sy(0) : y0 + h - 4; const vv = sy(v); return v >= 0 ? { y0: vv, y1: zero } : { y0: zero, y1: vv }; }) : null;
+    if(syWrap){
+      const w2 = Math.max(1, Math.min(10, w / Math.max(1, data.length) * .66));
+      sl(o.values).forEach((v, i) => {
+        if(!Number.isFinite(v)) return;
+        const r = syWrap(v);
+        ctx.fillStyle = o.colors[i] || "#787B86";
+        ctx.fillRect(mapX(i) - w2 / 2, r.y0, w2, Math.max(1, r.y1 - r.y0));
+      });
+    } else if(o.style === "stepline"){
+      let open = false, px = 0, py = 0, pc = null;
+      sl(o.values).forEach((v, i) => {
+        if(!Number.isFinite(v)){ open = false; return; }
+        const xxm = mapX(i), ym = sy(v);
+        const c = o.colors[i] || "#787B86";
+        if(open){
+          ctx.strokeStyle = pc || c;
+          ctx.lineWidth = o.width;
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.lineTo(xxm, py);
+          ctx.lineTo(xxm, ym);
+          ctx.stroke();
+        }
+        px = xxm; py = ym; pc = c; open = true;
+      });
+    } else if(o.style === "circles"){
+      sl(o.values).forEach((v, i) => {
+        if(!Number.isFinite(v)) return;
+        ctx.fillStyle = o.colors[i] || "#787B86";
+        ctx.beginPath(); ctx.arc(mapX(i), sy(v), Math.max(1.2, o.width * .8), 0, Math.PI * 2); ctx.fill();
+      });
+    } else {
+      this.drawSeriesLine(ctx, data, sl(o.values), mapX, sy, "#787B86", o.width, 0);
+    }
+  });
+  // push shapes al panel (encima/abajo)
+  res.outputs.forEach(o => {
+    if(o && o.kind === "shape"){
+      const valuesArray = sl(o.values);
+      valuesArray.forEach((v, i) => {
+        if(!pineTruth(v)) return;
+        const c = o.colors[i] || "#787B86";
+        const yy = o.location === "abovebar" || o.location === "top" ? y0 + 12 : y0 + h - 12;
+        ctx.fillStyle = c;
+        ctx.strokeStyle = c;
+        ctx.lineWidth = 1.4;
+        pineDrawGlyph(ctx, o.style, mapX(i), yy, Math.max(6, PINE_SIZE_PX[o.size] * .8), o.char);
+        const txt = o.texts && o.texts[i];
+        if(txt){
+          ctx.font = "600 9px 'JetBrains Mono', monospace";
+          ctx.textAlign = "center";
+          ctx.fillStyle = "#e8e8ec";
+          ctx.fillText(txt, mapX(i), yy + (o.location === "abovebar" ? -10 : 12));
+          ctx.textAlign = "left";
+        }
+      });
+      ctx.textAlign = "left";
+    }
+    if(o && o.kind === "arrow"){
+      sl(o.values).forEach((v, i) => {
+        if(!Number.isFinite(v) || Math.abs(v) < 1e-9) return;
+        const up = v > 0;
+        ctx.fillStyle = o.colors[i] || (up ? "#089981" : "#F23645");
+        pineDrawGlyph(ctx, up ? "arrowup" : "arrowdown", mapX(i), up ? y0 + 12 : y0 + h - 12, 8, "");
+      });
+    }
+  });
+  // marcas
+  this.drawPineMarksPane(ctx, data, res.marks, mapX, y0, h, lo, hi, sy);
+  // título + últimos valores
+  ctx.font = "700 11px 'JetBrains Mono', monospace";
+  ctx.fillStyle = "rgba(146,147,154,.8)";
+  ctx.textAlign = "left";
+  const title = res.meta.title || pineTitleFor(item);
+  ctx.fillText(String(title).slice(0, 60), x0 + 8, y0 + 14);
+  plots.forEach(o => {
+    const last = sl(o.values).at(-1);
+    if(!Number.isFinite(last)) return;
+    const c = o.colors.at(-1) || "#787B86";
+    ctx.fillStyle = c;
+    ctx.textAlign = "right";
+    ctx.font = "600 10px 'JetBrains Mono', monospace";
+    const t = o.title ? String(o.title).slice(0, 14) + " " : "";
+    ctx.fillText(t + last.toFixed(Math.abs(last) < 10 ? 2 : Math.abs(last) < 1000 ? 1 : 0), x0 + w - 6, y0 + 14);
+  });
+  ctx.textAlign = "left";
+  ctx.restore();
+};
+ChartPanel.prototype.drawPineMarksPane = function(ctx, data, marks, mapX, y0, h){
+  (marks || []).forEach(m => {
+    if(m.bar < 0 || m.bar >= data.length) return;
+    const isEntry = m.type === "entry";
+    const c = isEntry ? (m.dir === "long" ? "#089981" : "#F23645") : "#C0C0C0";
+    ctx.fillStyle = c;
+    ctx.strokeStyle = c;
+    pineDrawGlyph(ctx, isEntry ? (m.dir === "long" ? "labelup" : "labeldown") : "xcross", mapX(m.bar), isEntry ? y0 + h / 2 : y0 + h / 2, 8, "");
+  });
+};
+// alpha de un color CSS rgba/hex
+function pineCssAlpha(c){
+  if(typeof c !== "string") return 1;
+  if(c.startsWith("rgba(")){
+    const parts = c.slice(c.indexOf("(") + 1, c.indexOf(")")).split(",").map(v => parseFloat(v));
+    return parts.length >= 4 ? parts[3] : 1;
+  }
+  if(c.startsWith("#") && c.length === 9){
+    return parseInt(c.slice(7, 9), 16) / 255;
+  }
+  return 1;
+}
+function escapeHtml(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+
+// ===================================================================
+// ===== CABLEADO DE EVENTOS DEL EDITOR PINE =====
+// ===================================================================
+(function wirePineEditor(){
+  const $ = pineEl;
+  ensurePineDemoScripts();
+
+  const newRow = $("pineEditorToggleRow");
+  if(newRow) newRow.onclick = () => { openPineEditor(); $("indicatorWrap")?.classList.remove("open"); };
+  const libRow = $("indicatorLibraryToggle");
+  if(libRow) libRow.onclick = () => { openPineLibrary(); $("indicatorWrap")?.classList.remove("open"); };
+
+  const sel = $("pineScriptSelect");
+  if(sel) sel.onchange = () => { pineActiveScriptId = sel.value || null; loadPineScriptToEditor(); };
+
+  const src = $("pineSource");
+  if(src){
+    src.addEventListener("input", () => { updatePineLineNumbers(); pineLiveCheck(); });
+    src.addEventListener("scroll", () => {
+      const lines = $("pineLineNumbers");
+      if(lines) lines.scrollTop = src.scrollTop;
+    });
+    src.addEventListener("keydown", (e) => {
+      if(e.key === "Tab"){
+        e.preventDefault();
+        const start = src.selectionStart, end = src.selectionEnd;
+        src.value = src.value.slice(0, start) + "\t" + src.value.slice(end);
+        src.selectionStart = src.selectionEnd = start + 1;
+        updatePineLineNumbers();
+        pineLiveCheck();
+      }
+    });
+  }
+
+  const btnNew = $("pineNewScript");
+  if(btnNew) btnNew.onclick = () => {
+    const template = "//@version=5\nindicator('Mi indicador', overlay=true)\n\nlen = input.int(20, 'Longitud', minval=1)\n\nplot(ta.ema(close, len), 'EMA', color=color.blue, linewidth=2)";
+    const script = { id: "pine-" + Date.now() + "-" + Math.round(Math.random() * 9999), name: "Mi indicador", source: template };
+    pineScripts.push(script);
+    pineActiveScriptId = script.id;
+    savePineStore();
+    refreshPineScriptSelect();
+    loadPineScriptToEditor();
+    pineConsoleLog("✓ script nuevo (recuerda pulsar Guardar)", "ok");
+  };
+  const btnRename = $("pineRenameScript");
+  if(btnRename) btnRename.onclick = () => {
+    const script = currentPineScript();
+    if(!script){ pineConsoleLog("✗ no hay script seleccionado", "err"); return; }
+    const name = (prompt("Nombre del script:", script.name) || "").trim();
+    if(!name) return;
+    script.name = name;
+    savePineStore();
+    refreshPineScriptSelect();
+    pineEl("pinePanelTitle").textContent = script.name;
+    saveIndicatorSettings();
+    redrawAll();
+  };
+  const btnSave = $("pineSaveScript");
+  if(btnSave) btnSave.onclick = () => { pineSaveCurrent(false); };
+  const btnAdd = $("pineAddScript");
+  if(btnAdd) btnAdd.onclick = () => {
+    const script = pineSaveCurrent(false);
+    if(script) addPineScriptToChart(script);
+  };
+  const btnDelete = $("pineDeleteScript");
+  if(btnDelete) btnDelete.onclick = () => {
+    const script = currentPineScript();
+    if(!script){ pineConsoleLog("✗ no hay script seleccionado", "err"); return; }
+    if(!confirm(`¿Eliminar el script "${script.name}" y sus instancias en el gráfico?`)) return;
+    pineScripts = pineScripts.filter(s => s.id !== script.id);
+    activeIndicators = activeIndicators.filter(it => !(it.type === "pine" && it.scriptId === script.id));
+    syncIndicatorState();
+    saveIndicatorSettings();
+    savePineStore();
+    pineActiveScriptId = pineScripts[0]?.id || null;
+    refreshPineScriptSelect();
+    loadPineScriptToEditor();
+    redrawAll();
+    pineConsoleLog(`✓ eliminado: ${script.name}`, "ok");
+  };
+  const btnClose = $("pineCloseEditor");
+  if(btnClose) btnClose.onclick = closePineEditor;
+
+  // biblioteca
+  const libClose = $("pineLibraryClose");
+  if(libClose) libClose.onclick = closePineLibrary;
+  const libSearch = $("pineLibrarySearch");
+  if(libSearch) libSearch.addEventListener("input", renderPineLibrary);
+  const libBack = $("pineLibraryBackdrop");
+  if(libBack) libBack.addEventListener("click", (e) => { if(e.target === libBack) closePineLibrary(); });
+  const libPineEditorBtn = $("pineLibraryPineEditor");
+  if(libPineEditorBtn) libPineEditorBtn.onclick = () => { closePineLibrary(); openPineEditor(); };
+
+  // settings dinámicos
+  const setCancel = $("pineSettingsCancel");
+  if(setCancel) setCancel.onclick = closePineSettings;
+  const setApply = $("pineSettingsApply");
+  if(setApply) setApply.onclick = applyPineSettings;
+  const setBack = $("pineSettingsBackdrop");
+  if(setBack) setBack.addEventListener("click", (e) => { if(e.target === setBack) closePineSettings(); });
+})();
+
 
 
 init();
