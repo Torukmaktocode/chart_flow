@@ -482,6 +482,60 @@ body{background:var(--bg)}
 .layout-menu .layout-sync-title:first-child{margin-top:0}
 .layout-menu .layout-grid-btn{border-radius:6px;transition:background .15s ease,color .15s ease}
 
+/* ===== Pine Editor + Biblioteca de indicadores (estilo TradingView) ===== */
+.pine-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:860;display:none;align-items:flex-start;justify-content:center;padding-top:9vh}
+.pine-modal-backdrop.open{display:flex}
+.pine-modal{width:min(560px,92vw);max-height:74vh;background:var(--surface-2);border:1px solid var(--border-bright);border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.6);display:flex;flex-direction:column;overflow:hidden}
+.pine-modal-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.pine-modal-title{font-weight:700;font-size:14px}
+.pine-modal-search{flex:1;height:32px;background:var(--surface-3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:0 10px;font-size:13px;font-family:var(--font-ui);outline:none}
+.pine-modal-search:focus{border-color:var(--accent-dim)}
+.pine-modal-close{width:28px;height:28px;border:0;background:transparent;color:var(--text-dim);font-size:18px;cursor:pointer;border-radius:5px}
+.pine-modal-close:hover{background:var(--surface-3);color:var(--text)}
+.pine-modal-body{overflow-y:auto;flex:1;padding:8px 10px 12px}
+.pine-modal-section{font:600 10px var(--font-mono);text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);padding:8px 4px 4px}
+.pine-modal-row{width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border:0;border-radius:6px;background:transparent;color:var(--text);font-size:13px;font-family:var(--font-ui);cursor:pointer;text-align:left}
+.pine-modal-row:hover{background:var(--surface-3)}
+.pine-modal-row .tag{font:600 9px var(--font-mono);padding:2px 6px;border-radius:9px;background:var(--surface-3);color:var(--text-dim);white-space:nowrap}
+.pine-modal-row .tag.pine{background:rgba(244,244,245,.16);color:var(--text)}
+.pine-modal-row .desc{font-size:11px;color:var(--text-dim);margin-left:auto;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pine-modal-foot{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px}
+.pine-modal-foot .modal-btn{flex:1}
+.modal-btn{height:30px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:6px;padding:0 14px;font:600 12px var(--font-ui);cursor:pointer}
+.modal-btn:hover{border-color:#92939a}
+.modal-btn.primary{background:var(--accent);color:#111214;border-color:var(--accent)}
+.modal-btn.primary:hover{background:#fff}
+.modal-btn.danger:hover{border-color:var(--alert);color:var(--alert)}
+
+/* Panel editor Pine (parte inferior, estilo TradingView) */
+.pine-panel{position:fixed;left:0;right:0;bottom:28px;height:284px;background:#16171b;border-top:1px solid var(--border-bright);z-index:800;display:none;flex-direction:column;box-shadow:0 -10px 26px rgba(0,0,0,.45)}
+.pine-panel.open{display:flex}
+.pine-panel-head{height:34px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--surface-1);border-bottom:1px solid var(--border)}
+.pine-panel-title{font:700 12px var(--font-ui);letter-spacing:.4px;color:var(--text)}
+.pine-script-select{height:26px;max-width:240px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:5px;font:500 12px var(--font-ui);padding:0 6px;outline:none}
+.pine-panel-actions{margin-left:auto;display:flex;gap:6px}
+.pine-btn{height:26px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:5px;padding:0 11px;font:600 11px var(--font-ui);cursor:pointer;white-space:nowrap}
+.pine-btn:hover{border-color:#92939a}
+.pine-btn.primary{background:var(--accent);color:#111214;border-color:var(--accent)}
+.pine-btn.primary:hover{background:#fff}
+.pine-btn.danger:hover{border-color:#e5484d;color:#e5484d}
+.pine-editor-wrap{flex:1;display:flex;min-height:0}
+.pine-lines{width:40px;padding:8px 6px 8px 0;text-align:right;font:400 12px/1.5 var(--font-mono);color:var(--text-dim);background:var(--surface-1);border-right:1px solid var(--border);overflow:hidden;user-select:none;white-space:pre}
+.pine-panel textarea.pine-source{flex:1;resize:none;border:0;outline:none;background:#101114;color:#e8e8ec;font:400 12px/1.5 var(--font-mono);padding:8px 12px;tab-size:4;white-space:pre;overflow:auto}
+.pine-console{min-height:20px;max-height:74px;overflow-y:auto;padding:3px 12px;border-top:1px solid var(--border);font:400 11px/1.5 var(--font-mono);color:var(--text-dim);white-space:pre-wrap}
+.pine-console .err{color:#e5484d}
+.pine-console .ok{color:#46d79e}
+.app.pine-open .charts{bottom:284px;position:relative}
+
+/* settings de scripts Pine dinámicos */
+.pine-settings-body .setting-row{display:grid;grid-template-columns:130px 1fr 20px;align-items:center;gap:10px;padding:7px 0;font-size:13px}
+.pine-settings-body .setting-row label{color:var(--text-dim);font-size:12px}
+.field,.select,.pine-select,.pine-numfield{height:30px;background:var(--surface-3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:0 8px;font:400 13px var(--font-ui);outline:none;width:100%}
+.field:focus,.select:focus{border-color:var(--accent-dim)}
+.check{width:15px;height:15px;accent-color:var(--text)}
+.color-box{width:30px;height:30px;padding:0;border:1px solid var(--border);border-radius:5px;background:var(--surface-3);cursor:pointer}
+.info-dot{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--border);font:600 9px var(--font-ui);color:var(--text-dim)}
+.pine-badge-err{position:absolute;top:6px;left:8px;z-index:5;background:rgba(229,72,77,.16);border:1px solid rgba(229,72,77,.5);color:#ffb4b6;font:600 10px var(--font-mono);padding:2px 7px;border-radius:4px;pointer-events:none}
 </style>
 </head>
 <body>
@@ -493,6 +547,14 @@ body{background:var(--bg)}
     <div class="indicator-wrap" id="indicatorWrap">
       <button class="indicator-btn" id="indicatorButton">Indicadores</button>
       <div class="indicator-menu">
+        <button class="indicator-row" id="indicatorLibraryToggle" style="color:var(--text);font-weight:600">
+          <span>＋ Biblioteca de indicadores…</span>
+          <span style="margin-left:auto;font-size:10px;color:var(--text-dim)">Buscar y añadir</span>
+        </button>
+        <button class="indicator-row" id="pineEditorToggleRow" style="color:var(--text);font-weight:600">
+          <span>&#9998; Editor Pine</span>
+          <span style="margin-left:auto;font-size:10px;color:var(--text-dim)">Mis scripts</span>
+        </button>
         <button class="indicator-row" id="killzoneToggle">
           <span>ICT Killzones & Pivots [TFO]</span>
         </button>
@@ -640,6 +702,60 @@ body{background:var(--bg)}
     <div class="ctx-menu-title" id="ctxMenuTitle">Añadir a lista</div>
     <div class="ctx-menu-items" id="ctxMenuItems"></div>
   </div>
+
+  <!-- Biblioteca de indicadores (estilo TradingView) -->
+  <div class="pine-modal-backdrop" id="pineLibraryBackdrop">
+    <div class="pine-modal">
+      <div class="pine-modal-head">
+        <span class="pine-modal-title">Indicadores</span>
+        <input class="pine-modal-search" id="pineLibrarySearch" type="text" placeholder="Buscar indicadores y scripts Pine…">
+        <button class="pine-modal-close" id="pineLibraryClose">×</button>
+      </div>
+      <div class="pine-modal-body" id="pineLibraryBody"></div>
+      <div class="pine-modal-foot">
+        <button class="modal-btn" id="pineLibraryPineEditor">✎ Crear indicador con Pine Editor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Editor Pine -->
+  <div class="pine-panel" id="pinePanel">
+    <div class="pine-panel-head">
+      <span class="pine-panel-title" id="pinePanelTitle">Editor Pine</span>
+      <select class="pine-script-select" id="pineScriptSelect"></select>
+      <div class="pine-panel-actions">
+        <button class="pine-btn" id="pineNewScript">＋ Nuevo</button>
+        <button class="pine-btn" id="pineRenameScript">✎ Renombrar</button>
+        <button class="pine-btn" id="pineSaveScript">Guardar</button>
+        <button class="pine-btn primary" id="pineAddScript">Añadir al gráfico</button>
+        <button class="pine-btn danger" id="pineDeleteScript">Eliminar</button>
+        <button class="pine-btn" id="pineCloseEditor">×</button>
+      </div>
+    </div>
+    <div class="pine-editor-wrap">
+      <div class="pine-lines" id="pineLineNumbers"></div>
+      <textarea class="pine-source" id="pineSource" spellcheck="false" placeholder="// Editor de Pine Script (subset v5)
+// Ej:
+//@version=5
+//indicator('Mi EMA', overlay=true)
+//len = input.int(20, 'Largo')
+//plot(ta.ema(close, len), color=color.red)"></textarea>
+    </div>
+    <div class="pine-console" id="pineConsole">// Escribe tu script Pine y pulsa «Añadir al gráfico» o «Guardar».</div>
+  </div>
+
+  <!-- Settings dinámicos de scripts Pine -->
+  <div class="settings-backdrop" id="pineSettingsBackdrop">
+    <div class="settings-panel">
+      <div class="settings-head" id="pineSettingsTitle">
+        Pine
+        <button class="settings-close" id="pineSettingsClose">×</button>
+      </div>
+      <div class="settings-body pine-settings-body" id="pineSettingsBody"></div>
+      <div class="settings-foot"><button class="modal-btn" id="pineSettingsCancel">Cancelar</button><button class="modal-btn primary" id="pineSettingsApply">Aceptar</button></div>
+    </div>
+  </div>
+
   <div class="settings-backdrop" id="settingsBackdrop">
     <div class="settings-panel">
       <div class="settings-head">
@@ -7616,6 +7732,418 @@ function migrateOldProfiles() {
     savePanelTemplates(newTemplates);
     // No borramos los viejos por si acaso
   }
+}
+
+// ===================================================================
+// ===== MOTOR PINE SCRIPT (subset v5) — Editor Pine de ChartFlow =====
+// ===================================================================
+class PineError extends Error {
+  constructor(msg, line){ super(msg); this.line = line; this.pine = true; }
+}
+function pineFail(msg, line){ throw new PineError(msg, line); }
+
+const PINE_BLOCK_KEYWORDS = new Set(["if", "else", "for", "while", "switch"]);
+const PINE_TYPE_PREFIX = new Set(["float", "int", "bool", "string", "color", "series", "simple", "const"]);
+
+// --- Tokenizador
+function pineTokenizeLine(text, lineNo){
+  const tokens = [];
+  let i = 0;
+  const push = (type, value) => tokens.push({ type, value, line: lineNo });
+  while(i < text.length){
+    const ch = text[i];
+    if(ch === " " || ch === "\t"){ i++; continue; }
+    if(ch === "/" && text[i + 1] === "/") break; // comentario
+    if(/[0-9]/.test(ch) || (ch === "." && /[0-9]/.test(text[i + 1] || ""))){
+      let j = i, seen = false;
+      while(j < text.length && /[0-9.]/.test(text[j])) { if(text[j] === "."){ if(seen) break; seen = true; } j++; }
+      push("num", Number(text.slice(i, j)));
+      i = j; continue;
+    }
+    if(/[A-Za-z_#@]/.test(ch)){
+      let j = i;
+      while(j < text.length && /[A-Za-z0-9_#@.]/.test(text[j])) j++;
+      const word = text.slice(i, j);
+      // 'na' puede llevar []
+      push(/^(na|true|false)$/.test(word) ? "na_bool" : "ident", word);
+      i = j; continue;
+    }
+    if(ch === '"' || ch === "'"){
+      let j = i + 1, out = "";
+      while(j < text.length && text[j] !== ch){
+        if(text[j] === "\\"){ out += text[j + 1]; j += 2; continue; }
+        out += text[j]; j++;
+      }
+      if(j >= text.length) pineFail("Cadena sin cerrar", lineNo);
+      push("str", out);
+      i = j + 1; continue;
+    }
+    if(ch === "#" && /[0-9A-Fa-f]/.test(text[i + 1] || "")){
+      let j = i + 1;
+      while(j < text.length && /[0-9A-Fa-f]/.test(text[j])) j++;
+      push("colorhex", text.slice(i, j));
+      i = j; continue;
+    }
+    const three = text.slice(i, i + 3), two = text.slice(i, i + 2);
+    if(three === "::="){ pineFail("no soportado '::='", lineNo); }
+    if(two === ":="){ push("op", ":="); i += 2; continue; }
+    if(two === "=="){ push("op", "=="); i += 2; continue; }
+    if(two === "!="){ push("op", "!="); i += 2; continue; }
+    if(two === ">="){ push("op", ">="); i += 2; continue; }
+    if(two === "<="){ push("op", "<="); i += 2; continue; }
+    if(two === "&&"){ push("op", "&&"); i += 2; continue; }
+    if(two === "||"){ push("op", "||"); i += 2; continue; }
+    if(two === "=>"){ push("op", "=>"); i += 2; continue; }
+    push("op", ch);
+    i++;
+  }
+  return tokens;
+}
+
+// Convierte el fuente en statements con indent (fusión de líneas de continuación)
+function pineStatements(src){
+  const rawLines = String(src || "").replace(/\r/g, "").split("\n");
+  const phys = [];
+  rawLines.forEach((text, idx) => {
+    const trimmed = text.trim();
+    if(!trimmed) return;
+    if(trimmed.startsWith("//")) return;
+    const indent = (() => {
+      let n = 0;
+      for(const c of text){ if(c === " ") n++; else if(c === "\t") n += 4; else break; }
+      return n;
+    })();
+    phys.push({ line: idx + 1, indent, tokens: pineTokenizeLine(text, idx + 1) });
+  });
+  const stmts = [];
+  let k = 0;
+  const CONT_OPS = new Set([",", "(", "[", "+", "-", "*", "/", "%", "=", ":=", "==", "!=", ">=", "<=", "<", ">", "&&", "||", "?", ":", "and", "or"]);
+  while(k < phys.length){
+    const first = phys[k];
+    const merged = { line: first.line, indent: first.indent, tokens: [...first.tokens] };
+    k++;
+    while(merged.tokens.length){
+      const last = merged.tokens[merged.tokens.length - 1];
+      const next = phys[k];
+      if(!next) break;
+      const isCont = (last.type === "op" && CONT_OPS.has(last.value)) || (last.type === "ident" && (last.value === "and" || last.value === "or"));
+      if(!isCont) break;
+      merged.tokens.push(...next.tokens);
+      k++;
+    }
+    if(merged.tokens.length) stmts.push(merged);
+  }
+  return stmts;
+}
+
+// --- Parser (producción de AST)
+// Nodo expr: {k:'num'|'str'|'bool'|'na'|'var'|'super'|'call'|'index'|'bin'|'un'|'tern'|'func', ...}
+let PINE_NODE_SEQ = 0;
+function pineNewNode(node){ node.id = ++PINE_NODE_SEQ; return node; }
+
+function pineParse(src){
+  const stmts = pineStatements(src);
+  let pos = 0;
+
+  function parseTokens(tk){
+    let p = 0;
+    const la = () => tk[p];
+    const atEnd = () => p >= tk.length;
+
+    function parseCallArgs(){
+      const args = [];
+      if(la()?.value === ")"){ p++; return args; }
+      while(true){
+        if(tk[p] && tk[p].type === "ident" && tk[p + 1]?.value === "="){
+          const name = tk[p].value; p += 2;
+          args.push({ name, expr: parseExpr() });
+        } else {
+          args.push({ name: null, expr: parseExpr() });
+        }
+        if(la()?.value === ","){ p++; continue; }
+        if(la()?.value === ")"){ p++; break; }
+        pineFail("Se esperaba ')' o ',' en la lista de argumentos", la()?.line);
+      }
+      return args;
+    }
+
+    function parsePostfix(node){
+      if(la()?.value === "["){
+        p++;
+        const off = parseExpr();
+        if(la()?.value !== "]") pineFail("Se esperaba ']' en el operador de historia [n]", la()?.line);
+        p++;
+        return pineNewNode({ k: "index", a: node, off, line: node.line });
+      }
+      return node;
+    }
+    function parsePrimary(){
+      const t = la();
+      if(!t) pineFail("Expresión incompleta", 0);
+      if(t.type === "num"){ p++; return pineNewNode({ k: "num", v: t.value, line: t.line }); }
+      if(t.type === "str"){ p++; return pineNewNode({ k: "strs", v: t.value, line: t.line }); }
+      if(t.type === "colorhex"){ p++; return pineNewNode({ k: "lit_color", v: t.value, line: t.line }); }
+      if(t.value === "("){
+        p++;
+        const e = parseExpr();
+        if(la()?.value !== ")") pineFail("Se esperaba ')'", la()?.line);
+        p++;
+        return e;
+      }
+      if(t.value === "-" || t.value === "+" || t.value === "!"){
+        p++;
+        const operand = parsePostfix(parsePrimary());
+        return pineNewNode({ k: "un", op: t.value, a: operand, line: t.line });
+      }
+      if(t.value === "not"){
+        p++;
+        const operand = parsePostfix(parsePrimary());
+        return pineNewNode({ k: "un", op: "not", a: operand, line: t.line });
+      }
+      if(t.type === "ident"){
+        if(tk[p + 1]?.value === "." && tk[p + 2]?.type === "ident"){
+          const ns = t.value, name2 = tk[p + 2].value;
+          if(tk[p + 3]?.value === "("){
+            p += 3;
+            p++;
+            const args = parseCallArgs();
+            return pineNewNode({ k: "call", ns, name: name2, args, line: t.line });
+          }
+          p += 3;
+          return pineNewNode({ k: "nconst", ns, name: name2, line: t.line });
+        }
+        if(tk[p + 1]?.value === "("){
+          p += 2;
+          const args = parseCallArgs();
+          return pineNewNode({ k: "call", ns: null, name: t.value, args, line: t.line });
+        }
+        p++;
+        return pineNewNode({ k: "varref", name: t.value, line: t.line });
+      }
+      pineFail(`Token inesperado '${t.value}'`, t.line);
+    }
+    function parseMulContinue(node){
+      let a = node;
+      while(la() && la().type === "op" && ["*", "/", "%"].includes(la().value)){
+        const op = la().value; p++;
+        const b = parsePostfix(parsePrimary());
+        a = pineNewNode({ k: "bin", op, a, b, line: a.line });
+      }
+      return a;
+    }
+    function parseAddContinue(node){
+      let a = node;
+      while(la() && la().type === "op" && ["+", "-"].includes(la().value)){
+        const op = la().value; p++;
+        const b = parsePostfix(parsePrimary());
+        a = pineNewNode({ k: "bin", op, a, b, line: a.line });
+      }
+      return a;
+    }
+    function parseCmpContinue(node){
+      let a = node;
+      while(la() && ["==", "!=", ">=", "<=", "<", ">"].includes(la().value)){
+        const op = la().value; p++;
+        const b = parsePostfix(parsePrimary());
+        a = pineNewNode({ k: "bin", op, a, b, line: a.line });
+      }
+      return a;
+    }
+    function parseAndContinue(node){
+      let a = node;
+      while(la() && (la().value === "and" || la().value === "&&")){
+        const op = la().value; p++;
+        const b = parsePostfix(parsePrimary());
+        a = pineNewNode({ k: "bin", op: op === "&&" ? "&&" : "and", a, b, line: a.line });
+      }
+      return a;
+    }
+    function parseOrContinue(node){
+      let a = node;
+      while(la() && (la().value === "or" || la().value === "||")){
+        const op = la().value; p++;
+        const b = parsePostfix(parsePrimary());
+        a = pineNewNode({ k: "bin", op: op === "||" ? "||" : "or", a, b, line: a.line });
+      }
+      if(la()?.value === "?"){
+        p++;
+        const x = parseOrContinue(parsePostfix(parsePrimary()));
+        if(la()?.value !== ":") pineFail("Se esperaba ':' en el ternario", la()?.line);
+        p++;
+        const y = parseOrContinue(parsePostfix(parsePrimary()));
+        return pineNewNode({ k: "tern", cond: a, a: x, b: y, line: a.line });
+      }
+      return a;
+    }
+    function parseExpr(){
+      const node = parsePostfix(parsePrimary());
+      let a = parseMulContinue(node);
+      a = parseAddContinue(a);
+      a = parseCmpContinue(a);
+      a = parseAndContinue(a);
+      a = parseOrContinue(a);
+      return a;
+    }
+
+    const expr = parseExpr();
+    if(!atEnd()) pineFail(`Sobra '${la().value}' al final de la expresión`, la().line);
+    return expr;
+  }
+
+  function parseAssignTokens(tk){
+    if(tk.length >= 2 && tk[0].type === "ident" && tk[1].value === "="){
+      return { isAssign: true, mode: "=", name: tk[0].value, rest: tk.slice(2) };
+    }
+    if(tk.length >= 2 && tk[0].type === "ident" && tk[1].value === ":="){
+      return { isAssign: true, mode: ":=", name: tk[0].value, rest: tk.slice(2) };
+    }
+    return { isAssign: false };
+  }
+
+  function parseStatement(line){
+    const tk = line.tokens;
+    if(!tk.length) return null;
+    const keyword = tk[0].type === "ident" ? tk[0].value : null;
+    if(keyword === "while"){
+      pineFail("'while' no está soportado aún en el Editor Pine de ChartFlow (usa 'for')", line.line);
+    }
+    if(keyword === "switch"){
+      pineFail("'switch' no está soportado aún en el Editor Pine de ChartFlow", line.line);
+    }
+    if(keyword === "import" || keyword === "export" || keyword === "library"){
+      pineFail(`'${keyword}' no está soportado en este motor`, line.line);
+    }
+    // definición de función usuario: f(x, y) => expr
+    if(tk[0].type === "ident" && tk[1]?.value === "("){
+      const arrow = tk.findIndex(t => t.type === "op" && t.value === "=>");
+      if(arrow > 2){
+        const params = [];
+        for(let i = 2; i < arrow; i++){
+          if(tk[i].type === "ident" && tk[i].value !== ",") params.push(tk[i].value);
+        }
+        const body = parseTokens(tk.slice(arrow + 1));
+        return { kind: "funcdef", name: tk[0].value, params, body, line: line.line };
+      }
+      pineFail(`Función '${tk[0].value}' no reconocida (solo llamadas con argumentos)`, line.line);
+    }
+    if(keyword === "var" || keyword === "varip"){
+      const a = parseAssignTokens(tk.slice(1));
+      if(!a.isAssign || !a.rest.length) pineFail("Declaración 'var' sin valor", line.line);
+      return { kind: "decl", mode: keyword, name: a.name, expr: parseTokens(a.rest), line: line.line };
+    }
+    if(PINE_TYPE_PREFIX.has(keyword) && tk[1]?.type === "ident" && (tk[2]?.value === "=" || tk[2]?.value === ":=")){
+      const a = parseAssignTokens(tk.slice(1));
+      return { kind: a.mode === "=" ? "decl" : "reassign", mode: a.mode, name: a.name, expr: parseTokens(a.rest), line: line.line };
+    }
+    const a = parseAssignTokens(tk);
+    if(a.isAssign){
+      if(!a.rest.length) pineFail("Asignación sin valor", line.line);
+      const expr = parseTokens(a.rest);
+      if(a.mode === "=") return { kind: "decl", mode: "=", name: a.name, expr, line: line.line };
+      return { kind: "reassign", name: a.name, expr, line: line.line };
+    }
+    return { kind: "expr", line: line.line, expr: parseTokens(tk) };
+  }
+
+  const program = { body: [] };
+  function parseBlockInto(list, level){
+    while(pos < stmts.length){
+      const line = stmts[pos];
+      if(line.indent <= level) break;
+      const keyword = line.tokens[0]?.type === "ident" ? line.tokens[0].value : null;
+      if(keyword === "if"){
+        pos++;
+        const cond = parseTokens(line.tokens.slice(1));
+        const block = [];
+        parseBlockInto(block, line.indent);
+        list.push({ kind: "if", line: line.line, cond, block });
+        while(pos < stmts.length && stmts[pos].indent === line.indent && stmts[pos].tokens[0]?.value === "else"){
+          const elseLine = stmts[pos];
+          pos++;
+          if(elseLine.tokens[1]?.value === "if"){
+            const cond2 = parseTokens(elseLine.tokens.slice(2));
+            const block2 = [];
+            parseBlockInto(block2, elseLine.indent);
+            list.push({ kind: "elseIf", line: elseLine.line, cond: cond2, block: block2 });
+          } else {
+            const block2 = [];
+            parseBlockInto(block2, elseLine.indent);
+            list.push({ kind: "else", line: elseLine.line, block: block2 });
+            break;
+          }
+        }
+        continue;
+      }
+      if(keyword === "for"){
+        pos++;
+        let i = 1;
+        const varName = line.tokens[i]?.value;
+        if(!varName || line.tokens[i + 1]?.value !== "=") pineFail("for: sintaxis 'for i = a to b'", line.line);
+        i += 2;
+        const toIdx = line.tokens.findIndex((t, idx) => idx >= i && t.type === "ident" && t.value === "to");
+        if(toIdx < 0) pineFail("for: falta 'to'", line.line);
+        const from = parseTokens(line.tokens.slice(i, toIdx));
+        let rest = line.tokens.slice(toIdx + 1);
+        if(rest[0]?.value === "by"){
+          pineFail("for ... by n: no soportado aún", line.line);
+        }
+        const to = parseTokens(rest);
+        const block = [];
+        parseBlockInto(block, line.indent);
+        list.push({ kind: "for", line: line.line, varName, from, to, block });
+        continue;
+      }
+      pos++;
+      list.push(parseStatement(line));
+    }
+  }
+  parseBlockInto(program.body, -1);
+  if(pos < stmts.length) pineFail("Estructura de bloques incorrecta (indentación)", stmts[pos]?.line || 0);
+  return program;
+}
+
+
+// recorre el AST para preregistrar slots de plots/formas y extraer meta estática
+function pineCollectOutputs(program){
+  const out = { plotSlots: 0, inputs: [] };
+  function walk(node){
+    if(!node || typeof node !== "object") return;
+    if(node.k === "call"){
+      if(node.ns === "input" || (!node.ns && node.name === "input")){
+        node.inputId = out.inputs.length;
+        out.inputs.push(node);
+      }
+      if(!node.ns){
+        if(["plot", "plotshape", "plotchar", "plotarrow", "bgcolor", "barcolor"].includes(node.name)){
+          node.slot = out.plotSlots++;
+        }
+      }
+      node.args.forEach(a => walk(a.expr));
+    }
+    if(node.k === "index"){
+      walk(node.a); walk(node.off);
+    }
+    if(node.k === "un" || node.k === "bin"){
+      walk(node.a); walk(node.b);
+    }
+    if(node.k === "tern"){
+      walk(node.cond); walk(node.a); walk(node.b);
+    }
+  }
+  function walkStmts(list){
+    list.forEach(s => {
+      if(s.expr) walk(s.expr);
+      if(s.exprNode) walk(s.exprNode);
+      if(s.exprLine) { /* ya está parseado en expr */ }
+      if(s.cond) walk(s.cond);
+      if(s.from) walk(s.from);
+      if(s.to) walk(s.to);
+      if(s.step) walk(s.step);
+      if(s.block) walkStmts(s.block);
+    });
+  }
+walkStmts(program.body);
+  return out;
 }
 
 init();
