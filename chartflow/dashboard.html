@@ -7883,6 +7883,27 @@ function pineParse(src){
       if(t.type === "num"){ p++; return pineNewNode({ k: "num", v: t.value, line: t.line }); }
       if(t.type === "str"){ p++; return pineNewNode({ k: "strs", v: t.value, line: t.line }); }
       if(t.type === "colorhex"){ p++; return pineNewNode({ k: "lit_color", v: t.value, line: t.line }); }
+      if(t.type === "na_bool" || (t.type === "ident" && (t.value === "true" || t.value === "false" || t.value === "na"))){
+        p++;
+        if(t.value === "true") return pineNewNode({ k: "bools", v: true, line: t.line });
+        if(t.value === "false") return pineNewNode({ k: "bools", v: false, line: t.line });
+        return pineNewNode({ k: "na", line: t.line });
+      }
+      if(t.value === "["){
+        // literal de lista: options=[...] etc.
+        p++;
+        const items = [];
+        if(la() && la().value !== "]"){
+          while(true){
+            items.push(parseTern());
+            if(la() && la().value === ","){ p++; continue; }
+            break;
+          }
+        }
+        if(!la() || la().value !== "]") pineFail("Se esperaba ']' cerrando la lista", la().line);
+        p++;
+        return pineNewNode({ k: "arr", items, line: t.line });
+      }
       if(t.value === "("){
         p++;
         const e = parseExpr();
@@ -7922,68 +7943,60 @@ function pineParse(src){
       }
       pineFail(`Token inesperado '${t.value}'`, t.line);
     }
-    function parseMulContinue(node){
-      let a = node;
+    function atomAssert(){ return parsePostfix(parsePrimary()); }
+    function parseMulChain(){
+      let a = atomAssert();
       while(la() && la().type === "op" && ["*", "/", "%"].includes(la().value)){
         const op = la().value; p++;
-        const b = parsePostfix(parsePrimary());
-        a = pineNewNode({ k: "bin", op, a, b, line: a.line });
+        a = pineNewNode({ k: "bin", op, a, b: atomAssert(), line: a.line });
       }
       return a;
     }
-    function parseAddContinue(node){
-      let a = node;
+    function parseAddChain(){
+      let a = parseMulChain();
       while(la() && la().type === "op" && ["+", "-"].includes(la().value)){
         const op = la().value; p++;
-        const b = parsePostfix(parsePrimary());
-        a = pineNewNode({ k: "bin", op, a, b, line: a.line });
+        a = pineNewNode({ k: "bin", op, a, b: parseMulChain(), line: a.line });
       }
       return a;
     }
-    function parseCmpContinue(node){
-      let a = node;
+    function parseCmpChain(){
+      let a = parseAddChain();
       while(la() && ["==", "!=", ">=", "<=", "<", ">"].includes(la().value)){
         const op = la().value; p++;
-        const b = parsePostfix(parsePrimary());
-        a = pineNewNode({ k: "bin", op, a, b, line: a.line });
+        a = pineNewNode({ k: "bin", op, a, b: parseAddChain(), line: a.line });
       }
       return a;
     }
-    function parseAndContinue(node){
-      let a = node;
+    function parseAndChain(){
+      let a = parseCmpChain();
       while(la() && (la().value === "and" || la().value === "&&")){
         const op = la().value; p++;
-        const b = parsePostfix(parsePrimary());
-        a = pineNewNode({ k: "bin", op: op === "&&" ? "&&" : "and", a, b, line: a.line });
+        a = pineNewNode({ k: "bin", op: op === "&&" ? "&&" : "and", a, b: parseCmpChain(), line: a.line });
       }
       return a;
     }
-    function parseOrContinue(node){
-      let a = node;
+    function parseOrChain(){
+      let a = parseAndChain();
       while(la() && (la().value === "or" || la().value === "||")){
         const op = la().value; p++;
-        const b = parsePostfix(parsePrimary());
-        a = pineNewNode({ k: "bin", op: op === "||" ? "||" : "or", a, b, line: a.line });
+        a = pineNewNode({ k: "bin", op: op === "||" ? "||" : "or", a, b: parseAndChain(), line: a.line });
       }
+      return a;
+    }
+    function parseTern(){
+      const a = parseOrChain();
       if(la()?.value === "?"){
         p++;
-        const x = parseOrContinue(parsePostfix(parsePrimary()));
+        const x = parseTern();
         if(la()?.value !== ":") pineFail("Se esperaba ':' en el ternario", la()?.line);
         p++;
-        const y = parseOrContinue(parsePostfix(parsePrimary()));
+        const y = parseTern();
         return pineNewNode({ k: "tern", cond: a, a: x, b: y, line: a.line });
       }
       return a;
     }
-    function parseExpr(){
-      const node = parsePostfix(parsePrimary());
-      let a = parseMulContinue(node);
-      a = parseAddContinue(a);
-      a = parseCmpContinue(a);
-      a = parseAndContinue(a);
-      a = parseOrContinue(a);
-      return a;
-    }
+    function parseExpr(){ return parseTern(); }
 
     const expr = parseExpr();
     if(!atEnd()) pineFail(`Sobra '${la().value}' al final de la expresión`, la().line);
@@ -8024,7 +8037,6 @@ function pineParse(src){
         const body = parseTokens(tk.slice(arrow + 1));
         return { kind: "funcdef", name: tk[0].value, params, body, line: line.line };
       }
-      pineFail(`Función '${tk[0].value}' no reconocida (solo llamadas con argumentos)`, line.line);
     }
     if(keyword === "var" || keyword === "varip"){
       const a = parseAssignTokens(tk.slice(1));
@@ -8133,18 +8145,1068 @@ function pineCollectOutputs(program){
   function walkStmts(list){
     list.forEach(s => {
       if(s.expr) walk(s.expr);
-      if(s.exprNode) walk(s.exprNode);
-      if(s.exprLine) { /* ya está parseado en expr */ }
+      if(s.body) walk(s.body);
       if(s.cond) walk(s.cond);
       if(s.from) walk(s.from);
       if(s.to) walk(s.to);
-      if(s.step) walk(s.step);
       if(s.block) walkStmts(s.block);
     });
   }
 walkStmts(program.body);
   return out;
 }
+
+// ===================================================================
+// ===== RUNTIME PINE — intérprete por barra =====
+// ===================================================================
+const PINE_COLOR_CONSTS = {
+  blue:'#2962FF', green:'#089981', red:'#F23645', orange:'#FF9800', purple:'#9C27B0',
+  yellow:'#FFEB3B', white:'#FFFFFF', black:'#000000', gray:'#787B86', silver:'#C0C0C0',
+  maroon:'#7a0000', navy:'#0D47A1', lime:'#4CFF6E', teal:'#009688', aqua:'#00FFFF',
+  fuchsia:'#FF00FF', olive:'#808000'
+};
+const PINE_NS_CONSTS = {
+  plot: { style_line:'line', style_histogram:'histogram', style_stepline:'stepline', style_linebr:'linebr', style_area:'area', style_columns:'columns', style_circles:'circles', style_cross:'cross' },
+  location: { abovebar:'abovebar', belowbar:'belowbar', absolute:'absolute', top:'top', bottom:'bottom' },
+  shape: { triangleup:'triangleup', triangledown:'triangledown', flag:'flag', circle:'circle', xcross:'xcross', cross:'cross', square:'square', diamond:'diamond', labelup:'labelup', labeldown:'labeldown', arrowup:'arrowup', arrowdown:'arrowdown' },
+  size: { auto:'normal', tiny:'tiny', small:'small', normal:'normal', large:'large', huge:'huge' },
+  display: { none:'none', all:'all' },
+  strategy: { long:'long', short:'short' },
+  barmerge: { gaps_off:0, gaps_on:1 },
+  scale: { right:'right', left:'left' },
+};
+const PINE_BUILTIN_SERIES = new Set(['open','high','low','close','volume','hl2','hlc3','ohlc4','time','bar_index','na']);
+
+let pineCompileCache = new Map();
+// separa espacios de nombres consumidos por el tokenizer: input.int -> ns=input, name=int
+function pineNormalizeNs(node){
+  if(!node || typeof node !== 'object') return;
+  if(node.k === 'call'){
+    if(!node.ns && typeof node.name === 'string' && node.name.includes('.')){
+      const dot = node.name.indexOf('.');
+      node.ns = node.name.slice(0, dot);
+      node.name = node.name.slice(dot + 1);
+    }
+    node.args.forEach(a => pineNormalizeNs(a.expr));
+  } else if(node.k === 'varref' && typeof node.name === 'string' && node.name.includes('.')){
+    const dot = node.name.indexOf('.');
+    node.k = 'nconst';
+    node.ns = node.name.slice(0, dot);
+    node.name = node.name.slice(dot + 1);
+  } else if(node.k === 'index'){
+    pineNormalizeNs(node.a); pineNormalizeNs(node.off);
+  } else if(node.k === 'un' || node.k === 'bin'){
+    pineNormalizeNs(node.a); pineNormalizeNs(node.b);
+  } else if(node.k === 'tern'){
+    pineNormalizeNs(node.cond); pineNormalizeNs(node.a); pineNormalizeNs(node.b);
+  } else if(node.k === 'arr'){
+    node.items.forEach(it => pineNormalizeNs(it));
+  }
+}
+function pineNormalizeStmts(list){
+  list.forEach(s => {
+    if(s.expr) pineNormalizeNs(s.expr);
+    if(s.cond) pineNormalizeNs(s.cond);
+    if(s.from) pineNormalizeNs(s.from);
+    if(s.to) pineNormalizeNs(s.to);
+    if(s.block) pineNormalizeStmts(s.block);
+    if(s.body) pineNormalizeNs(s.body);
+  });
+}
+function compilePineSource(source){
+  const key = source || "";
+  if(pineCompileCache.has(key)) return pineCompileCache.get(key);
+  let result;
+  try {
+    const program = pineParse(key);
+    pineNormalizeStmts(program.body);
+    const collected = pineCollectOutputs(program);
+    result = { ok:true, program, slots: collected.plotSlots, inputNodes: collected.inputs };
+  } catch(e) {
+    if(e && e.pine) result = { ok:false, error: e.message || "error de compilación", line: e.line };
+    else { console.error("[Pine] error interno de compilación:", e); result = { ok:false, error: "Error interno: " + (e.message || e), line: 0 }; }
+  }
+  pineCompileCache.set(key, result);
+  return result;
+}
+
+function pineSeriesValue(name, R, shift = 0){
+  const bar = R.bar - shift;
+  if(bar < 0 || bar >= R.N) return NaN;
+  const d = R.data[bar];
+  switch(name){
+    case 'open': return d.o;
+    case 'high': return d.h;
+    case 'low': return d.l;
+    case 'close': return d.c;
+    case 'volume': return Number(d.v) || 0;
+    case 'hl2': return (d.h + d.l) / 2;
+    case 'hlc3': return (d.h + d.l + d.c) / 3;
+    case 'ohlc4': return (d.o + d.h + d.l + d.c) / 4;
+    case 'time': return d.t;
+    case 'bar_index': return bar;
+    default: return NaN;
+  }
+}
+
+function pineDummyData(){
+  const out = [];
+  for(let i = 0; i < 60; i++){
+    const base = 100 + i * 0.5 + Math.sin(i / 3) * 2;
+    const o = base, c = base + ((i % 2) ? 1.2 : -1.0);
+    out.push({ t: Date.now() - (60 - i) * 300000, o, h: Math.max(o, c) + 0.8, l: Math.min(o, c) - 0.8, c, v: 1000 + i * 10 });
+  }
+  return out;
+}
+
+// normaliza cualquier color Pine a CSS; null si no es color
+function pineNormalizeColor(c){
+  if(c === undefined || c === null) return null;
+  if(typeof c === 'number' && !Number.isFinite(c)) return null;
+  if(typeof c === 'string'){
+    if(c.startsWith('#')) return c;
+    if(c.startsWith('rgba(')) return c;
+    if(PINE_COLOR_CONSTS[c] !== undefined) return PINE_COLOR_CONSTS[c];
+    return null;
+  }
+  return null;
+}
+function hexToObj(hex){
+  return { r: parseInt(hex.slice(1,3),16), g: parseInt(hex.slice(3,5),16), b: parseInt(hex.slice(5,7),16), a: 1 };
+}
+function colorObjToCss(o){
+  return `rgba(${o.r},${o.g},${o.b},${Math.max(0, Math.min(1, o.a))})`;
+}
+function pineColorAlpha(c, transp){
+  const css = pineNormalizeColor(c);
+  if(!css) return null;
+  if(css.startsWith('rgba(') && css.includes(',')){
+    const parts = css.slice(css.indexOf('(') + 1, css.indexOf(')')).split(',').map(v => parseFloat(v));
+    if(parts.length >= 4){
+      const a = Math.max(0, Math.min(1, 1 - (isFinite(transp) ? transp : 0) / 100));
+      return `rgba(${parts[0]},${parts[1]},${parts[2]},${a})`;
+    }
+  }
+  if(css.startsWith('#')){
+    const o = hexToObj(css);
+    o.a = 1 - (isFinite(transp) ? transp : 0) / 100;
+    return colorObjToCss(o);
+  }
+  return css;
+}
+
+// Ejecuta el programa. settings: {'in<N>': valor}; data: velas completas
+function pineRun(source, settings, data){
+  const comp = compilePineSource(source);
+  if(!comp.ok) return comp;
+  if(!data || data.length < 2) return { ok:false, error:"sin datos suficientes", line:0 };
+  const N = data.length;
+  const R = {
+    data, N, bar:0,
+    env: { map: new Map(), parent:null },
+    outputs: new Array(comp.slots || 0).fill(null),
+    meta: { title:'Pine', shorttitle:null, overlay:true, isStrategy:false, inputs:[], inputsRecorded:new Set(), inputValues:{}, declared:false },
+    marks: [], bgcolors: new Array(N).fill(null), bars: new Array(N).fill(null),
+    hlines: new Map(), fills: new Map(),
+    strategy: { pos:null, size:0 },
+    states: new Map(),
+    warnings: [],
+  };
+  try {
+    for(R.bar = 0; R.bar < N; R.bar++){
+      R.callSeq = 0;
+      pineExecBlock(R.env, comp.program.body, "", R, 0);
+    }
+  } catch(e){
+    if(e && e.pine) return { ok:false, error:`Línea ${e.line || 0}: ${e.message}`, line: e.line || 0 };
+    console.error("[Pine] error en runtime:", e);
+    return { ok:false, error: "Error en runtime: " + (e.message || e), line: 0 };
+  }
+  // hlines sueltas al final (p.ej. si su exec se saltó)
+  return { ok:true, meta: R.meta, outputs: R.outputs, marks: R.marks, bgcolors: R.bgcolors, bars: R.bars, hlines: [...R.hlines.values()], fills: [...R.fills.values()], warnings: R.warnings, slots: comp.slots };
+}
+
+// ---- entorno
+function pineEnvFind(env, name){
+  let e = env;
+  while(e){
+    if(e.map.has(name)) return e.map.get(name);
+    e = e.parent;
+  }
+  return null;
+}
+function pineRootEnv(env){ let e = env; while(e.parent) e = e.parent; return e; }
+function pineDeclEntry(env, name, mode){
+  let entry = pineEnvFind(env, name);
+  if(!entry){
+    entry = { vals:[], initBar:undefined, lastVal:NaN, isVar:false, mode:'=' };
+    pineRootEnv(env).map.set(name, entry);
+  }
+  entry.mode = mode;
+  if(mode === 'var' || mode === 'varip') entry.isVar = true;
+  return entry;
+}
+function pineEntryRead(entry, bar){
+  if(entry.vals[bar] !== undefined) return entry.vals[bar];
+  return entry.isVar ? entry.lastVal : NaN;
+}
+function pineEntryHist(entry, bar, shift){
+  const i = bar - shift;
+  if(i < 0) return NaN;
+  if(entry.vals[i] !== undefined) return entry.vals[i];
+  if(entry.isVar){
+    let j = Math.min(i, entry.vals.length - 1);
+    while(j >= 0 && entry.vals[j] === undefined) j--;
+    return j >= 0 ? entry.vals[j] : NaN;
+  }
+  return NaN;
+}
+function pineNodeState(R, node, alpha){
+  return pineNodeVals(R, node, alpha);
+}
+function pineNodeVals(R, node, alpha){
+  const k = node.id + '#' + alpha;
+  let s = R.states.get(k);
+  if(!s){ s = { vals: [] }; R.states.set(k, s); }
+  else if(!s.vals) s.vals = [];
+  return s;
+}
+function pineRegisterVal(R, node, alpha, val){
+  pineNodeVals(R, node, alpha).vals[R.bar] = val;
+  return val;
+}
+
+function pineNum(v){
+  if(typeof v === 'number') return v;
+  if(typeof v === 'boolean') return v ? 1 : 0;
+  if(v === undefined || v === null || v === '') return NaN;
+  if(typeof v === 'string'){
+    if(v === 'true') return 1;
+    if(v === 'false') return 0;
+    const n = Number(v.replace('#','0x') && v.startsWith('#') ? v : v); // '#ff' no numérico
+    return Number.isFinite(n) ? n : (v.startsWith('#') || v.startsWith('rgba(') ? NaN : n);
+  }
+  return NaN;
+}
+function pineTruth(v){
+  if(typeof v === 'boolean') return v;
+  if(v === undefined || v === null) return false;
+  const n = pineNum(v);
+  return Number.isFinite(n) && n !== 0;
+}
+function pineIsNaNum(v){
+  return v === undefined || v === null || (typeof v === 'number' && !Number.isFinite(v));
+}
+function pineStr(v){
+  if(v === undefined || v === null) return '';
+  if(typeof v === 'number') return Number.isFinite(v) ? String(v) : 'na';
+  if(typeof v === 'boolean') return v ? 'true' : 'false';
+  if(v && v.__arr) return v.__arr.join(' ');
+  return String(v);
+}
+function pineCmp(a, b, op){
+  if(typeof a === 'string' && typeof b === 'string' && (op === '==' || op === '!=')){
+    return op === '==' ? a === b : a !== b;
+  }
+  const x = pineNum(a), y = pineNum(b);
+  if(Number.isNaN(x) || Number.isNaN(y)) return false;
+  switch(op){
+    case '==': return x === y;
+    case '!=': return x !== y;
+    case '>': return x > y;
+    case '<': return x < y;
+    case '>=': return x >= y;
+    case '<=': return x <= y;
+  }
+  return false;
+}
+function pineBinOp(a, b, op){
+  if(typeof a === 'string' && typeof b === 'string' && op === '+') return a + b;
+  const x = pineNum(a), y = pineNum(b);
+  switch(op){
+    case '+': return x + y;
+    case '-': return x - y;
+    case '*': return x * y;
+    case '/': return x / y;
+    case '%': return x % y;
+  }
+  return NaN;
+}
+
+// ---- args (posicional + nombrado)
+function pineArg(args, idx, name, def){
+  if(args && args[idx] && !args[idx].name) return args[idx].expr;
+  if(name){
+    const named = args && args.find(a => a.name === name);
+    if(named) return named.expr;
+  }
+  return def === undefined ? null : def;
+}
+
+// ---- block executor
+function pineExecBlock(env, list, alpha, R, depth){
+  for(let idx = 0; idx < list.length; idx++){
+    const s = list[idx];
+    try {
+      switch(s.kind){
+        case 'decl': {
+          const val = pineEval(s.expr, alpha, env, R);
+          const entry = pineDeclEntry(env, s.name, s.mode);
+          if(s.mode === 'var' || s.mode === 'varip'){
+            if(entry.initBar === undefined || entry.initBar === null){
+              entry.initBar = R.bar;
+              entry.vals[R.bar] = val;
+              entry.lastVal = val;
+            }
+          } else {
+            entry.vals[R.bar] = val;
+            entry.lastVal = val;
+          }
+          break;
+        }
+        case 'reassign': {
+          const entry = pineEnvFind(env, s.name);
+          if(!entry) pineFail(`'${s.name}' no está declarada`, s.line);
+          const val = pineEval(s.expr, alpha, env, R);
+          entry.vals[R.bar] = val;
+          entry.lastVal = val;
+          break;
+        }
+        case 'if': {
+          const cond = pineEval(s.cond, alpha, env, R);
+          let executed = pineTruth(cond);
+          if(executed) pineExecBlock(env, s.block, alpha, R, depth);
+          let j = idx + 1;
+          while(j < list.length && (list[j].kind === 'elseIf' || list[j].kind === 'else')){
+            if(!executed){
+              const alt = list[j];
+              if(alt.kind === 'elseIf'){
+                if(pineTruth(pineEval(alt.cond, alpha, env, R))){ pineExecBlock(env, alt.block, alpha, R, depth); executed = true; }
+              } else {
+                pineExecBlock(env, alt.block, alpha, R, depth);
+                executed = true;
+              }
+            }
+            idx = j;
+            j++;
+          }
+          break;
+        }
+        case 'for': {
+          const from = pineNum(pineEval(s.from, alpha, env, R));
+          const to = pineNum(pineEval(s.to, alpha, env, R));
+          if(!Number.isFinite(from) || !Number.isFinite(to)) break;
+          const step = Math.round(from) <= Math.round(to) ? 1 : -1;
+          const entry = pineDeclEntry(env, s.varName, '=');
+          for(let i = Math.round(from); step > 0 ? i <= Math.round(to) : i >= Math.round(to); i += step){
+            entry.vals[R.bar] = i;
+            entry.lastVal = i;
+            pineExecBlock(env, s.block, alpha, R, depth + 1);
+          }
+          break;
+        }
+        case 'funcdef': {
+          const root = pineRootEnv(env);
+          root.map.set(s.name, { vals:[], initBar:0, lastVal:NaN, isVar:false, mode:'=', fnVal: { __fn:true, params:s.params, body:s.body, env } });
+          break;
+        }
+        case 'expr': {
+          pineEval(s.expr, alpha, env, R);
+          break;
+        }
+      }
+    } catch(e){
+      if(e && e.pine && !e.line) e.line = s.line || e.line;
+      throw e;
+    }
+  }
+}
+
+// ---- evaluador
+function pineEval(node, alpha, env, R){
+  if(!node) pineFail("expresión incompleta", 0);
+  switch(node.k){
+    case 'num': return node.v;
+    case 'strs': return node.v;
+    case 'bools': return node.v ? 1 : 0;
+    case 'na': return NaN;
+    case 'lit_color': return node.v;
+    case 'nconst': return pineNconst(node, R);
+    case 'varref': return pineVarref(node, alpha, env, R);
+    case 'arr': return { __arr: node.items.map(it => pineEval(it, alpha, env, R)) };
+    case 'index': return pineIndex(node, alpha, env, R);
+    case 'un': {
+      const v = pineEval(node.a, alpha, env, R);
+      if(node.op === '-') { const n = pineNum(v); return -n; }
+      if(node.op === '+') return v;
+      return pineTruth(v) ? 0 : 1;
+    }
+    case 'bin': {
+      const a = pineEval(node.a, alpha, env, R);
+      const b = pineEval(node.b, alpha, env, R);
+      if(node.op === 'and' || node.op === '&&') return (pineTruth(a) && pineTruth(b)) ? 1 : 0;
+      if(node.op === 'or' || node.op === '||') return (pineTruth(a) || pineTruth(b)) ? 1 : 0;
+      if(['==','!=','>','<','>=','<='].includes(node.op)) return pineCmp(a, b, node.op) ? 1 : 0;
+      return pineBinOp(a, b, node.op);
+    }
+    case 'tern': {
+      const c = pineEval(node.cond, alpha, env, R);
+      return pineTruth(c) ? pineEval(node.a, alpha, env, R) : pineEval(node.b, alpha, env, R);
+    }
+    case 'call': return pineCall(node, alpha, env, R);
+    default: pineFail(`nodo '${node.k}' no soportado`, node.line || 0);
+  }
+}
+
+function pineNconst(node, R){
+  if(node.ns === 'color'){
+    const v = PINE_COLOR_CONSTS[node.name];
+    if(v !== undefined) return v;
+    pineFail(`color.${node.name} no reconocido (usa color.rgb() o hex #RRGGBB)`, node.line);
+  }
+  if(node.ns === 'strategy'){
+    if(node.name === 'position_size') return R.strategy.pos === 'long' ? 1 : (R.strategy.pos === 'short' ? -1 : 0);
+    if(node.name === 'position_avg_price') return NaN;
+    const v = PINE_NS_CONSTS.strategy[node.name];
+    if(v !== undefined) return v;
+    return NaN;
+  }
+  if(node.ns === 'syminfo') return 'X';
+  if(node.ns === 'timeframe') return 'current';
+  if(node.ns === 'barmerge') return 0;
+  const group = PINE_NS_CONSTS[node.ns];
+  if(group && group[node.name] !== undefined) return group[node.name];
+  pineFail(`${node.ns}.${node.name} no reconocido`, node.line);
+}
+
+function pineVarref(node, alpha, env, R){
+  if(PINE_BUILTIN_SERIES.has(node.name)) return pineSeriesValue(node.name, R);
+  if(node.name === 'dashed' || node.name === 'dotted' || node.name === 'solid') return node.name;
+  const entry = pineEnvFind(env, node.name);
+  if(!entry) pineFail(`'${node.name}' no está definida`, node.line);
+  if(entry.fnVal) return entry.fnVal;
+  return pineEntryRead(entry, R.bar);
+}
+
+function pineIndex(node, alpha, env, R){
+  const off = pineNum(pineEval(node.off, alpha, env, R)) || 0;
+  const n = Math.round(Math.abs(off) === off ? off : Math.round(off));
+  if(n > 5000) pineFail(`[n] con n=${n} demasiado grande`, node.line);
+  const a = node.a;
+  if(a.k === 'varref'){
+    if(PINE_BUILTIN_SERIES.has(a.name)) return pineSeriesValue(a.name, R, n);
+    const entry = pineEnvFind(env, a.name);
+    if(!entry) pineFail(`'${a.name}' no está definida`, node.line);
+    return pineEntryHist(entry, R.bar, n);
+  }
+  const store = pineNodeVals(R, a, alpha);
+  const i = R.bar - n;
+  if(i < 0) return NaN;
+  const v = store.vals[i];
+  return v === undefined ? NaN : v;
+}
+
+// ---- llamadas
+function pineCall(node, alpha, env, R){
+  if(node.ns === 'input' || node.name === 'input') return pineInputCall(node, alpha, env, R);
+  if(!node.ns){
+    const entry = pineEnvFind(env, node.name);
+    if(entry && entry.fnVal) return pineUserCall(node, entry.fnVal, alpha, env, R);
+  }
+  const key = node.ns ? node.ns + '.' + node.name : node.name;
+  const A = node.args;
+  const R0 = () => pineEval(pineArg(A, 0), alpha, env, R);
+
+  switch(key){
+    case 'indicator': case 'strategy': {
+      const isStrat = key === 'strategy';
+      const titleN = pineArg(A, 0, 'title') || pineNewNode({ k:'strs', v: isStrat ? 'Estrategia' : 'Pine', line: node.line });
+      R.meta.title = pineStr(pineEval(titleN, alpha, env, R)) || (isStrat ? 'Estrategia' : 'Pine');
+      const stN = pineArg(A, 1, 'shorttitle');
+      if(stN) R.meta.shorttitle = pineStr(pineEval(stN, alpha, env, R));
+      const ovN = pineArg(A, 2, 'overlay');
+      R.meta.overlay = isStrat ? true : (ovN ? pineTruth(pineEval(ovN, alpha, env, R)) : false);
+      R.meta.isStrategy = isStrat;
+      R.meta.declared = true;
+      return NaN;
+    }
+    case 'nz': {
+      const v = R0();
+      if(!pineIsNaNum(v) && (typeof v !== 'string')) return v;
+      if(typeof v === 'string') return v;
+      if(typeof v === 'number' && Number.isFinite(v)) return v;
+      const replN = pineArg(A, 1);
+      return replN ? pineEval(replN, alpha, env, R) : 0;
+    }
+    case 'na': {
+      if(!pineArg(A, 0)) return NaN;
+      const v = R0();
+      return (v === undefined || (typeof v === 'number' && Number.isNaN(v))) ? 1 : 0;
+    }
+    case 'fixnan': return pineFixNaN(node, alpha, env, R);
+    case 'int': return Math.round(pineNum(R0()));
+    case 'float': case 'number': return pineNum(R0());
+    case 'alertcondition': case 'alert': return NaN;
+    case 'max_bars_back': return NaN;
+    case 'color.new': return pineColorNew(node, alpha, env, R);
+    case 'color.rgb': return pineColorRgb(node, alpha, env, R);
+    case 'plot': return pinePlot(node, alpha, env, R);
+    case 'plotshape': return pineShapeCore(node, alpha, env, R, null);
+    case 'plotchar': return pinePlotchar(node, alpha, env, R);
+    case 'plotarrow': return pinePlotarrow(node, alpha, env, R);
+    case 'hline': return pineHline(node, alpha, env, R);
+    case 'bgcolor': return pineBgcolor(node, alpha, env, R);
+    case 'barcolor': return pineBarcolor(node, alpha, env, R);
+    case 'fill': return pineFill(node, alpha, env, R);
+    case 'strategy.entry': case 'strategy.order': {
+      const idArg = pineArg(A, 0);
+      const dirArg = pineArg(A, 1);
+      if(!dirArg) pineFail('strategy.entry necesita (id, dirección)', node.line);
+      const dirRaw = pineStr(pineEval(dirArg, alpha, env, R));
+      if(dirRaw !== 'long' && dirRaw !== 'short') pineFail('strategy.entry: usa strategy.long o strategy.short como dirección, ej: strategy.entry("L", strategy.long)', node.line);
+      const name = idArg ? pineStr(pineEval(idArg, alpha, env, R)) : 'E';
+      if(R.strategy.pos !== dirRaw){
+        R.strategy.pos = dirRaw;
+        R.strategy.size = dirRaw === 'long' ? 1 : -1;
+        R.marks.push({ bar: R.bar, type: 'entry', dir: dirRaw, text: name });
+      }
+      return NaN;
+    }
+    case 'strategy.close': case 'strategy.close_all': {
+      if(R.strategy.pos){
+        R.marks.push({ bar: R.bar, type: 'close', dir: R.strategy.pos, text: '' });
+        R.strategy.pos = null;
+        R.strategy.size = 0;
+      }
+      return NaN;
+    }
+    case 'strategy.exit': case 'strategy.cancel': return NaN;
+    case 'str.tostring': return pineStr(R0());
+    case 'str.format': pineFail('str.format no está soportado aún', node.line);
+    case 'array.new': case 'array.push': case 'array.get': case 'array.size': pineFail('arrays no soportados aún en este motor', node.line);
+  }
+
+  if(node.ns === 'ta') return pineTa(node, alpha, env, R);
+  if(node.ns === 'math') return pineMath(node, alpha, env, R);
+
+  pineFail(`Función '${key}' no soportada en este motor`, node.line);
+}
+
+// ---- INPUT
+function pineInputCall(node, alpha, env, R){
+  const kind = node.ns === 'input' && node.name !== 'input' ? node.name : null;
+  const A = node.args;
+  const defNode = pineArg(A, 0) || pineNewNode({ k:'na', line: node.line });
+  const id = 'in' + node.inputId;
+  const titleN = pineArg(A, 1, 'title');
+  const title = titleN ? pineStr(pineEval(titleN, alpha, env, R)) : ('Entrada ' + (node.inputId + 1));
+  const resolveNum = name => {
+    const n = pineArg(A, -1, name);
+    if(!n) return undefined;
+    const v = pineNum(pineEval(n, alpha, env, R));
+    return Number.isFinite(v) ? v : undefined;
+  };
+  let detected = kind;
+  if(!detected){
+    if(defNode.k === 'varref' && PINE_BUILTIN_SERIES.has(defNode.name)) detected = 'source';
+    else {
+      const dv = pineEval(defNode, alpha, env, R);
+      if(dv && dv.__arr) detected = 'string';
+      else if(typeof dv === 'string') detected = 'string';
+      else if(dv === 0 || dv === 1 || defNode.k === 'bools') detected = 'bool';
+      else if(typeof dv === 'number' && Number.isFinite(dv)) detected = 'float';
+      else detected = 'float';
+    }
+  }
+  // options
+  let optionsList = null;
+  const optN = pineArg(A, -1, 'options');
+  if(optN){
+    const ov = pineEval(optN, alpha, env, R);
+    if(ov && ov.__arr) optionsList = ov.__arr.map(pineStr);
+  }
+  // valor final
+  let value;
+  if(R.settings && R.settings[id] !== undefined) value = R.settings[id];
+  else {
+    if(detected === 'source') value = defNode.k === 'varref' ? defNode.name : 'close';
+    else {
+      const dv = pineEval(defNode, alpha, env, R);
+      value = dv && dv.__arr ? dv.__arr[0] : dv;
+    }
+  }
+  if(detected === 'bool') value = pineTruth(value) ? 1 : 0;
+  if(detected === 'float' || detected === 'int') value = pineNum(value);
+  if(detected === 'source') value = pineStr(value) || 'close';
+  if(R.meta.inputValues[id] === undefined) R.meta.inputValues[id] = value;
+  if(!R.meta.inputsRecorded.has(id)){
+    R.meta.inputsRecorded.add(id);
+    const meta = { id, kind: detected, title, defval: value };
+    const mn = resolveNum('minval'), mx = resolveNum('maxval'), stp = resolveNum('step');
+    if(mn !== undefined) meta.min = mn;
+    if(mx !== undefined) meta.max = mx;
+    if(stp !== undefined) meta.step = stp;
+    const grp = pineArg(A, -1, 'group');
+    if(grp) meta.group = pineStr(pineEval(grp, alpha, env, R)) || '';
+    if(detected === 'source') meta.options = ['close','open','high','low','hl2','hlc3','ohlc4'];
+    else if(detected === 'string' && optionsList) meta.options = optionsList;
+    R.meta.inputs.push(meta);
+  }
+  if(detected === 'source') return pineSeriesValue(PINE_BUILTIN_SERIES.has(value) ? value : 'close', R);
+  return value;
+}
+
+// ---- color helpers
+function pineColorNew(node, alpha, env, R){
+  const base = pineEval(pineArg(node.args, 0), alpha, env, R);
+  const tN = pineArg(node.args, 1);
+  const t = tN ? pineNum(pineEval(tN, alpha, env, R)) : 0;
+  return pineColorAlpha(base, Number.isFinite(t) ? t : 0);
+}
+function pineColorRgb(node, alpha, env, R){
+  const r = Math.round(pineNum(pineEval(node.args[0].expr, alpha, env, R)));
+  const g = Math.round(pineNum(pineEval(node.args[1].expr, alpha, env, R)));
+  const b = Math.round(pineNum(pineEval(node.args[2].expr, alpha, env, R)));
+  const tN = pineArg(node.args, 3);
+  const t = tN ? pineNum(pineEval(tN, alpha, env, R)) || 0 : 0;
+  return `rgba(${r},${g},${b},${1 - (isFinite(t) ? t : 0) / 100})`;
+}
+function pineFixNaN(node, alpha, env, R){
+  const v = pineNum(pineEval(pineArg(node.args, 0), alpha, env, R));
+  const s = pineNodeState(R, node, alpha);
+  if(Number.isFinite(v)) s.last = v;
+  return Number.isFinite(v) ? v : (s.last === undefined ? NaN : s.last);
+}
+
+// ---- ta.*
+function pineStRing(s, v, n){
+  s.buf = s.buf || [];
+  const nv = pineNum(v);
+  if(Number.isFinite(nv)) s.buf.push(nv);
+  while(s.buf.length > 600) s.buf.shift();
+}
+function pineRingResult(s, n, fn){
+  if(!s.buf || s.buf.length < n) return NaN;
+  return fn(s.buf.slice(-n));
+}
+function pineTa(node, alpha, env, R){
+  const A = node.args;
+  const name2 = node.name;
+  const s = pineNodeState(R, node, alpha);
+  const lenOf = (argIdx, name, def) => {
+    const nNode = pineArg(A, argIdx, name);
+    const n = nNode ? pineNum(pineEval(nNode, alpha, env, R)) : def;
+    return Math.max(1, Math.round(isFinite(n) ? n : def));
+  };
+  const out = (v) => pineRegisterVal(R, node, alpha, v);
+
+  switch(name2){
+    case 'sma': {
+      const v = pineJackSrc(pineArg(A, 0, 'source'), alpha, env, R);
+      const n = lenOf(1, 'length');
+      pineStRing(s, v, n);
+      return out(pineRingResult(s, n, seg => seg.reduce((a, b) => a + b, 0) / seg.length));
+    }
+    case 'wma': {
+      const v = pineJackSrc(pineArg(A, 0, 'source'), alpha, env, R);
+      const n = lenOf(1, 'length');
+      pineStRing(s, v, n);
+      return out(pineRingResult(s, n, seg => {
+        let num = 0, den = 0;
+        for(let i = 0; i < seg.length; i++){ num += seg[i] * (i + 1); den += i + 1; }
+        return den ? num / den : NaN;
+      }));
+    }
+    case 'vwma': {
+      const v = pineJackSrc(pineArg(A, 0, 'source'), alpha, env, R);
+      const n = lenOf(1, 'length');
+      s.vbuf = s.vbuf || [];
+      s.vbuf.push(Number(R.data[R.bar].v) || 0);
+      while(s.vbuf.length > 600) s.vbuf.shift();
+      pineStRing(s, v, n);
+      return out(pineRingResult(s, n, seg => {
+        const vol = s.vbuf.slice(-seg.length);
+        let pv = 0, vv = 0;
+        for(let i = 0; i < seg.length; i++){ pv += seg[i] * vol[i]; vv += vol[i]; }
+        return vv ? pv / vv : NaN;
+      }));
+    }
+    case 'stdev': {
+      const v = pineJackSrc(pineArg(A, 0, 'source'), alpha, env, R);
+      const n = lenOf(1, 'length');
+      pineStRing(s, v, n);
+      return out(pineRingResult(s, n, seg => {
+        const m = seg.reduce((a, b) => a + b, 0) / seg.length;
+        const sq = seg.reduce((a, b) => a + (b - m) * (b - m), 0) / seg.length;
+        return Math.sqrt(Math.max(0, sq));
+      }));
+    }
+    case 'dev': {
+      const v = pineJackSrc(pineArg(A, 0, 'source'), alpha, env, R);
+      const n = lenOf(1, 'length');
+      pineStRing(s, v, n);
+      return out(pineRingResult(s, n, seg => {
+        const m = seg.reduce((a, b) => a + b, 0) / seg.length;
+        return seg.reduce((a, b) => a + Math.abs(b - m), 0) / seg.length;
+      }));
+    }
+    case 'highest': case 'lowest': {
+      const v = pineJackSrc(pineArg(A, 0, 'source'), alpha, env, R);
+      const n = lenOf(1, 'length');
+      pineStRing(s, v, n);
+      return out(pineRingResult(s, n, seg => name2 === 'highest' ? Math.max(...seg) : Math.min(...seg)));
+    }
+    case 'rsi': {
+      const v = pineJackSrc(pineArg(A, 0, 'source'), alpha, env, R);
+      const n = lenOf(1, 'length');
+      s.prev = s.prev === undefined ? NaN : s.prev;
+      const d = Number.isFinite(s.prev) ? pineNum(v) - s.prev : NaN;
+      s.prev = pineNum(v);
+      if(Number.isFinite(d)){
+        s.g = s.g || []; s.l = s.l || [];
+        s.g.push(Math.max(0, d)); s.l.push(Math.max(0, -d));
+        while(s.g.length > n){ s.g.shift(); s.l.shift(); }
+      }
+      if(!s.g || s.g.length < n) return out(NaN);
+      const ag = s.g.reduce((a, b) => a + b, 0) / n;
+      const al = s.l.reduce((a, b) => a + b, 0) / n;
+      if(al === 0) return out(ag === 0 ? 50 : 100);
+      return out(100 - 100 / (1 + ag / al));
+    }
+    case 'ema': case 'rma': {
+      const v = pineNum(pineJackSrc(pineArg(A, 0, 'source'), alpha, env, R));
+      const n = lenOf(1, 'length');
+      const coef = name2 === 'ema' ? 2 / (n + 1) : 1 / n;
+      if(!Number.isFinite(s.prev)){
+        s.ring = s.ring || [];
+        if(Number.isFinite(v)) s.ring.push(v);
+        if(s.ring.length >= n){
+          s.prev = s.ring.reduce((a, b) => a + b, 0) / n;
+          s.ring = null;
+          return out(s.prev);
+        }
+        return out(NaN);
+      }
+      if(Number.isFinite(v)){
+        s.prev = v * coef + s.prev * (1 - coef);
+        return out(s.prev);
+      }
+      return out(s.prev);
+    }
+    case 'tr': case 'atr': {
+      const d = R.data[R.bar];
+      const prevC = R.bar > 0 ? R.data[R.bar - 1].c : NaN;
+      const h = d.h, l = d.l;
+      const tr0 = h - l;
+      const tr1 = Number.isFinite(prevC) ? Math.abs(h - prevC) : NaN;
+      const tr2 = Number.isFinite(prevC) ? Math.abs(l - prevC) : NaN;
+      const tr = Math.max(tr0, Number.isNaN(tr1) ? -Infinity : tr1, Number.isNaN(tr2) ? -Infinity : tr2);
+      if(name2 === 'tr') return out(tr);
+      const n = lenOf(0, 'length', 14);
+      if(!Number.isFinite(s.prev)){
+        s.ring = s.ring || [];
+        s.ring.push(tr);
+        if(s.ring.length >= n){
+          s.prev = s.ring.reduce((a, b) => a + b, 0) / n;
+          s.ring = null;
+        }
+        return out(s.prev === undefined ? NaN : s.prev);
+      }
+      s.prev = (tr + (n - 1) * s.prev) / n;
+      return out(s.prev);
+    }
+    case 'change': case 'mom': case 'roc': {
+      const v = pineNum(pineJackSrc(pineArg(A, 0, 'source'), alpha, env, R));
+      const offN = pineArg(A, 1);
+      const off = Math.max(1, Math.round(offN ? (pineNum(pineEval(offN, alpha, env, R)) || 1) : 1));
+      s.hist = s.hist || [];
+      s.hist.push(v);
+      while(s.hist.length > 600) s.hist.shift();
+      const past = s.hist[s.hist.length - 1 - off];
+      if(!Number.isFinite(past)) return out(NaN);
+      if(name2 === 'roc') return out(past !== 0 ? (v - past) / past * 100 : NaN);
+      return out(v - past);
+    }
+    case 'cum': {
+      const v = pineNum(pineJackSrc(pineArg(A, 0, 'source'), alpha, env, R));
+      s.acc = (s.acc === undefined ? 0 : s.acc) + (Number.isFinite(v) ? v : 0);
+      return out(s.acc);
+    }
+    case 'crossover': case 'crossunder': case 'cross': {
+      const a = pineNum(pineJackSrc(pineArg(A, 0, 'a'), alpha, env, R));
+      const b = pineNum(pineJackSrc(pineArg(A, 1, 'b'), alpha, env, R));
+      let res = 0;
+      if(s.has && Number.isFinite(a) && Number.isFinite(b) && Number.isFinite(s.pa) && Number.isFinite(s.pb)){
+        if(name2 === 'crossover') res = (a > b && s.pa <= s.pb) ? 1 : 0;
+        else if(name2 === 'crossunder') res = (a < b && s.pa >= s.pb) ? 1 : 0;
+        else res = ((a > b && s.pa <= s.pb) || (a < b && s.pa >= s.pb)) ? 1 : 0;
+      }
+      s.pa = a; s.pb = b; s.has = true;
+      return out(res);
+    }
+    case 'falling': case 'rising': {
+      const v = pineNum(pineJackSrc(pineArg(A, 0, 'source'), alpha, env, R));
+      const n = lenOf(1, 'length');
+      s.hist = s.hist || [];
+      s.hist.push(v);
+      while(s.hist.length > 600) s.hist.shift();
+      if(s.hist.length < n + 1) return out(0);
+      const seg = s.hist.slice(-n - 1);
+      for(let i = 1; i < seg.length; i++){
+        if(name2 === 'falling' && !(seg[i] < seg[i - 1])) return out(0);
+        if(name2 === 'rising' && !(seg[i] > seg[i - 1])) return out(0);
+      }
+      return out(1);
+    }
+    case 'valuewhen': {
+      const cond = pineTruth(pineJackSrc(pineArg(A, 0, 'condition'), alpha, env, R));
+      const v = pineNum(pineJackSrc(pineArg(A, 1, 'source'), alpha, env, R));
+      const occN = pineArg(A, 2, 'occurrence');
+      const occ = Math.max(0, Math.round(occN ? (pineNum(pineEval(occN, alpha, env, R)) || 0) : 0));
+      s.trueVals = s.trueVals || [];
+      if(cond && Number.isFinite(v)) s.trueVals.push(v);
+      while(s.trueVals.length > 600) s.trueVals.shift();
+      return out(s.trueVals.length > occ ? s.trueVals[s.trueVals.length - 1 - occ] : NaN);
+    }
+    case 'barssince': {
+      const cond = pineTruth(pineJackSrc(pineArg(A, 0, 'condition'), alpha, env, R));
+      if(cond) s.since = 0;
+      else s.since = Number.isFinite(s.since) ? s.since + 1 : NaN;
+      return out(s.since);
+    }
+    case 'pivothigh': case 'pivotlow': {
+      let srcNode, leftArg, rightArg;
+      if(A.length >= 3){
+        srcNode = pineArg(A, 0); leftArg = pineArg(A, 1, 'leftbars'); rightArg = pineArg(A, 2, 'rightbars');
+      } else {
+        srcNode = { id: ++PINE_NODE_SEQ, k:'varref', name: name2 === 'pivothigh' ? 'high' : 'low', line: node.line };
+        leftArg = pineArg(A, 0, 'leftbars'); rightArg = pineArg(A, 1, 'rightbars');
+      }
+      const v = pineNum(pineJackSrc(srcNode, alpha, env, R));
+      const l = Math.max(1, Math.round(pineNum(pineEval(leftArg, alpha, env, R)) || 5));
+      const rr = Math.max(1, Math.round(pineNum(pineEval(rightArg, alpha, env, R)) || 5));
+      s.buf = s.buf || [];
+      s.buf.push(v);
+      while(s.buf.length > 600) s.buf.shift();
+      const idx = s.buf.length - 1 - rr;
+      if(idx < l) return out(NaN);
+      const pivotVal = s.buf[idx];
+      if(!Number.isFinite(pivotVal)) return out(NaN);
+      for(let i = 0; i < l; i++){
+        const w = s.buf[idx - l + i];
+        if(!Number.isFinite(w)) return out(NaN);
+        if(name2 === 'pivothigh' && w > pivotVal) return out(NaN);
+        if(name2 === 'pivotlow' && w < pivotVal) return out(NaN);
+      }
+      for(let i = 1; i <= rr; i++){
+        const w = s.buf[idx + i];
+        if(!Number.isFinite(w)) return out(NaN);
+        if(name2 === 'pivothigh' && w >= pivotVal) return out(NaN);
+        if(name2 === 'pivotlow' && w <= pivotVal) return out(NaN);
+      }
+      return out(pivotVal);
+    }
+    default:
+      pineFail(`ta.${name2} no está soportada aún. Soportadas: sma, ema, rma, wma, vwma, stdev, dev, highest, lowest, rsi, atr, tr, change, mom, roc, cum, crossover, crossunder, cross, falling, rising, valuewhen, barssince, pivothigh, pivotlow`, node.line);
+  }
+}
+
+// si el argumento es una referencia a input.source la resuelve a su valor de barra
+function pineJackSrc(node, alpha, env, R){
+  const v = pineEval(node, alpha, env, R);
+  if(v && v.__src) return pineSeriesValue(v.__src, R);
+  if(typeof v === 'string' && PINE_BUILTIN_SERIES.has(v)) return pineSeriesValue(v, R);
+  return v;
+}
+
+function pineMath(node, alpha, env, R){
+  const numOne = () => pineNum(pineEval(pineArg(node.args, 0), alpha, env, R));
+  const numAt = i => pineNum(pineEval(node.args[i].expr, alpha, env, R));
+  switch(node.name){
+    case 'abs': return Math.abs(numOne());
+    case 'sqrt': { const v = numOne(); return v < 0 ? NaN : Math.sqrt(v); }
+    case 'log': { const v = numOne(); return v <= 0 ? NaN : Math.log(v); }
+    case 'log10': { const v = numOne(); return v <= 0 ? NaN : Math.log10(v); }
+    case 'exp': return Math.exp(numOne());
+    case 'sign': return Math.sign(numOne());
+    case 'round': {
+      const v = numOne();
+      if(node.args[1]){
+        const dec = numAt(1);
+        return Math.round(v * Math.pow(10, dec)) / Math.pow(10, dec);
+      }
+      return Math.round(v);
+    }
+    case 'floor': return Math.floor(numOne());
+    case 'ceil': return Math.ceil(numOne());
+    case 'pow': return Math.pow(numOne(), numAt(1));
+    case 'min': {
+      let m = Infinity;
+      node.args.forEach((a, i) => { const v = pineNum(pineEval(a.expr, alpha, env, R)); if(Number.isFinite(v)) m = Math.min(m, v); });
+      return m === Infinity ? NaN : m;
+    }
+    case 'max': {
+      let m = -Infinity;
+      node.args.forEach((a, i) => { const v = pineNum(pineEval(a.expr, alpha, env, R)); if(Number.isFinite(v)) m = Math.max(m, v); });
+      return m === -Infinity ? NaN : m;
+    }
+    case 'avg': {
+      let sum = 0, cnt = 0;
+      node.args.forEach((a) => { const v = pineNum(pineEval(a.expr, alpha, env, R)); if(Number.isFinite(v)){ sum += v; cnt++; } });
+      return cnt ? sum / cnt : NaN;
+    }
+    default:
+      pineFail(`math.${node.name} no está soportada. Soportadas: abs, sqrt, log, log10, exp, sign, round, floor, ceil, pow, min, max, avg`, node.line);
+  }
+}
+
+// ---- funciones del usuario
+function pineUserCall(node, fn, alpha, env, R){
+  R.callSeq++;
+  const childAlpha = alpha + '#' + node.id + 'c' + R.callSeq;
+  const child = { map: new Map(), parent: fn.env };
+  fn.params.forEach((p, i) => {
+    const entry = { vals:[], initBar:0, lastVal:NaN, isVar:false, mode:'=' };
+    const v = node.args[i] ? pineEval(node.args[i].expr, alpha, env, R) : NaN;
+    entry.vals[R.bar] = v;
+    entry.lastVal = v;
+    child.map.set(p, entry);
+  });
+  const val = pineEval(fn.body, childAlpha, child, R);
+  pineNodeVals(R, { id: node.id * 7919 + R.callSeq, k: 'call' }, childAlpha).vals[R.bar] = val;
+  return val;
+}
+
+// ---- registrar outputs
+function pineEnsureOutput(R, node, kind){
+  let o = R.outputs[node.slot];
+  if(!o){
+    o = {
+      kind, slot: node.slot,
+      values: new Array(R.N).fill(NaN),
+      colors: new Array(R.N).fill(null),
+      texts: new Array(R.N).fill(null),
+      title: '', width: 1, style: 'line', offset: 0, hidden: false,
+      size: 'normal', location: 'abovebar', char: null,
+    };
+    R.outputs[node.slot] = o;
+  }
+  return o;
+}
+function pinePlot(node, alpha, env, R){
+  const A = node.args;
+  const o = pineEnsureOutput(R, node, 'plot');
+  const v = pineEval(pineArg(A, 0, 'series'), alpha, env, R);
+  o.values[R.bar] = typeof v === 'number' ? v : pineNum(v);
+  const tN = pineArg(A, 1, 'title');
+  if(tN) o.title = pineStr(pineEval(tN, alpha, env, R)) || o.title;
+  const cN = pineArg(A, 2, 'color');
+  if(cN) o.colors[R.bar] = pineNormalizeColor(pineEval(cN, alpha, env, R));
+  const wN = pineArg(A, 3, 'linewidth');
+  if(wN && !o._wlocked){ const w = Math.round(pineNum(pineEval(wN, alpha, env, R)) || 1); o.width = Math.max(1, w); o._wlocked = true; }
+  const stN = pineArg(A, 4, 'style');
+  if(stN && !o._slocked){ o.style = pineStr(pineEval(stN, alpha, env, R)) || 'line'; o._slocked = true; }
+  const offN = pineArg(A, 5, 'offset');
+  if(offN && !o._olocked){ o.offset = Math.round(pineNum(pineEval(offN, alpha, env, R)) || 0); o._olocked = true; }
+  const dN = pineArg(A, 6, 'display');
+  if(dN && pineStr(pineEval(dN, alpha, env, R)) === 'none') o.hidden = true;
+  return { __plot: node.slot, __title: o.title };
+}
+function pineShapeCore(node, alpha, env, R, opts){
+  const A = node.args;
+  const o = pineEnsureOutput(R, node, 'shape');
+  if(o.kind === 'plot'){ o.kind = 'shape'; }
+  const v = pineEval(pineArg(A, 0, 'series'), alpha, env, R);
+  o.values[R.bar] = typeof v === 'number' ? v : pineNum(v);
+  const tN = pineArg(A, 1, 'title');
+  if(tN) o.title = pineStr(pineEval(tN, alpha, env, R)) || o.title;
+  const stN = pineArg(A, 2, 'style');
+  if(stN && !o._slocked){ o.style = pineStr(pineEval(stN, alpha, env, R)) || o.style; o._slocked = true; }
+  const locN = pineArg(A, 3, 'location');
+  if(locN && !o._llocked){ o.location = pineStr(pineEval(locN, alpha, env, R)) || o.location; o._llocked = true; }
+  const cN = pineArg(A, 4, 'color') || pineArg(A, 5, 'color');
+  if(cN) o.colors[R.bar] = pineNormalizeColor(pineEval(cN, alpha, env, R));
+  const szN = pineArg(A, -1, 'size');
+  if(szN && !o._zlocked){ o.size = pineStr(pineEval(szN, alpha, env, R)) || 'normal'; o._zlocked = true; }
+  const txN = pineArg(A, -1, 'text');
+  if(txN) o.texts[R.bar] = pineStr(pineEval(txN, alpha, env, R)) || null;
+  const txcN = pineArg(A, -1, 'textcolor');
+  if(txcN) o.textColor = pineNormalizeColor(pineEval(txcN, alpha, env, R));
+  return { __plot: node.slot, __title: o.title };
+}
+function pinePlotchar(node, alpha, env, R){
+  const A = node.args;
+  const o = pineEnsureOutput(R, node, 'shape');
+  const charN = pineArg(A, 2, 'char');
+  if(!o._chlocked){
+    o.char = charN ? pineStr(pineEval(charN, alpha, env, R)) : '';
+    o.style = 'char';
+    o._chlocked = true;
+    o._slocked = true;
+  }
+  return pineShapeCore(node, alpha, env, R, { char: o.char });
+}
+function pinePlotarrow(node, alpha, env, R){
+  const A = node.args;
+  const o = pineEnsureOutput(R, node, 'arrow');
+  o.values[R.bar] = pineNum(pineEval(pineArg(A, 0, 'series'), alpha, env, R));
+  return { __plot: node.slot, __title: o.title };
+}
+function pineHline(node, alpha, env, R){
+  const A = node.args;
+  const price = pineNum(pineEval(pineArg(A, 0, 'price'), alpha, env, R));
+  if(!Number.isFinite(price)) return { __hline: node.id };
+  const tN = pineArg(A, 1, 'title');
+  const cN = pineArg(A, 2, 'color');
+  const lsN = pineArg(A, 3, 'linestyle');
+  const wN = pineArg(A, 4, 'linewidth');
+  const entry = {
+    price,
+    title: tN ? pineStr(pineEval(tN, alpha, env, R)) : '',
+    color: cN ? (pineNormalizeColor(pineEval(cN, alpha, env, R)) || '#787B86') : '#787B86',
+    style: lsN ? pineStr(pineEval(lsN, alpha, env, R)) : 'solid',
+    width: wN ? Math.max(1, Math.round(pineNum(pineEval(wN, alpha, env, R)) || 1)) : 1,
+  };
+  R.hlines.set(node.id, entry);
+  return { __hline: node.id };
+}
+function pineBgcolor(node, alpha, env, R){
+  const c = pineEval(pineArg(node.args, 0, 'color'), alpha, env, R);
+  R.bgcolors[R.bar] = pineNormalizeColor(c);
+  return NaN;
+}
+function pineBarcolor(node, alpha, env, R){
+  const c = pineEval(pineArg(node.args, 0, 'color'), alpha, env, R);
+  R.bars[R.bar] = pineNormalizeColor(c);
+  return NaN;
+}
+function pineFill(node, alpha, env, R){
+  const p1 = pineEval(pineArg(node.args, 0), alpha, env, R);
+  const p2 = pineEval(pineArg(node.args, 1), alpha, env, R);
+  if(!p1 || !p2 || p1.__plot === undefined || p2.__plot === undefined)
+    pineFail('fill(p1, p2) necesita los handles de dos plot() guardados en variables', node.line);
+  const cN = node.args[2] && !node.args[2].name ? node.args[2].expr : pineArg(node.args, -1, 'color');
+  const color = cN ? (pineNormalizeColor(pineEval(cN, alpha, env, R)) || 'rgba(120,123,134,.12)') : 'rgba(120,123,134,.12)';
+  let entry = R.fills.get(node.id);
+  if(!entry){ entry = { a: p1.__plot, b: p2.__plot, colors: new Array(R.N).fill(null) }; R.fills.set(node.id, entry); }
+  entry.colors[R.bar] = color;
+  return NaN;
+}
+
+// ejecuta el script sobre datos dummy para validar + extraer meta
+function pineProbeMeta(source){
+  const res = pineRun(source, null, pineDummyData());
+  if(!res.ok) return res;
+  return {
+    ok: true,
+    meta: {
+      title: res.meta.title, shorttitle: res.meta.shorttitle,
+      overlay: res.meta.overlay, isStrategy: res.meta.isStrategy,
+      inputs: res.meta.inputs,
+    }
+  };
+}
+
 
 init();
 </script>
