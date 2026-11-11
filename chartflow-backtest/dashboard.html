@@ -6,7 +6,7 @@
 <title>ChartFlow Backtest</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#06090f;--s1:#0b1018;--s2:#0f1520;--s3:#141c28;--border:#1a2435;--text:#e8ecf4;--dim:#5a6a80;--accent:#00d4ff;--accent-d:rgba(0,212,255,.15);--bull:#00e5a0;--bull-d:rgba(0,229,160,.12);--bear:#ff3355;--bear-d:rgba(255,51,85,.12);--mono:'JetBrains Mono',monospace;--ui:'Inter',system-ui,sans-serif}
+:root{--bg:#0b0b0d;--s1:#111114;--s2:#141417;--s3:#1b1b1f;--border:#26262b;--text:#e8ecf4;--dim:#5f5f68;--accent:#00d4ff;--accent-d:rgba(0,212,255,.15);--bull:#00e5a0;--bull-d:rgba(0,229,160,.12);--bear:#ff3355;--bear-d:rgba(255,51,85,.12);--mono:'JetBrains Mono',monospace;--ui:'Inter',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--ui)}
 .app{display:flex;flex-direction:column;height:100vh;position:relative}
 .topbar{height:40px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
@@ -72,7 +72,7 @@
 .equity-wrap{height:60px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
 .equity-wrap canvas{width:100%;height:100%}
 /* Barra inferior estilo TradingView: Buy/Sell + tamano | replay centrado | balance */
-.bottombar{height:44px;display:flex;align-items:center;gap:8px;padding:0 12px;background:#161b22;border-top:1px solid var(--border);flex-shrink:0;position:relative;z-index:30}
+.bottombar{height:44px;display:flex;align-items:center;gap:8px;padding:0 12px;background:#141417;border-top:1px solid var(--border);flex-shrink:0;position:relative;z-index:30}
 .bb-left{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
 .bb-center{display:flex;align-items:center;gap:4px;flex-shrink:0}
 .bb-right{display:flex;align-items:center;gap:8px;flex:1;min-width:0;justify-content:flex-end}
@@ -565,8 +565,8 @@
   <div class="ctx-row"><label>Cuerpo bajista</label><input type="color" id="ctxBearBody" value="#ff3355"></div>
   <div class="ctx-row"><label>Borde bajista</label><input type="color" id="ctxBearBorder" value="#ff3355"></div>
   <div class="ctx-sep"></div>
-  <div class="ctx-row"><label>Fondo</label><input type="color" id="ctxBg" value="#06090f"></div>
-  <div class="ctx-row"><label>Grid</label><input type="color" id="ctxGrid" value="#1a2435"></div>
+  <div class="ctx-row"><label>Fondo</label><input type="color" id="ctxBg" value="#0b0b0d"></div>
+  <div class="ctx-row"><label>Grid</label><input type="color" id="ctxGrid" value="#26262b"></div>
   <div class="ctx-sep"></div>
   <div class="ctx-row"><label>Nombre</label><input type="text" id="ctxPresetName" placeholder="Mi estilo" style="flex:1;height:20px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:3px;padding:0 5px;font:10px var(--mono)"></div>
   <div class="ctx-row"><button class="ctx-btn" id="ctxSave">Guardar preset</button></div>
@@ -1986,12 +1986,12 @@ function drawChart(){
   });
 
   // Price scale
-  ctx.font="10px 'JetBrains Mono',monospace";ctx.fillStyle="#5a6a80";ctx.textAlign="right";
+  ctx.font="10px 'JetBrains Mono',monospace";ctx.fillStyle="#5f5f68";ctx.textAlign="right";
   for(let i=1;i<=8;i++){const yy=Math.round(plotH/8*i)+2;ctx.fillText(fmtP(hi-rng/8*i),W-4,Math.min(yy+3,plotH))}
 
   // X-axis
-  xctx.fillStyle="#0b1018";xctx.fillRect(0,0,xW,xH);
-  xctx.strokeStyle="#1a2435";xctx.beginPath();xctx.moveTo(0,.5);xctx.lineTo(xW,.5);xctx.stroke();
+  xctx.fillStyle="#111114";xctx.fillRect(0,0,xW,xH);
+  xctx.strokeStyle="#26262b";xctx.beginPath();xctx.moveTo(0,.5);xctx.lineTo(xW,.5);xctx.stroke();
   // Separacion adaptativa por PIXELES: una etiqueta cada ~90px reales del eje.
   // (antes se calculaba por numero de velas y al hacer zoom out se amontonaban)
   const labelGap=Math.max(1,Math.ceil(90/totalCandleW));
@@ -2007,12 +2007,12 @@ function drawChart(){
     const xx=Math.round(clamp(x(i),26,xW-124));
     if(seenX.has(xx))continue;
     seenX.add(xx);
-    xctx.font="9px 'JetBrains Mono',monospace";xctx.fillStyle="#5a6a80";xctx.textAlign="center";
+    xctx.font="9px 'JetBrains Mono',monospace";xctx.fillStyle="#5f5f68";xctx.textAlign="center";
     xctx.fillText(time,xx,12);
     const dayKey=d.toDateString();
     if(!seenDates.has(dayKey)){
       seenDates.add(dayKey);
-      xctx.fillStyle="#3a4a5a";xctx.font="8px 'JetBrains Mono',monospace";
+      xctx.fillStyle="#52525a";xctx.font="8px 'JetBrains Mono',monospace";
       xctx.fillText(dayName+" "+dateStr,xx,23);
     }
   }
@@ -2074,7 +2074,7 @@ function renderMetrics(){
   const m=calcMetrics();if(!m){["mWR","mPnL","mPF","mDD","mSH","mEX","mTOT"].forEach(id=>{$(id).textContent="--";$(id).className="mv"});return}$("mWR").textContent=m.wr.toFixed(1)+"%";$("mWR").className="mv "+(m.wr>=50?"pos":"neg");const p=$("mPnL");p.textContent=(m.pnl>=0?"+":"")+"$"+m.pnl.toFixed(2);p.className="mv "+(m.pnl>=0?"pos":"neg");const pf=$("mPF");pf.textContent=m.pf===Infinity?"∞":m.pf.toFixed(2);pf.className="mv "+(m.pf>=1?"pos":"neg");$("mDD").textContent="-$"+m.md.toFixed(2)+" ("+m.mdp.toFixed(1)+"%)";$("mDD").className="mv neg";const sh=$("mSH");sh.textContent=m.sh.toFixed(2);sh.className="mv "+(m.sh>=1?"pos":"neg");const ex=$("mEX");ex.textContent="$"+m.ex.toFixed(2);ex.className="mv "+(m.ex>=0?"pos":"neg");$("mTOT").textContent=m.total;
 }
 
-function drawEquity(){const canvas=$("eqCanvas");if(!canvas)return;const ctx=canvas.getContext("2d"),dpr=window.devicePixelRatio||1,rect=canvas.parentElement.getBoundingClientRect();canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;canvas.style.width=rect.width+"px";canvas.style.height=rect.height+"px";ctx.setTransform(dpr,0,0,dpr,0,0);const w=rect.width,h=rect.height,data=S.equity;if(data.length<2)return;const vals=data.map(d=>d.eq),mn=Math.min(...vals),mx=Math.max(...vals),rng=mx-mn||1,pad=4;ctx.fillStyle="#06090f";ctx.fillRect(0,0,w,h);const baseY=h-pad-((S.initial-mn)/rng)*(h-2*pad);ctx.strokeStyle="rgba(255,255,255,.12)";ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(0,baseY);ctx.lineTo(w,baseY);ctx.stroke();ctx.setLineDash([]);const grad=ctx.createLinearGradient(0,0,0,h);grad.addColorStop(0,"rgba(0,229,160,.25)");grad.addColorStop(1,"rgba(0,229,160,.02)");ctx.beginPath();ctx.moveTo(0,h-pad);data.forEach((pt,i)=>{ctx.lineTo((i/(data.length-1))*w,h-pad-((pt.eq-mn)/rng)*(h-2*pad))});ctx.lineTo(w,h-pad);ctx.closePath();ctx.fillStyle=grad;ctx.fill();ctx.beginPath();data.forEach((pt,i)=>{const px=(i/(data.length-1))*w,py=h-pad-((pt.eq-mn)/rng)*(h-2*pad);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py)});ctx.strokeStyle=vals[vals.length-1]>=vals[0]?"#00e5a0":"#ff3355";ctx.lineWidth=1.5;ctx.stroke()}
+function drawEquity(){const canvas=$("eqCanvas");if(!canvas)return;const ctx=canvas.getContext("2d"),dpr=window.devicePixelRatio||1,rect=canvas.parentElement.getBoundingClientRect();canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;canvas.style.width=rect.width+"px";canvas.style.height=rect.height+"px";ctx.setTransform(dpr,0,0,dpr,0,0);const w=rect.width,h=rect.height,data=S.equity;if(data.length<2)return;const vals=data.map(d=>d.eq),mn=Math.min(...vals),mx=Math.max(...vals),rng=mx-mn||1,pad=4;ctx.fillStyle="#0b0b0d";ctx.fillRect(0,0,w,h);const baseY=h-pad-((S.initial-mn)/rng)*(h-2*pad);ctx.strokeStyle="rgba(255,255,255,.12)";ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(0,baseY);ctx.lineTo(w,baseY);ctx.stroke();ctx.setLineDash([]);const grad=ctx.createLinearGradient(0,0,0,h);grad.addColorStop(0,"rgba(0,229,160,.25)");grad.addColorStop(1,"rgba(0,229,160,.02)");ctx.beginPath();ctx.moveTo(0,h-pad);data.forEach((pt,i)=>{ctx.lineTo((i/(data.length-1))*w,h-pad-((pt.eq-mn)/rng)*(h-2*pad))});ctx.lineTo(w,h-pad);ctx.closePath();ctx.fillStyle=grad;ctx.fill();ctx.beginPath();data.forEach((pt,i)=>{const px=(i/(data.length-1))*w,py=h-pad-((pt.eq-mn)/rng)*(h-2*pad);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py)});ctx.strokeStyle=vals[vals.length-1]>=vals[0]?"#00e5a0":"#ff3355";ctx.lineWidth=1.5;ctx.stroke()}
 
 // Help modal
 $("helpBtn").onclick=()=>{$("helpOverlay").classList.add("visible")};
@@ -3082,16 +3082,27 @@ function updateMotivation(stats){
 loadHabits();
 
 // Candle color config
-let candleColors={bullWick:"#00e5a0",bullBody:"#00e5a0",bullBorder:"#00e5a0",bearWick:"#ff3355",bearBody:"#ff3355",bearBorder:"#ff3355",bg:"#06090f",grid:"#1a2435"};
+let candleColors={bullWick:"#00e5a0",bullBody:"#00e5a0",bullBorder:"#00e5a0",bearWick:"#ff3355",bearBody:"#ff3355",bearBorder:"#ff3355",bg:"#0b0b0d",grid:"#26262b"};
 const defaultColors={...candleColors};
 let colorPresets={};
-function loadColors(){try{const s=localStorage.getItem("bt_candleColors");if(s)candleColors=JSON.parse(s)}catch(e){}}
+function loadColors(){
+  try{
+    const s=localStorage.getItem("bt_candleColors");
+    if(s){
+      const saved=JSON.parse(s);
+      // migracion de negros azulados viejos -> negros neutros nuevos
+      if(saved.bg==="#06090f")saved.bg="#0b0b0d";
+      if(saved.grid==="#1a2435")saved.grid="#26262b";
+      candleColors=saved;
+    }
+  }catch(e){}
+}
 function saveColors(){try{localStorage.setItem("bt_candleColors",JSON.stringify(candleColors))}catch(e){}}
 function loadPresets(){try{const s=localStorage.getItem("bt_colorPresets");if(s)colorPresets=JSON.parse(s)}catch(e){}}
 function savePresets(){try{localStorage.setItem("bt_colorPresets",JSON.stringify(colorPresets))}catch(e){}}
 
 const palettes=[
-  {name:"Clásico",bullWick:"#00e5a0",bullBody:"#00e5a0",bullBorder:"#00e5a0",bearWick:"#ff3355",bearBody:"#ff3355",bearBorder:"#ff3355",bg:"#06090f",grid:"#1a2435"},
+  {name:"Clásico",bullWick:"#00e5a0",bullBody:"#00e5a0",bullBorder:"#00e5a0",bearWick:"#ff3355",bearBody:"#ff3355",bearBorder:"#ff3355",bg:"#0b0b0d",grid:"#26262b"},
   {name:"Azul",bullWick:"#00bfff",bullBody:"#00bfff",bullBorder:"#0099cc",bearWick:"#ff6347",bearBody:"#ff6347",bearBorder:"#cc4030",bg:"#0a0e1a",grid:"#1a2a40"},
   {name:"Dorado",bullWick:"#ffd700",bullBody:"#ffd700",bullBorder:"#ccac00",bearWick:"#ff4500",bearBody:"#ff4500",bearBorder:"#cc3600",bg:"#0f0a00",grid:"#2a2000"},
   {name:"Neón",bullWick:"#00ff88",bullBody:"#00ff88",bullBorder:"#00cc6a",bearWick:"#ff0066",bearBody:"#ff0066",bearBorder:"#cc0052",bg:"#050510",grid:"#151530"},
