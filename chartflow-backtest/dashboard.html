@@ -421,6 +421,7 @@
       <option value="730">2 años</option>
       <option value="0">Personalizado</option>
     </select>
+    <button class="btn" id="randomRangeBtn" title="Sortea un rango y una ventana de fechas al azar (memoriza las usadas para no repetir)" style="height:26px;padding:0 9px;font-size:12px">🎲</button>
     <span class="lbl">Desde</span>
     <input type="date" id="dateFrom">
     <span class="lbl">Hasta</span>
@@ -1076,6 +1077,9 @@ let priceCenter=0; // Center price for zoom
   $("tfSel").addEventListener("change",()=>{$("tfReplay").value=$("tfSel").value});
   $("balIn").onchange=saveBacktestConfig;
   $("riskIn").onchange=saveBacktestConfig;
+  // fechas manuales -> el preset pasa a Personalizado y la eleccion persiste
+  $("dateFrom").onchange=()=>{if($("rangePreset").value!=="0")$("rangePreset").value="0";saveBacktestConfig();};
+  $("dateTo").onchange=()=>{if($("rangePreset").value!=="0")$("rangePreset").value="0";saveBacktestConfig();};
   $("progBar").onclick=e=>{if(!S.loaded)return;const r=$("progBar").getBoundingClientRect();advanceTo(Math.floor(((e.clientX-r.left)/r.width)*(S.candles.length-1)))};
   
   // Preservar datos locales: el auto-borrado destruia trades, sesiones y habitos
@@ -1093,6 +1097,7 @@ let priceCenter=0; // Center price for zoom
       if(cfg.to)$("dateTo").value=cfg.to;
       if(cfg.bal)$("balIn").value=cfg.bal;
       if(cfg.risk)$("riskIn").value=cfg.risk;
+      if(cfg.preset)$("rangePreset").value=cfg.preset;
       if(cfg.speed!=null)setSpeed(cfg.speed);
       hadSavedCfg=!!(cfg.from&&cfg.to);
     }
@@ -1100,18 +1105,71 @@ let priceCenter=0; // Center price for zoom
 
   $("rangePreset").onchange=()=>{
     const days=+$("rangePreset").value;
-    if(days===0)return;
+    if(days===0)return; // Personalizado: respeta DESDE/HASTA manuales
     const to=new Date();const from=new Date();from.setDate(from.getDate()-days);
     $("dateTo").value=to.toISOString().split("T")[0];
     $("dateFrom").value=from.toISOString().split("T")[0];
-    if(days<=30)$("tfSel").value="5m";
-    else if(days<=60)$("tfSel").value="15m";
-    else if(days<=180)$("tfSel").value="30m";
-    else $("tfSel").value="1h";
-    $("tfReplay").value=$("tfSel").value;
     saveBacktestConfig();
+    if(S.loaded)loadBacktest(); // el rango elegido manda: recarga el replay con el rango nuevo
   };
   // El preset por defecto define el rango; las fechas guardadas por el usuario tienen prioridad
+  // 🎲 Rango y fechas al azar GARANTIZADO con velas: sorteja solo dentro de la
+  // cobertura real del historial descargado, verifica la carga de cada ventana
+  // (si no trae velas vuelve a sortear) y si la TF actual no tiene datos locales
+  // cambia automaticamente a la TF con mas historial
+  $("randomRangeBtn").onclick=async()=>{
+    const AGG_BASE={"10m":"5m","4h":"1h","3m":"1m"};
+    let per=null;
+    try{
+      const st=await(await fetch("/api/data-status")).json();
+      per=st&&st.symbols&&st.symbols[S.symbol];
+    }catch(e){}
+    const covFor=tf=>per&&(per[tf]||per[AGG_BASE[tf]]);
+    // TF actual sin datos locales -> saltar a la TF con mas historial descargado
+    if(!covFor($("tfSel").value)){
+      const withData=Object.keys(per||{}).filter(tf=>per[tf]&&(per[tf].count||0)>50)
+        .sort((a,b)=>(per[b].count||0)-(per[a].count||0));
+      if(!withData.length){toast("🎲 Sin historial descargado para "+S.symbol);return}
+      $("tfSel").value=withData[0];$("tfReplay").value=withData[0];
+      toast("🎲 "+$("tfSel").value+" no tenia datos: replay en "+withData[0]);
+    }
+    const cov=covFor($("tfSel").value);
+    if(!cov||cov.count<=50){toast("🎲 Sin historial descargado");return}
+    // data-status entrega fechas ISO en texto -> convertir a timestamps reales
+    const firstTs=Date.parse(cov.first),lastTs=Date.parse(cov.last);
+    const spanDays=Math.max(3,Math.floor((lastTs-firstTs)/86400000)-1);
+    const hist=JSON.parse(localStorage.getItem("bt_used_ranges")||"[]");
+    const used=new Set(hist.map(r=>r.key));
+    for(let tries=0;tries<6;tries++){
+      const daysPool=[7,14,30,60,90,180,365,730].filter(d=>d<=spanDays);
+      const days=daysPool.length?daysPool[Math.floor(Math.random()*daysPool.length)]:spanDays;
+      let from="",to="",key="";
+      for(let t2=0;t2<80;t2++){
+        const offsetDays=Math.floor(Math.random()*(spanDays-days+2));
+        const toTs=lastTs-offsetDays*86400000;
+        const fromTs=toTs-days*86400000;
+        if(fromTs<firstTs)continue;
+        const f=new Date(fromTs).toISOString().split("T")[0];
+        const tt=new Date(toTs).toISOString().split("T")[0];
+        key=S.symbol+"|"+$("tfSel").value+"|"+f+"|"+tt;
+        from=f;to=tt;
+        if(!used.has(key))break;
+      }
+      $("rangePreset").value=String(days);
+      $("dateFrom").value=from;
+      $("dateTo").value=to;
+      saveBacktestConfig();
+      const ok=await loadBacktest(); // verifica que la ventana traiga velas de verdad
+      if(ok){
+        hist.push({key,from,to,days,ts:Date.now()});
+        if(hist.length>200)hist.splice(0,hist.length-200);
+        try{localStorage.setItem("bt_used_ranges",JSON.stringify(hist))}catch(e){}
+        toast(`🎲 Sorteo: ${days} días · ${from} → ${to} · ${S.candles.length} velas`);
+        return;
+      }
+    }
+    toast("🎲 Ninguna ventana trajo velas: refresca el historial (node download-history.js)");
+  };
   $("rangePreset").dispatchEvent(new Event("change"));
   if(hadSavedCfg){
     try{const cfg=JSON.parse(localStorage.getItem("bt_cfg"));if(cfg.from)$("dateFrom").value=cfg.from;if(cfg.to)$("dateTo").value=cfg.to;}catch{}
@@ -1322,7 +1380,7 @@ function saveBacktestConfig(){
     localStorage.setItem("bt_cfg",JSON.stringify({
       symbol:$("symSel").value,tf:$("tfSel").value,
       from:$("dateFrom").value,to:$("dateTo").value,
-      bal:$("balIn").value,risk:$("riskIn").value,speed:S.speed
+      bal:$("balIn").value,risk:$("riskIn").value,speed:S.speed,preset:$("rangePreset").value
     }));
   }catch{}
 }
@@ -1363,8 +1421,8 @@ async function loadBacktest(){
     S.loaded=true;
     $("dragHint").classList.add("visible");setTimeout(()=>$("dragHint").classList.remove("visible"),8000);
     const first=new Date(S.candles[0].t),last=new Date(S.candles[S.candles.length-1].t);
-    $("dateFrom").value=first.toISOString().split("T")[0];
-    $("dateTo").value=last.toISOString().split("T")[0];
+    // DESDE/HASTA se respetan tal como los eligio el usuario: si el historial
+    // descargado cubre menos, el toast de abajo lo informa con las fechas reales
     render();
     toast(`${d.candles.length} velas · ${SYM[sym]?.label||sym} · ${first.toLocaleDateString("es-ES")} → ${last.toLocaleDateString("es-ES")}`);
     return true;
