@@ -27,7 +27,9 @@ var THEMES = {
 };
 // Tema por defecto de la app de escritorio: NEGRO ChartFlow (coherente con la shell;
 // el usuario puede conmutar a azul marino con clic derecho)
-var THEME_NAME = localStorage.getItem('stock_theme') || 'black';
+// Siempre arranca en NEGRO: se ignora/borra cualquier tema guardado de sesiones anteriores
+var THEME_NAME = 'black';
+try { localStorage.removeItem('stock_theme'); } catch (e) {}
 var CUSTOM_BG = localStorage.getItem('stock_custom_bg') || '#101014';
 function themePalette(){
   if (THEME_NAME === 'custom') {
@@ -40,6 +42,13 @@ function themePalette(){
   return THEMES[THEME_NAME] || THEMES.navy;
 }
 var THEME = themePalette();
+// Sincronizar el DOM con el tema por defecto al arrancar (CSS + data-theme)
+document.documentElement.dataset.theme = THEME_NAME;
+(function(){
+  var root = document.documentElement.style;
+  root.setProperty('--panel', THEME.panel);
+  root.setProperty('--bg', THEME.panel);
+})();
 function applyTheme(name){
   THEMES.custom = THEMES.custom || (function(){ var b = THEMES.black, o = {}; for (var k in b) o[k] = b[k]; return o; })();
   if (name === 'custom') { THEMES.custom.panel = CUSTOM_BG; THEMES.custom.yBg = CUSTOM_BG; THEMES.custom.xBg = CUSTOM_BG; THEMES.custom.dotRing = CUSTOM_BG; }
@@ -666,8 +675,10 @@ function buildPanel(s) {
 function drawPanel(s, pts, livePrice) {
   var view = getViewState(s.sym);
   var atLatest = true;
+  var fullLen = 0, winStart = 0, winEnd = 0;
   if (pts && pts.length > 2) {
     var fullPts = pts;
+    fullLen = fullPts.length;
     var caForFit = document.getElementById('ca-' + s.sym);
     ensureTradingViewWindow(view, fullPts.length, caForFit ? caForFit.offsetWidth - 68 : 420);
     var visibleCount = getVisibleCount(view, fullPts.length);
@@ -677,6 +688,8 @@ function drawPanel(s, pts, livePrice) {
     var end = fullPts.length - Math.round(view.xOffset || 0);
     end = clamp(end, visibleCount, fullPts.length);
     var start = Math.max(0, end - visibleCount);
+    // ventana logica expuesta para el render con desborde (pan rigido)
+    winStart = start; winEnd = end;
     pts = fullPts.slice(start, end);
     if (atLatest) pts = removeTrailingFlatTail(pts);
   }
@@ -697,6 +710,23 @@ function drawPanel(s, pts, livePrice) {
   var cW = totalW - YAXW, cH = totalH - XAXH;
   if (cW <= 0 || cH <= 0) return;
   var RIGHT_GAP = (cW / 5) * 1.5;
+
+  // TRUCO TRADINGVIEW (mismo modelo que ChartFlow): el area de trazado es TODO
+  // el ancho y el hueco derecho son "puntos fantasma" extra al final de la
+  // serie. Asi la linea SE DESLIZA RIGIDA y cruza el hueco de forma visible
+  // hasta el eje, en vez de re-escalarse dentro de una caja al 70% y pegarse
+  // a una frontera invisible a media pantalla
+  var plotW = cW;
+  var xDenom = Math.max(1, pts.length - 1);
+  var extraPts = RIGHT_GAP * xDenom / Math.max(1, plotW - RIGHT_GAP);
+  var stepX = plotW / (xDenom + extraPts);
+  // slice de render con desborde: puntos que entran/salen por los bordes y
+  // cruzan el hueco sin desaparecer (el canvas los recorta en el borde fisico)
+  var spillR = Math.ceil(extraPts) + 3;
+  var rStart = Math.max(0, winStart - 3);
+  var rEnd = Math.min(fullLen || pts.length, (atLatest ? winStart + pts.length : winEnd) + (atLatest ? 0 : spillR));
+  var linePts = (fullLen && rEnd > rStart) ? fullPts.slice(rStart, rEnd) : pts.slice();
+  var offIdx = rStart - winStart;
 
   var prices = [];
   pts.forEach(function(p){ prices.push(Number(p.c)); });
@@ -727,7 +757,6 @@ function drawPanel(s, pts, livePrice) {
     ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,cH); ctx.stroke();
   }
 
-  var linePts = pts.slice();
   ctx.strokeStyle = '#eef1fb';
   ctx.lineWidth = 1.45;
   ctx.lineJoin = 'round';
@@ -735,7 +764,7 @@ function drawPanel(s, pts, livePrice) {
   var lineCoords = [];
   for (var k = 0; k < linePts.length; k++) {
     var p = linePts[k];
-    var px = (k / (linePts.length-1)) * Math.max(1, cW - RIGHT_GAP);
+    var px = (offIdx + k) * stepX;
     var yc = cH - ((p.c - lo) / range) * cH;
     lineCoords.push({x:px, y:yc});
   }
@@ -743,7 +772,9 @@ function drawPanel(s, pts, livePrice) {
 
   var lastY = cH - ((last - lo) / range) * cH;
   lastY = Math.max(1, Math.min(cH-1, lastY));
-  var lastX = lineCoords.length ? lineCoords[lineCoords.length - 1].x : Math.max(1, cW - RIGHT_GAP);
+  // el punto marca la ULTIMA vela de la ventana logica (coincide con el badge);
+  // la linea sigue extendiendose a la derecha por el hueco con datos mas nuevos
+  var lastX = (atLatest ? (pts.length - 1) : (winEnd - 1 - winStart)) * stepX;
 
   ctx.fillStyle = THEME.dot;
   ctx.strokeStyle = THEME.dotRing;
@@ -758,7 +789,8 @@ function drawPanel(s, pts, livePrice) {
 
   pb.style.display = 'block';
   pb.innerHTML = '<span>' + fmtP(last) + '</span><span class="cd">' + candleCountdownText(Date.now()) + '</span>';
-  pb.style.top = Math.round(lastY) + 'px';
+  // badge anclado: NUNCA se corta por el borde del panel (estilo TradingView)
+  pb.style.top = Math.round(Math.max(16, Math.min(cH - 16, lastY))) + 'px';
   pb.style.background = THEME.badgeBg;
 
   var yCtx = fitCanvas(yaC, YAXW, cH);
@@ -797,7 +829,7 @@ function drawPanel(s, pts, livePrice) {
     var lbl = fmtX(pts[xIdx].t, spanMs);
     if (seen[lbl]) continue;
     seen[lbl] = true;
-    var xpx = (xIdx / (pts.length-1)) * Math.max(1, cW - RIGHT_GAP);
+    var xpx = xIdx * stepX;
     xCtx.fillText(lbl, Math.max(24, Math.min(cW-28, xpx)), 20);
   }
 }

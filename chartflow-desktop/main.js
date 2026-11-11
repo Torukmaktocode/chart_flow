@@ -22,7 +22,32 @@ const homeServer = http.createServer((req, res) => {
   res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
   res.end(fs.readFileSync(path.join(__dirname, "home.html")));
 });
+// Un solo proceso handler: si el puerto 8711 ya esta ocupado (instancia previa
+// viva o proceso zombie), NO cracha: la instancia existente ya sirve la home
+homeServer.on("error", (err) => {
+  if (err && err.code === "EADDRINUSE") {
+    console.warn("[home] puerto " + HOME_PORT + " ocupado: se reutiliza el servidor de la instancia previa");
+  } else {
+    console.warn("[home] error en servidor home:", err && err.message);
+  }
+});
 homeServer.listen(HOME_PORT, "127.0.0.1");
+
+// Instancia unica: si la app ya esta abierta, la segunda apertura NO arranca
+// otro proceso (evita el EADDRINUSE y los puertos duplicados); en su lugar
+// trae al frente la ventana existente
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.show();
+      win.focus();
+    }
+  });
+}
 
 // Los backends viven en el repo raiz (modo desarrollo) o en resources/backend (empaquetado)
 // Persisncia del perfil en carpeta PROPIA (no el "Electron" generico): aqui
@@ -48,7 +73,7 @@ let win = null;
 function portBusy(port) {
   return new Promise(resolve => {
     const s = net.createConnection({ port, host: "127.0.0.1" });
-    s.setTimeout(900);
+    s.setTimeout(250);  // en localhost el rechazo es instantaneo; 250ms sobra
     s.on("connect", () => { s.destroy(); resolve(true); });
     s.on("timeout", () => { s.destroy(); resolve(false); });
     s.on("error", () => resolve(false));
@@ -86,13 +111,13 @@ function forward(name, line) {
 }
 
 async function bootAll() {
-  const results = [];
-  for (const svc of SERVICES) {
+  // LANZAR TODOS LOS BACKENDS EN PARALELO: cada spawn es independiente y
+  // tarda ~1s, asi que el total es ~1s en vez de ~5s en serie
+  await Promise.all(SERVICES.map(async svc => {
     await ensureService(svc);
-    results.push({ name: svc.name, label: svc.label, port: svc.port, status: svc.status });
     sendStatus();
-  }
-  return results;
+  }));
+  return SERVICES.map(s => ({ name: s.name, label: s.label, port: s.port, status: s.status }));
 }
 
 function sendStatus() {
@@ -185,7 +210,23 @@ function activatePane(name) {
   if (!v) {
     v = new WebContentsView({ webPreferences: { contextIsolation: true, nodeIntegration: false } });
     v.setBounds(paneBounds());
-    v.webContents.loadURL(PANE_URLS[name]);
+    // CARGA CON REINTENTO: si el backend aun no esta arriba, la carga falla y
+    // un temporizador vuelve a intentarlo en cuanto el puerto responda. Asi el
+    // panel aparece SOLO cuando esta listo, sin bloquear el arranque de la app.
+    const svcPort = (SERVICES.find(s => s.name === name) || {}).port;
+    let tries = 0;
+    let loadedOk = false;
+    v.webContents.loadURL(PANE_URLS[name]).catch(() => {});
+    v.webContents.once("did-finish-load", () => { loadedOk = true; });
+    const retryLoad = setInterval(() => {
+      tries++;
+      if (tries > 150 || loadedOk || !v.webContents || v.webContents.isDestroyed()) { clearInterval(retryLoad); return; }
+      portBusy(svcPort).then(up => {
+        if (!up || loadedOk) return;
+        clearInterval(retryLoad);
+        try { v.webContents.loadURL(PANE_URLS[name]).catch(() => {}); } catch (e) {}
+      });
+    }, 400);
     v.webContents.once("did-finish-load", () => {
       // restaurar el estado guardado de este panel si existe en el snapshot
       try {
@@ -259,12 +300,16 @@ ipcMain.handle("save-config", () => saveAppState(true));
 setInterval(() => { if (win && Object.keys(panes).length) saveAppState(false); }, 120000);
 
 app.whenReady().then(async () => {
+  // instancia duplicada (no obtuvo el lock): no crear ventana ni backends
+  if (!gotTheLock) return;
   // puerto de depuracion para agentes/antrenamiento con agent-browser
   app.commandLine.appendSwitch("remote-debugging-port", "9222");
   createWindow();
-  await bootAll();
-  sendStatus();
+  // MOSTRAR EL PANEL PRINCIPAL YA MISMO: el reintento interno hace que cargue
+  // en cuanto su backend responda; los backends arrancan en paralelo sin
+  // bloquear la ventana (antes se esperaban los 5 en serie)
   activatePane("backtest");
+  bootAll();
 });
 
 app.on("window-all-closed", () => {

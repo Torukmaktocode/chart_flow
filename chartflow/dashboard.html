@@ -258,12 +258,16 @@ canvas{position:absolute;top:0}
 .app.nav-hover .chart-wrap:hover .bottom-tools{opacity:1}
 .app.nav-hidden .bottom-tools{display:none}
 .app.nav-always .bottom-tools{opacity:1}
+/* Durante el arrastre de velas los botones se ocultan: si no, quedan flotando
+   sobre el grafico y TAPAN las velas que pasan por detras (estilo TradingView:
+   nada flotando sobre el precio mientras se desplaza) */
+.chart-wrap.dragging-view .bottom-tools{opacity:0 !important;transition:opacity .12s ease}
 .mini{width:27px;height:24px;border-radius:5px;background:var(--surface-3);color:var(--text);border:0;font-weight:800;font-family:var(--font-mono);font-size:11px;transition:background .12s}
 .mini:hover{background:var(--accent);color:var(--bg)}
 .mini.profile-color-btn.active{background:var(--accent);color:var(--bg);box-shadow:0 0 0 1px var(--text)}
 .price-line{position:absolute;left:44px;right:120px;height:1px;background:repeating-linear-gradient(90deg,rgba(137,137,137,.55) 0,rgba(137,137,137,.55) 1px,transparent 1px,transparent 4px);z-index:4;box-shadow:0 0 8px rgba(137,137,137,.25);animation:pricePulse 2s ease-in-out infinite}
 @keyframes pricePulse{0%,100%{opacity:.7}50%{opacity:1}}
-.price-badge{position:absolute;right:44px;transform:translateY(-50%);min-width:62px;background:var(--accent);color:var(--bg);border-radius:2px;padding:3px 5px;text-align:center;font-size:11px;font-weight:700;line-height:12px;z-index:9;font-family:var(--font-mono);box-shadow:0 0 12px rgba(137,137,137,.4)}
+.price-badge{position:absolute;right:44px;transform:translateY(-50%);min-width:62px;background:var(--accent);color:var(--bg);border-radius:2px;padding:3px 5px;text-align:center;font-size:11px;font-weight:700;line-height:12px;z-index:11;font-family:var(--font-mono);box-shadow:0 0 12px rgba(137,137,137,.4)}
 .price-badge .cd{display:block;font-size:10px;font-weight:400;margin-top:1px;opacity:.8}
 .crosshair-v,.crosshair-h{position:absolute;display:none;pointer-events:none;z-index:11}.crosshair-v{top:0;bottom:30px;width:1px;border-left:1px dashed rgba(137,137,137,.6)}.crosshair-h{left:44px;right:120px;height:1px;border-top:1px dashed rgba(137,137,137,.6)}.crosshair-price,.crosshair-time{position:absolute;display:none;pointer-events:none;z-index:12;border-radius:2px;font-size:12px;font-weight:700;line-height:14px;padding:4px 7px;white-space:nowrap;font-family:var(--font-mono)}.crosshair-price{right:44px;transform:translateY(-50%);text-align:center;min-width:auto;padding:2px 5px;background:#1b1d21;color:#f4f4f5;border:1px solid rgba(255,255,255,.12)}.crosshair-time{transform:translateX(-50%);background:#1b1d21;color:#f4f4f5;border:1px solid rgba(255,255,255,.12)}.chart-wrap.crosshair-active{cursor:crosshair}
 .unit{position:absolute;top:8px;right:43px;z-index:10;height:25px;min-width:50px;border:1px solid var(--border);background:var(--surface-1);color:var(--text);border-radius:4px;font-size:12px;font-weight:700;font-family:var(--font-mono)}
@@ -3725,7 +3729,10 @@ class ChartPanel {
     this.view.xOffset = clamp(this.view.xOffset || 0, 0, maxOffset);
     let end = this.candles.length - Math.round(this.view.xOffset || 0);
     end = clamp(end, visibleCount, this.candles.length);
-    return this.candles.slice(Math.max(0, end - visibleCount), end);
+    // ventana logica expuesta para el render con desborde (pan rigido)
+    this._winStart = Math.max(0, end - visibleCount);
+    this._winEnd = end;
+    return this.candles.slice(this._winStart, end);
   }
   priceAtClientY(clientY){
     if(!this.lastScale) return null;
@@ -3743,12 +3750,20 @@ class ChartPanel {
     const mainY = localY;
     if(mainX < 0 || mainX > mainW || mainY < 0 || mainY > mainH || !data?.length) return this.hideCrosshair();
     const price = this.lastScale.hi - (mainY / mainH) * this.lastScale.range;
+    // Misma formula que draw(): area completa + velas fantasma del offset.
+    // Usa barW guardado por el ultimo draw para calzar exacto con las velas
     const rightBars = clamp(Number(designSettings.rightBars) || 0, 0, 40);
-    const rightPad = clamp(Math.round(mainW / 8 * 2) + rightBars * 2, 110, Math.round(mainW * .36));
-    const plotW = savedPlotW || Math.max(1, mainW - rightPad - plotLeftPad);
+    const padBase = (layoutMode > 1) ? 220 : 320;
+    const rightPad = Math.round(Math.min(
+      clamp(padBase + rightBars * 2, padBase, padBase + 40),
+      Math.max(0, mainW - 80)
+    ));
+    const plotFull = Math.max(1, mainW - plotLeftPad);
     const xDenom = Math.max(1, data.length - 1);
-    const idx = clamp(Math.round(((mainX - plotLeftPad) / plotW) * xDenom), 0, data.length - 1);
-    const xPos = left + plotLeftPad + (idx / xDenom) * plotW;
+    const extraBars = rightPad * xDenom / Math.max(1, plotFull - rightPad);
+    const barW = this.lastChart.barW || (plotFull / (xDenom + extraBars));
+    const idx = clamp(Math.round((mainX - plotLeftPad) / barW), 0, data.length - 1);
+    const xPos = left + plotLeftPad + idx * barW;
     const reticleStyle = designSettings.reticleStyle === "solid" ? "solid" : "dashed";
     const reticleColor = rgba(designSettings.reticleColor || "#d4d4d9", .72);
     this.el.classList.add("crosshair-active");
@@ -3763,7 +3778,8 @@ class ChartPanel {
     this.$("cross-h").style.left = left + "px";
     this.$("cross-h").style.right = (this.lastChart.right + this.lastChart.yW) + "px";
     this.$("cross-price").style.display = "block";
-    this.$("cross-price").style.top = Math.round(mainY) + "px";
+    // anclada dentro del eje: nunca se corta arriba/abajo (estilo TradingView)
+    this.$("cross-price").style.top = Math.round(clamp(mainY, 12, mainH - 12)) + "px";
     this.$("cross-price").style.right = (this.lastChart.right + 6) + "px";
     this.$("cross-price").textContent = fmtPrice(price);
     this.$("cross-time").style.display = "block";
@@ -5142,32 +5158,55 @@ class ChartPanel {
     const rightBars = clamp(Number(designSettings.rightBars) || 0, 0, 40);
     const isMultiPanel = layoutMode > 1;
     const padBase = isMultiPanel ? 220 : 320;
-    const maxRightPad = clamp(padBase + rightBars * 2, padBase, padBase + 40);
-    const visibleCount = Math.max(20, Math.floor(this.candles.length / Math.max(1, this.view.xZoom)));
-    const maxOffset = Math.max(0, this.candles.length - visibleCount);
-    const scrollRatio = maxOffset > 0 ? clamp((this.view.xOffset || 0) / maxOffset, 0, 1) : 0;
-    const rightPad = Math.round(maxRightPad * (1 - scrollRatio));
-    const plotW = Math.max(1, mainW - rightPad - plotLeftPad);
-    this.lastChart.plotW = plotW;
+    // TRUCO REAL DE TRADINGVIEW: el area de trazado es TODO el ancho disponible.
+    // El offset derecho no es una zona muerta: son "velas fantasma" de espacio
+    // extra al final de la serie. Asi, al arrastrar, las velas SE DESLIZAN
+    // RIGIDAMENTE y siguen VISIBLES mientras cruzan la zona del offset hasta
+    // el eje (antes se re-escalian dentro de plotW y desaparecian en una
+    // pared invisible a media pantalla, como si quedaran atras del panel)
+    // Guarda: en paneles muy angostos, el margen cede para dejar >= 80px de velas
+    const rightPad = Math.round(Math.min(
+      clamp(padBase + rightBars * 2, padBase, padBase + 40),
+      Math.max(0, mainW - 80)
+    ));
+    const plotW = Math.max(1, mainW - plotLeftPad);
     const xDenom = Math.max(1, data.length - 1);
-    const x = i => plotLeftPad + (i / xDenom) * plotW;
+    const extraBars = rightPad * xDenom / Math.max(1, plotW - rightPad);
+    const barW = plotW / (xDenom + extraBars);
+    // PAN RIGIDO (modelo TradingView): ademas de la ventana logica se dibujan
+    // las velas que estan ENTRANDO/SALIENDO por los bordes y cruzando la zona
+    // del offset. Asi ninguna vela desaparece a media pantalla al arrastrar:
+    // el canvas las recorta solo en el borde fisico del panel
+    const winStart = this._winStart || 0;
+    const winEnd = this._winEnd || data.length;
+    const spillL = 3;
+    const spillR = Math.ceil(extraBars) + 3;
+    const rStart = Math.max(0, winStart - spillL);
+    const rEnd = Math.min(this.candles.length, winEnd + spillR);
+    const rdata = this.candles.slice(rStart, rEnd);
+    // x  -> indices de la ventana logica (ejes, badge, header)
+    // xr -> indices del slice de render con desborde (velas e indicadores)
+    const x = i => plotLeftPad + i * barW;
+    const xr = i => plotLeftPad + (rStart + i - winStart) * barW;
+    this.lastChart.plotW = plotW;
+    this.lastChart.barW = barW;
     const main = this.$("main");
     main.style.left = left + "px"; main.style.top = top + "px";
     const ctx = fitCanvas(main, mainW, totalH);
     ctx.fillStyle = designSettings.bgColor;
     ctx.fillRect(0,0,mainW,totalH);
     drawGrid(ctx, mainW, totalH);
-    const candleW = clamp(plotW / Math.max(1, data.length) * .62, 3, 13);
-    this.drawKillzones(ctx, data, scale, x, y, mainW, candleW);
-    this.drawOpeningPrices(ctx, data, x, y, mainW);
+    const candleW = clamp(barW * .62, 3, 13);
+    this.drawKillzones(ctx, rdata, scale, xr, y, mainW, candleW);
+    this.drawOpeningPrices(ctx, rdata, xr, y, mainW);
     // Pre-calcular colores MACD Pro para barcolorear velas
     const macdProBarColors = [];
     const macdProItems_ = visibleMacdProItems();
     if(macdProItems_.length > 0) {
       macdProItems_.forEach(item => {
         const settings = getMacdProSettingsFor(item);
-        if(data.length < Math.max(settings.fastLength, settings.slowLength) + 2) return;
-        const result = computeMACDPro(data, settings);
+        if(rdata.length < Math.max(settings.fastLength, settings.slowLength) + 2) return;
+        const result = computeMACDPro(rdata, settings);
         result.hist.forEach((value, i) => {
           if(!Number.isFinite(value)) return;
           const prev = result.hist[i - 1];
@@ -5182,11 +5221,11 @@ class ChartPanel {
         });
       });
     }
-    try { this.drawPineBarColorPrepass(data); } catch(e) { this._pineBarColors = []; }
+    try { this.drawPineBarColorPrepass(rdata); } catch(e) { this._pineBarColors = []; }
     const pineBarColors = this._pineBarColors || [];
-    data.forEach((p,i) => {
-      const xx = x(i), yo = y(p.o), yc = y(p.c), yh = y(p.h), yl = y(p.l);
-      const style = {...candleStyle(p, data[i - 1])};
+    rdata.forEach((p,i) => {
+      const xx = xr(i), yo = y(p.o), yc = y(p.c), yh = y(p.h), yl = y(p.l);
+      const style = {...candleStyle(p, rdata[i - 1])};
       // Aplicar barcolor de MACD Pro si existe
       if(macdProBarColors[i]) {
         style.body = macdProBarColors[i];
@@ -5213,26 +5252,34 @@ class ChartPanel {
         ctx.strokeRect(xx - candleW / 2, topBody, candleW, bodyH);
       }
     });
-    this.drawSMFCloudOverlay(ctx, data, x, y, mainW, candleW);
-    this.drawStrategyJrOverlay(ctx, data, x, y, mainW, candleW);
-    this.drawRtcStrategyOverlay(ctx, data, x, y, mainW);
-    this.drawRtcStochOverlay(ctx, data, x, y, mainW);
-    this.drawRtcStoch6Overlay(ctx, data, x, y, mainW);
+    this.drawSMFCloudOverlay(ctx, rdata, xr, y, mainW, candleW);
+    this.drawStrategyJrOverlay(ctx, rdata, xr, y, mainW, candleW);
+    this.drawRtcStrategyOverlay(ctx, rdata, xr, y, mainW);
+    this.drawRtcStochOverlay(ctx, rdata, xr, y, mainW);
+    this.drawRtcStoch6Overlay(ctx, rdata, xr, y, mainW);
     this.drawRtcScreener(ctx, data, mainW);
-    this.drawEMAOverlay(ctx, data, x, y);
-    this.drawBibiruOverlay(ctx, data, x, y);
-    this.drawBibiruVwapOverlay(ctx, data, x, y, mainW);
-    this.drawMACDProOverlay(ctx, data, x, y, mainW);
-    this.drawDisplacementOverlay(ctx, data, x, y, mainW, candleW);
-    this.drawSmartSignalOverlay(ctx, data, x, y, mainW);
-    this.drawPineOverlays(ctx, data, x, y, mainW, candleW);
+    this.drawEMAOverlay(ctx, rdata, xr, y);
+    this.drawBibiruOverlay(ctx, rdata, xr, y);
+    this.drawBibiruVwapOverlay(ctx, rdata, xr, y, mainW);
+    this.drawMACDProOverlay(ctx, rdata, xr, y, mainW);
+    this.drawDisplacementOverlay(ctx, rdata, xr, y, mainW, candleW);
+    this.drawSmartSignalOverlay(ctx, rdata, xr, y, mainW);
+    this.drawPineOverlays(ctx, rdata, xr, y, mainW, candleW);
     this.drawAlertLines(data, y, mainH, mainW);
     const last = data[data.length - 1], prev = data.length > 1 ? data[data.length - 2] : last;
     this.updateHeader(last, prev);
     const lastY = clamp(y(last.c), 1, mainH - 1);
+    // TRUCO TRADINGVIEW #2: el badge de precio NUNCA se corta. Cuando el precio
+    // queda pegado al borde (o fuera del rango visible tras desplazar con el
+    // mouse), la etiqueta se ANCLA al borde en vez de centrarse ahi y quedar
+    // recortada por overflow:hidden del panel
+    const badgeY = clamp(y(last.c), 16, mainH - 16);
     const pline = this.$("pline");
     pline.style.top = Math.round(lastY) + "px";
-    pline.style.left = left + "px";
+    // Estilo TradingView: la linea nace en la ULTIMA vela visible y llega hasta
+    // el eje de precio (no cruza todo el grafico) -> el precio queda siempre
+    // "conectado" a su vela, tambien al desplazar con el mouse
+    pline.style.left = Math.round(left + (data.length - 1) * barW) + "px";
     pline.style.right = (right + yW - 1) + "px";
     // Color dinámico según dirección de la vela (alcista=verde, bajista=rojo)
     const isBull = last.c >= last.o;
@@ -5240,7 +5287,7 @@ class ChartPanel {
     const dt = "#ffffff";
     pline.style.background = `repeating-linear-gradient(90deg,${rgba(dc, .92)} 0,${rgba(dc, .92)} 2px,transparent 2px,transparent 4px)`;
     const pb = this.$("pb");
-    pb.style.top = Math.round(lastY) + "px";
+    pb.style.top = Math.round(badgeY) + "px";
     pb.style.right = (right + 6) + "px";
     pb.style.background = dc;
     pb.style.color = dt;
@@ -5402,6 +5449,8 @@ class ChartPanel {
       }
       const data = this.visibleCandles();
       this.drag = {x:e.clientX, y:e.clientY, offset:this.view.xOffset || 0, yOffset:this.view.yOffset || 0, total:this.candles.length, visible:data.length, width:Math.max(1, this.el.clientWidth - 160), height:Math.max(1, rect.height - 34)};
+      // ocultar los botones flotantes mientras se arrastran las velas
+      this.el.classList.add("dragging-view");
     });
     this.el.addEventListener("dblclick", e => {
       const alertTarget = e.target.closest?.(".alert-line,.alert-label");
@@ -7502,6 +7551,7 @@ function init(){
     panels.forEach(p => {
       p.drag = null;
       p.axisDrag = null;
+      p.el.classList.remove("dragging-view");
     });
     document.body.style.cursor = "";
   });
