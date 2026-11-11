@@ -12,7 +12,7 @@ const EXCEL_DIR = path.join(ROOT, "trade-records");
 const EXCEL_FILE = path.join(EXCEL_DIR, "trades.xlsx");
 
 // Timeframe to minutes mapping
-const TF_MINUTES = { "5m": 5, "15m": 15, "30m": 30, "1h": 60 };
+const TF_MINUTES = { "1m": 1, "3m": 3, "5m": 5, "10m": 10, "15m": 15, "30m": 30, "1h": 60, "4h": 240 };
 
 function sendJson(res, status, payload) {
   res.writeHead(status, {
@@ -621,6 +621,36 @@ function handleChartRequest(req, res) {
       hint: "El rango pedido no cruza los datos descargados. Ejecuta node download-history.js para refrescar.",
     });
     return;
+  }
+
+  // Agregacion desde una TF base local: 10m <- 5m x2, 4h <- 1h x4, 3m <- 1m x3
+  // (permite replay en TFs que no tienen archivo propio usando los datos descargados)
+  const AGG_FROM = { "10m": "5m", "4h": "1h", "3m": "1m" };
+  const baseTf = AGG_FROM[tf];
+  if (baseTf) {
+    const baseMinutes = TF_MINUTES[baseTf] || 5;
+    const targetMinutes = TF_MINUTES[tf] || 5;
+    const ratio = Math.max(1, Math.round(targetMinutes / baseMinutes));
+    const baseFilePath = path.join(DATA_DIR, symbol, `${baseTf}.json`);
+    if (fs.existsSync(baseFilePath)) {
+      const need = (count > 0 ? count : 2000) * ratio + ratio * 10;
+      const baseCandles = loadLocalData(symbol, baseTf, fromTs, toTs, need);
+      if (baseCandles && baseCandles.length >= ratio * 2) {
+        let agg = aggregate(baseCandles, targetMinutes);
+        if (count > 0 && agg.length > count) agg = agg.slice(agg.length - count);
+        if (agg.length >= 2) {
+          console.log(`📁 Local agregada: ${symbol} ${baseTf} x${ratio} → ${tf} = ${agg.length} velas`);
+          sendJson(res, 200, {
+            symbol,
+            label: symbol,
+            timeframe: tf,
+            source: `local-agg:${baseTf}`,
+            candles: agg,
+          });
+          return;
+        }
+      }
+    }
   }
 
   // Fallback to ChartFlow proxy (solo si el par simbolo/tf local no existe)

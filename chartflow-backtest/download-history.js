@@ -15,18 +15,25 @@ const SYMBOLS = {
   SOLUSD:  { yahoo: 'SOL-USD',     label: 'SOLUSD' },
 };
 
-const TIMEFRAMES = ['5m', '15m', '30m', '1h'];
-
-// Historial objetivo por timeframe (dias). Yahoo entrega intradia en chunks de
-// ~60 dias por request: se pagina hacia atras hasta que ya no hay mas datos.
-const TARGET_DAYS = {
-  '5m':  730,   // intenta 2 anios de velas de 5m (lo que yahoo tenga)
-  '15m': 730,
-  '30m': 730,
-  '1h':  730,
+// ── ESCALA COMPLETA DE TEMPORALIDADES DEL REPLAY (estilo TradingView) ──
+// 1m 3m 5m 10m 15m 30m 1h 4h
+// - Yahoo NO ofrece 3m/10m/4h nativos -> se descarga la TF base y se agrega xN
+// - Yahoo 1m solo conserva ~30 dias de historial (limite de la fuente)
+// - Binance (crypto) si tiene 1m/3m/4h nativos, pero NO 10m -> 5m agregado x2
+const TF_SPECS = {
+  '1m':  { yahoo: '1m',  chunk: 6,   days: 30,  binance: '1m',  binYears: 1 },
+  '3m':  { aggFrom: '1m', factor: 3, days: 30,  binance: '3m',  binYears: 1 },
+  '5m':  { yahoo: '5m',  chunk: 57,  days: 730, binance: '5m',  binYears: 2 },
+  '10m': { aggFrom: '5m', factor: 2, days: 730, binanceFrom: '5m', binYears: 2 },
+  '15m': { yahoo: '15m', chunk: 57,  days: 730, binance: '15m', binYears: 2 },
+  '30m': { yahoo: '30m', chunk: 57,  days: 730, binance: '30m', binYears: 3 },
+  '1h':  { yahoo: '60m', chunk: 57,  days: 730, binance: '1h',  binYears: 4 },
+  '4h':  { aggFrom: '1h', factor: 4, days: 730, binance: '4h',  binYears: 4 },
 };
-const CHUNK_DAYS = 57; // margen bajo el limite de 60d por request de yahoo
-const EMPTY_CHUNKS_STOP = 3; // corta si llegan N chunks vacios seguidos
+const TIMEFRAMES = Object.keys(TF_SPECS);
+
+const CHUNK_DAYS_DEFAULT = 57; // margen bajo el limite de 60d por request de yahoo
+const EMPTY_CHUNKS_STOP = 3;   // corta si llegan N chunks vacios seguidos
 
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
@@ -67,22 +74,40 @@ function mergeCandles(prev, fresh) {
   return prev;
 }
 
-// Descarga paginada: chunks de CHUNK_DAYS hacia atras hasta TARGET_DAYS
+// Agrega velas de una TF base a una TF mayor (mismo criterio que server.js:
+// buckets alineados por epoch, o=primera h=max l=min c=ultima v=suma)
+function aggregate(candles, minutes) {
+  if (!minutes || minutes <= 1) return candles;
+  const bucketMs = minutes * 60 * 1000;
+  const buckets = new Map();
+  for (const c of candles) {
+    const b = Math.floor(c.t / bucketMs) * bucketMs;
+    const cur = buckets.get(b);
+    if (!cur) buckets.set(b, { t: b, o: c.o, h: c.h, l: c.l, c: c.c, v: c.v || 0 });
+    else {
+      cur.h = Math.max(cur.h, c.h);
+      cur.l = Math.min(cur.l, c.l);
+      cur.c = c.c;
+      cur.v = (cur.v || 0) + (c.v || 0);
+    }
+  }
+  return Array.from(buckets.values()).sort((a, b) => a.t - b.t);
+}
+
+// Descarga paginada de una TF NATIVA de yahoo: chunks hacia atras hasta targetDays
 // o hasta que yahoo deje de tener datos (EMPTY_CHUNKS_STOP vacios seguidos)
-async function downloadSymbol(symbol, tf) {
+async function downloadYahoo(symbol, yahooInterval, chunkDays, targetDays) {
   const cfg = SYMBOLS[symbol];
-  const interval = tf;
-  const back = TARGET_DAYS[tf] || 730;
   const now = Date.now();
 
   let candles = [];
   let emptyStreak = 0;
   let pages = 0;
 
-  for (let offsetDays = 0; offsetDays < back; offsetDays += CHUNK_DAYS) {
+  for (let offsetDays = 0; offsetDays < targetDays; offsetDays += chunkDays) {
     const toTs = now - offsetDays * 86400000;
-    const fromTs = toTs - CHUNK_DAYS * 86400000;
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(cfg.yahoo)}?period1=${Math.floor(fromTs / 1000)}&period2=${Math.floor(toTs / 1000)}&interval=${interval}&includePrePost=true`;
+    const fromTs = toTs - chunkDays * 86400000;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(cfg.yahoo)}?period1=${Math.floor(fromTs / 1000)}&period2=${Math.floor(toTs / 1000)}&interval=${yahooInterval}&includePrePost=true`;
     try {
       const data = await fetchJson(url);
       const fresh = parseYahoo(data);
@@ -97,7 +122,7 @@ async function downloadSymbol(symbol, tf) {
         if (emptyStreak >= EMPTY_CHUNKS_STOP) break;
       }
     } catch (e) {
-      console.error(`  chunk ${symbol} ${tf} (−${offsetDays}d): ${e.message}`);
+      console.error(`  chunk ${symbol} ${yahooInterval} (−${offsetDays}d): ${e.message}`);
       emptyStreak++;
       if (emptyStreak >= EMPTY_CHUNKS_STOP) break;
     }
@@ -109,19 +134,21 @@ async function downloadSymbol(symbol, tf) {
 }
 
 // ── BINANCE (crypto con anos de historial gratis, sin API key) ──
-// Yahoo limita 5m/15m/30m a ~60 dias; Binance entrega anios completos
 const BINANCE_SYMBOLS = { BTCUSD: 'BTCUSDT', ETHUSD: 'ETHUSDT', SOLUSD: 'SOLUSDT' };
-const BINANCE_YEARS = { '5m': 2, '15m': 2, '30m': 3, '1h': 4 };
+const BINANCE_MS = {
+  '1m': 60000, '3m': 180000, '5m': 300000, '15m': 900000,
+  '30m': 1800000, '1h': 3600000, '4h': 14400000,
+};
 
-async function fetchBinance(asset, tf) {
+async function fetchBinance(asset, interval, years) {
   const out = [];
-  const msPer = { '5m': 300000, '15m': 900000, '30m': 1800000, '1h': 3600000 }[tf];
-  const years = BINANCE_YEARS[tf] || 1;
-  const startTarget = Date.now() - years * 365.25 * 86400000;
+  const msPer = BINANCE_MS[interval];
+  if (!msPer) throw new Error(`Intervalo binance no soportado: ${interval}`);
+  const startTarget = Date.now() - (years || 1) * 365.25 * 86400000;
   let end = Date.now();
   while (end > startTarget) {
     const startTime = Math.max(0, end - 1000 * msPer);
-    const url = `https://api.binance.com/api/v3/klines?symbol=${asset}&interval=${tf}&startTime=${startTime}&endTime=${end}&limit=1000`;
+    const url = `https://api.binance.com/api/v3/klines?symbol=${asset}&interval=${interval}&startTime=${startTime}&endTime=${end}&limit=1000`;
     let data;
     try {
       data = await fetchJson(url);
@@ -138,8 +165,52 @@ async function fetchBinance(asset, tf) {
   return out;
 }
 
+// Obtiene las velas de una TF de la escala para un simbolo:
+// 1) Binance nativo (crypto)  2) Yahoo nativo  3) Agregacion desde la TF base
+async function getTFData(symbol, tf) {
+  const spec = TF_SPECS[tf];
+  if (!spec) return null;
+  const binAsset = BINANCE_SYMBOLS[symbol];
+
+  // Crypto: Binance primero (historial completo en anios); yahoo como respaldo
+  if (binAsset) {
+    let bin = [];
+    if (spec.binance) {
+      bin = await fetchBinance(binAsset, spec.binance, spec.binYears);
+      if (bin.length >= 2) return { candles: bin, source: 'binance' };
+    } else if (spec.binanceFrom) {
+      // TF no nativa en binance (10m): base agregada
+      const base = await fetchBinance(binAsset, spec.binanceFrom, spec.binYears);
+      const agg = aggregate(base, parseInt(tf));
+      if (agg.length >= 2) return { candles: agg, source: `binance-agg:${spec.binanceFrom}` };
+    }
+    console.log('  (binance vacio, fallback yahoo)');
+  }
+
+  // Yahoo: TF nativa directa
+  if (spec.yahoo) {
+    const res = await downloadYahoo(symbol, spec.yahoo, spec.chunk || CHUNK_DAYS_DEFAULT, spec.days || 730);
+    if (res) return { candles: res.candles, source: 'yahoo' };
+  }
+
+  // Yahoo: TF agregada desde su TF base (3m<-1m, 10m<-5m, 4h<-1h)
+  if (spec.aggFrom) {
+    const baseSpec = TF_SPECS[spec.aggFrom] || {};
+    const baseInterval = baseSpec.yahoo;
+    if (baseInterval) {
+      const res = await downloadYahoo(symbol, baseInterval, baseSpec.chunk || CHUNK_DAYS_DEFAULT, spec.days || 730);
+      if (res) {
+        const agg = aggregate(res.candles, parseInt(tf));
+        if (agg.length >= 2) return { candles: agg, source: `yahoo-agg:${spec.aggFrom}x${spec.factor}` };
+      }
+    }
+  }
+
+  return null;
+}
+
 async function main() {
-  console.log('=== Descargando historicos (paginado) ===\n');
+  console.log('=== Descargando historicos (escala 1m-4h, paginado) ===\n');
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
   const summary = {};
@@ -151,21 +222,11 @@ async function main() {
     for (const tf of TIMEFRAMES) {
       process.stdout.write(`  ${tf}... `);
       let res = null;
-      let source = '';
-
-      // Crypto: Binance primero (historial completo en anios); yahoo como respaldo
-      const binAsset = BINANCE_SYMBOLS[symbol];
-      if (binAsset) {
-        const bin = await fetchBinance(binAsset, tf);
-        await new Promise(r => setTimeout(r, 400));
-        if (bin.length >= 2) {
-          res = { candles: bin, pages: Math.ceil((Date.now() - bin[0].t) / (1000 * ({ '5m': 300000, '15m': 900000, '30m': 1800000, '1h': 3600000 }[tf]))) };
-          source = ' (binance)';
-        } else {
-          console.log('  (binance vacio, fallback yahoo)');
-        }
+      try {
+        res = await getTFData(symbol, tf);
+      } catch (e) {
+        console.error(`  error ${symbol} ${tf}: ${e.message}`);
       }
-      if (!res) res = await downloadSymbol(symbol, tf);
 
       if (res) {
         const dir = path.join(DATA_DIR, symbol);
@@ -175,8 +236,8 @@ async function main() {
 
         const first = new Date(res.candles[0].t).toLocaleDateString('es-ES');
         const last = new Date(res.candles[res.candles.length - 1].t).toLocaleDateString('es-ES');
-        console.log(`OK ${res.candles.length} velas${source} (${first} -> ${last})`);
-        summary[symbol][tf] = { count: res.candles.length, first, last, source: source.trim() || 'yahoo' };
+        console.log(`OK ${res.candles.length} velas (${res.source}) (${first} -> ${last})`);
+        summary[symbol][tf] = { count: res.candles.length, first, last, source: res.source };
       } else {
         console.log('Sin datos');
         summary[symbol][tf] = { count: 0 };

@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#06090f;--s1:#0b1018;--s2:#0f1520;--s3:#141c28;--border:#1a2435;--text:#e8ecf4;--dim:#5a6a80;--accent:#00d4ff;--accent-d:rgba(0,212,255,.15);--bull:#00e5a0;--bull-d:rgba(0,229,160,.12);--bear:#ff3355;--bear-d:rgba(255,51,85,.12);--mono:'JetBrains Mono',monospace;--ui:'Inter',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--ui)}
-.app{display:flex;flex-direction:column;height:100vh}
+.app{display:flex;flex-direction:column;height:100vh;position:relative}
 .topbar{height:40px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
 .logo{font:800 13px var(--mono);color:var(--accent);white-space:nowrap}
 .lbl{font:600 10px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
@@ -18,16 +18,18 @@
 .sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
 .btn{height:26px;border:1px solid var(--border);background:var(--s2);color:var(--text);border-radius:13px;padding:0 11px;font:700 11px var(--ui);cursor:pointer;transition:all .15s;white-space:nowrap}
 .btn:hover{border-color:var(--accent);color:var(--accent)}
-.btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
-.btn.primary:hover{filter:brightness(1.15)}
-.btn.danger{border-color:var(--bear);color:var(--bear)}
-.btn.danger:hover{background:var(--bear);color:#fff}
+.btn.primary{background:var(--s3);color:var(--accent);border-color:rgba(0,212,255,.35)}
+.btn.primary:hover{background:var(--accent-d);filter:none}
+.btn.danger{background:var(--bear-d);color:var(--bear);border-color:rgba(255,51,85,.3)}
+.btn.danger:hover{background:rgba(255,51,85,.22);color:var(--bear);filter:none}
 .spacer{flex:1}
 .workspace{flex:1;display:flex;overflow:hidden;min-height:0}
 .chart-col{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;position:relative}
 .chart-wrap{flex:1;position:relative;overflow:hidden;min-height:0;cursor:crosshair}
 .chart-wrap canvas{position:absolute;top:0;left:0;width:100%;height:100%}
-.x-axis{height:30px;background:var(--s1);border-top:1px solid var(--border);flex-shrink:0}
+.x-axis{height:30px;background:var(--s1);border-top:1px solid var(--border);flex-shrink:0;position:relative}
+/* Badge de zona horaria del eje X (estilo TradingView: reloj en vivo a la derecha) */
+.tz-badge{position:absolute;right:6px;top:50%;transform:translateY(-50%);font:600 9px var(--mono);color:var(--dim);background:var(--s3);border:1px solid var(--border);padding:2px 7px;border-radius:3px;z-index:2;pointer-events:none;white-space:nowrap}
 .price-line{position:absolute;left:0;right:0;height:1px;z-index:5;pointer-events:none;border-top:1px dashed rgba(223,228,240,.35)}
 .price-badge{position:absolute;right:0;transform:translateY(-50%);background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font:700 11px var(--mono);z-index:10;white-space:nowrap}
 .watermark{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:800 56px var(--mono);color:rgba(255,255,255,.03);pointer-events:none;z-index:1}
@@ -36,8 +38,8 @@
 .side-section h3{font:800 10px var(--mono);color:var(--accent);letter-spacing:.7px;text-transform:uppercase;margin-bottom:6px}
 .trade-actions{display:flex;gap:5px}
 .trade-actions button{flex:1;height:30px;border:0;border-radius:6px;font:800 11px var(--mono);cursor:pointer;transition:filter .15s}
-.trade-actions .buy{background:var(--bull);color:#06090f}
-.trade-actions .sell{background:var(--bear);color:#fff}
+.trade-actions .buy{background:var(--bull-d);color:var(--bull);border:1px solid rgba(0,229,160,.35)}
+.trade-actions .sell{background:var(--bear-d);color:var(--bear);border:1px solid rgba(255,51,85,.3)}
 .trade-actions button:hover{filter:brightness(1.15)}
 .trade-actions button.active-entry{box-shadow:0 0 0 2px var(--accent);animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 2px var(--accent)}50%{box-shadow:0 0 0 4px rgba(0,212,255,.4)}}
@@ -69,13 +71,41 @@
 .metric .mv.pos{color:var(--bull)}.metric .mv.neg{color:var(--bear)}
 .equity-wrap{height:60px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
 .equity-wrap canvas{width:100%;height:100%}
-.bottombar{height:40px;display:flex;align-items:center;gap:5px;padding:0 10px;background:var(--s1);border-top:1px solid var(--border);flex-shrink:0}
-.replay-btn{width:28px;height:28px;border:1px solid var(--border);background:var(--s2);color:var(--text);border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;transition:all .12s}
-.replay-btn:hover{background:var(--s3);border-color:var(--accent);color:var(--accent)}
-.replay-btn.playing{background:var(--accent-d);border-color:var(--accent);color:var(--accent)}
+/* Barra inferior estilo TradingView: Buy/Sell + tamano | replay centrado | balance */
+.bottombar{height:44px;display:flex;align-items:center;gap:8px;padding:0 12px;background:#161b22;border-top:1px solid var(--border);flex-shrink:0;position:relative;z-index:30}
+.bb-left{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.bb-center{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.bb-right{display:flex;align-items:center;gap:8px;flex:1;min-width:0;justify-content:flex-end}
+.bb-buy{height:28px;border:none;border-radius:6px;background:#2962ff;color:#fff;font:700 11px var(--ui);padding:0 16px;cursor:pointer;transition:filter .12s}
+.bb-buy:hover{filter:brightness(1.12)}
+.bb-sell{height:28px;border:none;border-radius:6px;background:#f5798a;color:#fff;font:700 11px var(--ui);padding:0 16px;cursor:pointer;transition:filter .12s}
+.bb-sell:hover{filter:brightness(1.08)}
+.bb-buy.active-entry{box-shadow:0 0 0 2px var(--bg),0 0 0 4px #2962ff}
+.bb-sell.active-entry{box-shadow:0 0 0 2px var(--bg),0 0 0 4px #f5798a}
+.bb-size{display:flex;align-items:center;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--bg);overflow:hidden;flex-shrink:0}
+.bb-size input{width:52px;height:100%;border:none;background:transparent;color:var(--text);font:700 11px var(--mono);padding:0 6px;text-align:center}
+.bb-size input:focus{outline:none}
+.bb-size span{font:9px var(--mono);color:var(--dim);padding:0 6px;border-left:1px solid var(--border)}
+.replay-btn{min-width:26px;height:26px;border:none;background:transparent;color:var(--dim);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;transition:all .12s;padding:0 4px}
+.replay-btn:hover{background:rgba(255,255,255,.07);color:var(--text)}
+.replay-btn.playing{background:var(--accent-d);color:var(--accent)}
+.replay-btn.exit:hover{background:var(--bear-d);color:var(--bear)}
 .bb-sep{width:1px;height:18px;background:var(--border)}
+.bb-balance{font:800 11px var(--mono);padding:5px 10px;border-radius:6px;background:var(--s3);white-space:nowrap}
 .speed-sel{height:22px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:4px;padding:0 5px;font:10px var(--mono)}
-.progress-bar{flex:1;height:3px;background:var(--s3);border-radius:2px;cursor:pointer}
+/* Selector de TF del replay: texto plano con caret, sin caja (estilo TradingView) */
+.tf-replay{height:26px;border:none;background:transparent;color:var(--text);font:700 12px var(--mono);cursor:pointer;appearance:none;-webkit-appearance:none;padding:0 14px 0 6px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%235a6a80'/></svg>");background-repeat:no-repeat;background-position:right 2px center;border-radius:6px}
+.tf-replay:hover{background-color:rgba(255,255,255,.07)}
+.tf-replay:focus{outline:none}
+/* Slider de velocidad del replay: escala 0.1x -> 16x velas/seg */
+.speed-wrap{position:relative;width:120px;height:28px;display:flex;align-items:center;flex-shrink:0}
+.speed-range{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:2px;background:var(--s3);outline:none;cursor:pointer}
+.speed-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:13px;height:13px;border-radius:50%;background:#2f6bff;border:2px solid #fff;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.speed-range::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:#2f6bff;border:2px solid #fff;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.speed-tip{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);background:#2f6bff;color:#fff;font:700 9px var(--ui);padding:3px 8px;border-radius:10px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:50}
+.speed-wrap:hover .speed-tip,.speed-wrap.active .speed-tip{opacity:1}
+.speed-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#2f6bff}
+.progress-bar{width:110px;height:3px;background:var(--s3);border-radius:2px;cursor:pointer;flex-shrink:0}
 .progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .1s}
 .bb-info{font:10px var(--mono);color:var(--dim);white-space:nowrap}
 .bb-info .cur{color:var(--accent);font-weight:700}
@@ -377,7 +407,7 @@
     <span class="lbl">Sym</span>
     <select id="symSel"></select>
     <span class="lbl">TF</span>
-    <select id="tfSel"><option value="5m">5m</option><option value="15m">15m</option><option value="30m">30m</option><option value="1h">1h</option></select>
+    <select id="tfSel"><option value="1m">1m</option><option value="3m">3m</option><option value="5m">5m</option><option value="10m">10m</option><option value="15m">15m</option><option value="30m">30m</option><option value="1h">1h</option><option value="4h">4h</option></select>
     <div class="sep"></div>
     <span class="lbl">Rango</span>
     <select id="rangePreset">
@@ -409,7 +439,7 @@
       <option value="30" selected>30 min</option>
       <option value="60">60 min</option>
     </select>
-    <div id="timerDisplay" style="display:none;background:linear-gradient(135deg,rgba(0,212,255,.15),rgba(0,229,160,.1));border:1px solid rgba(0,212,255,.3);border-radius:8px;padding:4px 10px;font:700 14px var(--mono);color:var(--accent);min-width:80px;text-align:center">
+    <div id="timerDisplay" style="display:none;background:var(--s2);border:1px solid rgba(0,212,255,.25);border-radius:8px;padding:4px 10px;font:700 14px var(--mono);color:var(--accent);min-width:80px;text-align:center">
       <span id="timerValue">30:00</span>
     </div>
     <div class="spacer"></div>
@@ -434,15 +464,12 @@
         <div class="crosshair-label crosshair-date" id="crossDate"></div>
         <div class="crosshair-label crosshair-price" id="crossPrice"></div>
       </div>
-      <div class="x-axis" id="xAxisWrap"><canvas id="xAxisCanvas"></canvas></div>
+      <div class="x-axis" id="xAxisWrap"><canvas id="xAxisCanvas"></canvas><div class="tz-badge" id="tzBadge">UTC · --:--:--</div></div>
     </div>
     <div class="side">
       <div class="side-section">
         <h3 data-i18n="Operar">💹 Operar</h3>
-        <div class="trade-actions">
-          <button class="buy" id="buyBtn" data-i18n="LONG">▲ LONG</button>
-          <button class="sell" id="sellBtn" data-i18n="SHORT">▼ SHORT</button>
-        </div>
+        <!-- Buy/Sell y el tamano viven ahora en la barra inferior (estilo TradingView) -->
         <div id="tradeConfig" style="display:none;margin-top:8px">
           <div class="side-row"><label>Tipo</label>
             <select id="cfgOrderType" style="flex:1;height:24px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:4px;padding:0 5px;font:10px var(--mono)">
@@ -454,7 +481,6 @@
           <div class="side-row"><label>Entrada</label><input id="cfgEntry" readonly style="opacity:.6"></div>
           <div class="side-row"><label>SL</label><input type="number" id="cfgSL" placeholder="pips" step="0.1"><span class="unit">pips</span></div>
           <div class="side-row"><label>TP</label><input type="number" id="cfgTP" placeholder="pips" step="0.1"><span class="unit">pips</span></div>
-          <div class="side-row"><label>Tamaño</label><input type="number" id="cfgSize" value="1" min="0.01" step="0.01"><span class="unit">lote</span></div>
           <div class="side-row"><label>Spread</label><input type="number" id="cfgSpread" value="0" min="0" step="0.1"><span class="unit">pips</span></div>
           <div class="side-row" style="margin-top:2px"><label>Slippage</label><input type="number" id="cfgSlippage" value="0" min="0" step="0.1"><span class="unit">pips</span></div>
           <div class="trade-actions" style="margin-top:5px">
@@ -498,20 +524,31 @@
     </div>
   </div>
   <div class="bottombar">
-    <button class="replay-btn" id="stepBack" title="← Retroceder">⏮</button>
-    <button class="replay-btn" id="playPause" title="Space Play/Pausa">▶</button>
-    <button class="replay-btn" id="stepFwd" title="→ Avanzar">⏭</button>
-    <div class="bb-sep"></div>
-    <select class="speed-sel" id="speedSel"><option value="1">1x</option><option value="2">2x</option><option value="5">5x</option><option value="10" selected>10x</option><option value="25">25x</option><option value="50">50x</option><option value="100">100x</option></select>
-    <div class="bb-sep"></div>
-    <div class="progress-bar" id="progBar"><div class="progress-fill" id="progFill" style="width:0%"></div></div>
-    <div class="bb-info"><span class="cur" id="cIdx">0</span>/<span id="cTotal">0</span></div>
-    <div class="bb-sep"></div>
-    <div class="bb-info">⏱️ <span class="cur" id="trainTime">0 min</span></div>
-    <div class="bb-sep"></div>
-    <div class="bb-info" id="countdownBottom" style="display:none;color:var(--accent);font-weight:700">⏳ <span id="countdownBottomValue">00:00</span></div>
-    <div class="bb-sep" id="countdownSep" style="display:none"></div>
-    <div class="bb-date" id="cDate">--</div>
+    <div class="bb-left">
+      <button class="bb-buy" id="buyBtn" title="Comprar / LONG">Buy</button>
+      <button class="bb-sell" id="sellBtn" title="Vender / SHORT">Sell</button>
+      <div class="bb-size"><input type="number" id="cfgSize" value="1" min="0.01" step="0.01"><span>lote</span></div>
+    </div>
+    <div class="bb-center">
+      <button class="replay-btn" id="stepBack" title="← Retroceder">⏮</button>
+      <div class="speed-wrap" id="speedWrap">
+        <input type="range" class="speed-range" id="speedRange" min="0" max="7" step="1" value="4" title="Velocidad del replay">
+        <div class="speed-tip" id="speedTip">2x per sec</div>
+      </div>
+      <button class="replay-btn" id="playPause" title="Space Play/Pausa">▶</button>
+      <select class="tf-replay" id="tfReplay" title="Temporalidad del replay"><option value="1m">1m</option><option value="3m">3m</option><option value="5m">5m</option><option value="10m">10m</option><option value="15m">15m</option><option value="30m">30m</option><option value="1h">1h</option><option value="4h">4h</option></select>
+      <button class="replay-btn" id="stepFwd" title="→ Avanzar">⏭</button>
+      <button class="replay-btn exit" id="exitReplay" title="Salir del replay">↩</button>
+    </div>
+    <div class="bb-right">
+      <div class="progress-bar" id="progBar"><div class="progress-fill" id="progFill" style="width:0%"></div></div>
+      <div class="bb-info"><span class="cur" id="cIdx">0</span>/<span id="cTotal">0</span></div>
+      <div class="bb-info">⏱️ <span class="cur" id="trainTime">0 min</span></div>
+      <div class="bb-sep" id="countdownSep" style="display:none"></div>
+      <div class="bb-info" id="countdownBottom" style="display:none;color:var(--accent);font-weight:700">⏳ <span id="countdownBottomValue">00:00</span></div>
+      <div class="bb-balance" id="bbBalance">$100,000.00</div>
+      <div class="bb-date" id="cDate">--</div>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -932,7 +969,47 @@ function applyLang(){
   if($("exitBtn"))$("exitBtn").textContent=t("SALIR");
 }
 
-const S={candles:[],idx:0,playing:false,speed:10,timer:null,balance:100000,initial:100000,riskPct:1,open:[],closed:[],equity:[],symbol:"NAS100",tf:"5m",tab:"open",loaded:false,zoom:1,panX:0,entryMode:null,dragType:null,selectedTrade:null,_dx:0,_dp:0,_dy:0,_dlo:0,_dhi:0,sessionStart:null,sessionMinutes:0};
+const S={candles:[],idx:0,playing:false,speed:2,timer:null,balance:100000,initial:100000,riskPct:1,open:[],closed:[],equity:[],symbol:"NAS100",tf:"5m",tab:"open",loaded:false,zoom:1,panX:0,entryMode:null,dragType:null,selectedTrade:null,_dx:0,_dp:0,_dy:0,_dlo:0,_dhi:0,sessionStart:null,sessionMinutes:0};
+
+// Escala de velocidad del replay (velas por segundo), estilo TradingView:
+// de muy lento (1 vela cada 10 seg) hasta 16x por segundo
+const SPEED_STEPS=[0.1,0.25,0.5,1,2,4,8,16];
+function speedLabel(v){
+  if(v<1){
+    const secs=Math.round(1/v);
+    return "1 per "+secs+" sec";
+  }
+  return (v===1?"1":v+"x")+" per sec";
+}
+function speedIndex(v){ // indice del paso mas cercano a una velocidad dada
+  let best=0,dist=Infinity;
+  SPEED_STEPS.forEach((s,i)=>{const d=Math.abs(s-v);if(d<dist){dist=d;best=i}});
+  return best;
+}
+function speedFromIndex(i){ return SPEED_STEPS[clamp(+i||0,0,SPEED_STEPS.length-1)]; }
+// Pinta slider de velocidad: valor, tooltip y relleno del track
+function renderSpeedUI(){
+  const idx=+$("speedRange").value||0;
+  const v=SPEED_STEPS[idx];
+  S.speed=v;
+  $("speedTip").textContent=speedLabel(v);
+  const r=$("speedRange");
+  const frac=idx/(SPEED_STEPS.length-1);
+  r.style.background=`linear-gradient(90deg,#2f6bff ${frac*100}%,var(--s3) ${frac*100}%)`;
+  // anclar la burbuja sobre el thumb del slider
+  const wrap=$("speedWrap");
+  const thumb=13,track=r.clientWidth-thumb;
+  $("speedTip").style.left=Math.round(thumb/2+frac*track)+"px";
+  wrap.classList.toggle("active",true);
+  clearTimeout(renderSpeedUI._t);
+  renderSpeedUI._t=setTimeout(()=>wrap.classList.remove("active"),1200);
+}
+function setSpeed(v,fromUI){
+  $("speedRange").value=speedIndex(v);
+  renderSpeedUI();
+  if(!fromUI)saveBacktestConfig();
+  if(S.playing)startTimer();
+}
 const SYM={
   NAS100:{label:"NAS100",pip:1,pipValue:1},
   US500:{label:"S&P500",pip:0.1,pipValue:5},
@@ -964,6 +1041,18 @@ let priceCenter=0; // Center price for zoom
   $("dateFrom").value=past.toISOString().split("T")[0];
 
   $("startBtn").onclick=startBacktest;$("exitBtn").onclick=exitBacktest;
+  $("exitReplay").onclick=exitBacktest; // botón ↩ de la píldora flotante
+  // Zona horaria del eje X: offset real del sistema + reloj local en vivo
+  function tzOffsetLabel(){
+    const mins=-new Date().getTimezoneOffset();
+    const sign=mins>=0?"+":"-";
+    const hh=Math.floor(Math.abs(mins)/60),mm=Math.abs(mins)%60;
+    return "UTC"+sign+hh+(mm?":"+String(mm).padStart(2,"0"):"");
+  }
+  function updateTzBadge(){
+    $("tzBadge").textContent=tzOffsetLabel()+" · "+new Date().toLocaleTimeString("es-ES",{hour12:false});
+  }
+  updateTzBadge();setInterval(updateTzBadge,1000);
   // REQUISITO: cambiar simbolo/TF SOLO muestra las velas del activo elegido (en pausa).
   // El replay avanza unicamente al pulsar INICIAR.
   $("symSel").onchange=()=>{ if(S.open.length)toast("⚠ Cambiar de activo limpia los trades abiertos en curso"); loadBacktest(); };
@@ -973,7 +1062,18 @@ let priceCenter=0; // Center price for zoom
   $("confirmBtn").onclick=confirmTrade;$("cancelBtn").onclick=exitMode;
   $("saveEditBtn").onclick=saveEdit;$("cancelEditBtn").onclick=()=>{S.selectedTrade=null;$("editSection").style.display="none";render()};
   $("breakevenBtn").onclick=setBreakeven;
-  $("speedSel").onchange=()=>{S.speed=+$("speedSel").value;saveBacktestConfig();if(S.playing)startTimer()};
+  // Slider de velocidad del replay: 0.1x -> 16x velas/seg con etiqueta tipo TradingView
+  $("speedRange").addEventListener("input",()=>{renderSpeedUI();saveBacktestConfig();if(S.playing)startTimer()});
+  $("speedRange").addEventListener("change",e=>e.target.blur()); // no robar Space del play/pausa
+  // Selector de TF del replay (barra inferior): mantiene tfSel sincronizado y recarga
+  $("tfReplay").onchange=()=>{
+    if(S.open.length)toast("⚠ Cambiar de temporalidad limpia los trades abiertos en curso");
+    $("tfSel").value=$("tfReplay").value;
+    saveBacktestConfig();
+    loadBacktest();
+  };
+  // sincronizar el selector del replay cuando cambia el TF del topbar
+  $("tfSel").addEventListener("change",()=>{$("tfReplay").value=$("tfSel").value});
   $("balIn").onchange=saveBacktestConfig;
   $("riskIn").onchange=saveBacktestConfig;
   $("progBar").onclick=e=>{if(!S.loaded)return;const r=$("progBar").getBoundingClientRect();advanceTo(Math.floor(((e.clientX-r.left)/r.width)*(S.candles.length-1)))};
@@ -993,7 +1093,7 @@ let priceCenter=0; // Center price for zoom
       if(cfg.to)$("dateTo").value=cfg.to;
       if(cfg.bal)$("balIn").value=cfg.bal;
       if(cfg.risk)$("riskIn").value=cfg.risk;
-      if(cfg.speed)$("speedSel").value=cfg.speed;
+      if(cfg.speed!=null)setSpeed(cfg.speed);
       hadSavedCfg=!!(cfg.from&&cfg.to);
     }
   }catch{}
@@ -1008,6 +1108,7 @@ let priceCenter=0; // Center price for zoom
     else if(days<=60)$("tfSel").value="15m";
     else if(days<=180)$("tfSel").value="30m";
     else $("tfSel").value="1h";
+    $("tfReplay").value=$("tfSel").value;
     saveBacktestConfig();
   };
   // El preset por defecto define el rango; las fechas guardadas por el usuario tienen prioridad
@@ -1221,7 +1322,7 @@ function saveBacktestConfig(){
     localStorage.setItem("bt_cfg",JSON.stringify({
       symbol:$("symSel").value,tf:$("tfSel").value,
       from:$("dateFrom").value,to:$("dateTo").value,
-      bal:$("balIn").value,risk:$("riskIn").value,speed:$("speedSel").value
+      bal:$("balIn").value,risk:$("riskIn").value,speed:S.speed
     }));
   }catch{}
 }
@@ -1451,8 +1552,8 @@ function saveTrainingSession(minutes){
   sessions[todayKey].sessions++;
   
   // Calcular tiempo simulado (velas procesadas)
-  const tfMinutes={5:5,15:15,30:30,60:60};
-  const simMinutes=S.candles.length*(tfMinutes[parseInt(S.tf)]||5);
+  const tfMinutes={"1m":1,"3m":3,"5m":5,"10m":10,"15m":15,"30m":30,"1h":60,"4h":240};
+  const simMinutes=S.candles.length*(tfMinutes[S.tf]||5);
   sessions[todayKey].simulatedTime+=simMinutes;
   sessions[todayKey].backtestTrades+=S.closed.length;
   
@@ -1506,6 +1607,20 @@ function advanceTo(idx){
 
 // ENTRY MODE
 function enterMode(type){
+  if(!S.loaded||S.candles.length<2){toast("⚠ Carga un backtest primero (INICIAR)");return}
+  const currentPrice=S.candles[S.idx]?.c;
+  if(!currentPrice){toast("Sin datos en la vela actual");return}
+  // Orden a MERCADO: ejecucion inmediata estilo TradingView (Buy/Sell de la barra)
+  if($("cfgOrderType").value==="MARKET"){
+    const slPips=+$("cfgSL").value||20,tpPips=+$("cfgTP").value||40;
+    const spread=+$("cfgSpread").value||0,slip=+$("cfgSlippage").value||0;
+    const size=+$("cfgSize").value||1;
+    const trade=placeMarketTrade(type,{currentPrice,slPips,tpPips,spread,slip,size});
+    S.open.push(trade);updateUI();renderTrades();render();
+    toast(`${type==="LONG"?"▲ LONG":"▼ SHORT"} Mercado @ ${fmtP(trade.entryPrice)} · ${trade.size} lote(s) — SL/TP ${slPips}/${tpPips} pips`);
+    return;
+  }
+  // Limit/Stop: modo de colocacion con click en el grafico
   S.entryMode=type;S.selectedTrade=null;$("editSection").style.display="none";
   $("buyBtn").classList.toggle("active-entry",type==="LONG");
   $("sellBtn").classList.toggle("active-entry",type==="SHORT");
@@ -1513,7 +1628,6 @@ function enterMode(type){
   $("entryBanner").classList.add("visible");
   $("entryBanner").textContent=`🎯 ${type} — Click en el gráfico para colocar entrada`;
   $("cfgEntry").value="Click en gráfico";$("cfgSL").value="";$("cfgTP").value="";$("cfgSize").value="1";
-  $("cfgOrderType").value="MARKET";
   $("chartWrap").style.cursor="crosshair";
 }
 function exitMode(){
@@ -1525,16 +1639,17 @@ function exitMode(){
 // Sizing honesto: riesgo$ = pipsSL * valorPuntoUSD * tamano → tamano = riesgo$/(pipsSL*valorPunto)
 // pipValue = valor en USD de 1 pip para 1 unidad de tamano (contrato estandar)
 // Se paga spread+slippage en la entrada market (compra mas caro / venta mas barato)
-function placeMarketTrade(type,{currentPrice,slPips,tpPips,spread,slip}){
+function placeMarketTrade(type,{currentPrice,slPips,tpPips,spread,slip,size}){
   const sym=SYM[S.symbol]||{};
   const pip=sym.pip||0.01,pipValue=sym.pipValue||1;
   const cost=((spread||0)+(slip||0))*pip;
   const entry=type==="LONG"?currentPrice+cost:currentPrice-cost;
   const sl=type==="LONG"?entry-slPips*pip:entry+slPips*pip;
   const tp=type==="LONG"?entry+tpPips*pip:entry-tpPips*pip;
+  // tamano: el del input de la barra inferior; si es invalido, sizing por riesgo
   const riskAmt=S.balance*(S.riskPct/100);
-  const size=slPips>0?Math.max(1,Math.floor(riskAmt/(slPips*pipValue))):1;
-  return{id:"t-"+Date.now(),type,orderType:"MARKET",entryPrice:entry,entryTime:S.candles[S.idx]?.t,entryIdx:S.idx,sl,tp,slPips,tpPips,pip,pipValue,spread:spread||0,slip:slip||0,size,exitPrice:null,exitTime:null,exitIdx:null,pnl:0,status:"OPEN",reason:null};
+  const lots=+size>0?+size:(slPips>0?Math.max(1,Math.floor(riskAmt/(slPips*pipValue))):1);
+  return{id:"t-"+Date.now(),type,orderType:"MARKET",entryPrice:entry,entryTime:S.candles[S.idx]?.t,entryIdx:S.idx,sl,tp,slPips,tpPips,pip,pipValue,spread:spread||0,slip:slip||0,size:lots,exitPrice:null,exitTime:null,exitIdx:null,pnl:0,status:"OPEN",reason:null};
 }
 function placeEntry(e){
   if(!S.entryMode||!chartPlot)return;
@@ -1550,7 +1665,7 @@ function placeEntry(e){
     const currentPrice=S.candles[S.idx]?.c||price; // Use last close
     const slPips=+$("cfgSL").value||20;const tpPips=+$("cfgTP").value||40;
     const spread=+$("cfgSpread").value||0,slip=+$("cfgSlippage").value||0;
-    const trade=placeMarketTrade(type,{currentPrice,slPips,tpPips,spread,slip});
+    const trade=placeMarketTrade(type,{currentPrice,slPips,tpPips,spread,slip,size:+$("cfgSize").value||1});
     S.open.push(trade);exitMode();updateUI();renderTrades();render();
     toast(`${type==="LONG"?"▲ LONG":"▼ SHORT"} Mercado @ ${fmtP(trade.entryPrice)} (con spread) — Arrastra SL/TP para ajustar`);
   }
@@ -1877,15 +1992,21 @@ function drawChart(){
   // X-axis
   xctx.fillStyle="#0b1018";xctx.fillRect(0,0,xW,xH);
   xctx.strokeStyle="#1a2435";xctx.beginPath();xctx.moveTo(0,.5);xctx.lineTo(xW,.5);xctx.stroke();
-  const labelGap=Math.max(1,Math.floor(data.length/Math.max(1,Math.floor(xW/90))));
+  // Separacion adaptativa por PIXELES: una etiqueta cada ~90px reales del eje.
+  // (antes se calculaba por numero de velas y al hacer zoom out se amontonaban)
+  const labelGap=Math.max(1,Math.ceil(90/totalCandleW));
   const seenDates=new Set();
+  const seenX=new Set();
   const days=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
   for(let i=0;i<data.length;i+=labelGap){
     const d=new Date(data[i].t);
     const time=d.getHours().toString().padStart(2,"0")+":"+d.getMinutes().toString().padStart(2,"0");
     const dayName=days[d.getDay()];
     const dateStr=d.getDate().toString().padStart(2,"0")+"/"+(d.getMonth()+1).toString().padStart(2,"0");
-    const xx=x(i);
+    // anclar dentro del area visible (sin pisar el badge de zona horaria de la derecha)
+    const xx=Math.round(clamp(x(i),26,xW-124));
+    if(seenX.has(xx))continue;
+    seenX.add(xx);
     xctx.font="9px 'JetBrains Mono',monospace";xctx.fillStyle="#5a6a80";xctx.textAlign="center";
     xctx.fillText(time,xx,12);
     const dayKey=d.toDateString();
@@ -1915,7 +2036,7 @@ function drawChart(){
 }
 
 function render(){drawChart();updateUI();renderTrades();renderMetrics();drawEquity()}
-function updateUI(){$("openCnt").textContent=S.open.length;$("closedCnt").textContent=S.closed.length;$("cIdx").textContent=S.idx;$("cTotal").textContent=S.candles.length;$("progFill").style.width=(S.candles.length>1?(S.idx/(S.candles.length-1))*100:0)+"%";const c=S.candles[S.idx];if(c)$("cDate").textContent=fmtT(c.t);if($("mCAP")){$("mCAP").textContent="$"+S.balance.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0});$("mCAP").style.color=S.balance>=S.initial?"var(--bull)":"var(--bear)"}}
+function updateUI(){$("openCnt").textContent=S.open.length;$("closedCnt").textContent=S.closed.length;$("cIdx").textContent=S.idx;$("cTotal").textContent=S.candles.length;$("progFill").style.width=(S.candles.length>1?(S.idx/(S.candles.length-1))*100:0)+"%";const c=S.candles[S.idx];if(c)$("cDate").textContent=fmtT(c.t);if($("mCAP")){$("mCAP").textContent="$"+S.balance.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0});$("mCAP").style.color=S.balance>=S.initial?"var(--bull)":"var(--bear)"}if($("bbBalance")){$("bbBalance").textContent="$"+S.balance.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});$("bbBalance").style.color=S.balance>=S.initial?"var(--bull)":"var(--bear)"}}
 function renderTrades(){
   const l=$("tradesList"),tr=S.tab==="open"?S.open:S.closed;
   if(!tr.length){l.innerHTML=`<div class="empty-msg">${S.tab==="open"?"Sin trades abiertos":"Sin trades cerrados"}</div>`;return}
