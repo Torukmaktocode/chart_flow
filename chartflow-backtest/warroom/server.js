@@ -801,8 +801,11 @@ function resolveItemTs(item, url, title) {
 async function fetchOne(feed) {
   try {
     const parsed = await parser.parseURL(feed.url);
-    const items = (parsed.items || []).slice(0, 14).map(item => {
-      const title = (item.title || '').trim();
+    // FinancialJuice publica ~100 titulares (bloques con hora) — es el feed
+    // central del war room: trae mucho más que el resto (14).
+    const perFeed = feed.src === 'FINANCIALJUICE' ? 50 : 14;
+    const items = (parsed.items || []).slice(0, perFeed).map(item => {
+      const title = (item.title || '').trim().replace(/^FinancialJuice:\s*/i, '');
       const body  = (item.contentSnippet || item.summary || item.content || '')
                       .replace(/<[^>]+>/g, '').trim().slice(0, 400);
       const full  = title + ' ' + body;

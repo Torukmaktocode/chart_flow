@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -312,9 +312,9 @@ const TL = {
     magH:'Magnitud ALTA', magM:'Magnitud MEDIA', magL:'Magnitud BAJA',
     conf:'Confianza', crit:'CRÍTICO', high:'ALTO', med:'MEDIO', low:'BAJO',
     now:'ahora', m:'m', h:'h',
-    tabs:['Todo','🎙 Trump / Truth Social','Reuters / AP','Fed / Macro','Mercados / Tech','⚡ Squawk X','📅 Calendario'],
+    tabs:['Todo','FinancialJuice','🎙 Trump / Truth Social','Reuters / AP','Fed / Macro','Mercados / Tech','⚡ Squawk X','📅 Calendario'],
     noServer:`<div class="err-box">
-      <b>⚠ Servidor no encontrado</b><br><br>
+      <b>âš  Servidor no encontrado</b><br><br>
       Abre una terminal en la carpeta <code>warroom</code> y ejecuta:<br><br>
       <code>node server.js</code><br><br>
       Luego recarga esta página. El servidor agrega 22 feeds RSS gratuitos en tiempo real.
@@ -331,9 +331,9 @@ const TL = {
     magH:'HIGH Magnitude', magM:'MED Magnitude', magL:'LOW Magnitude',
     conf:'Confidence', crit:'CRITICAL', high:'HIGH', med:'MED', low:'LOW',
     now:'now', m:'m', h:'h',
-    tabs:['All','🎙 Trump / Truth Social','Reuters / AP','Fed / Macro','Markets / Tech','⚡ Squawk X','📅 Calendar'],
+    tabs:['All','FinancialJuice','🎙 Trump / Truth Social','Reuters / AP','Fed / Macro','Markets / Tech','⚡ Squawk X','📅 Calendar'],
     noServer:`<div class="err-box">
-      <b>⚠ Server not found</b><br><br>
+      <b>âš  Server not found</b><br><br>
       Open a terminal in the <code>warroom</code> folder and run:<br><br>
       <code>node server.js</code><br><br>
       Then reload this page. The server aggregates 22 free RSS feeds in real time.
@@ -424,7 +424,7 @@ async function loadMarkets(){
     const d = await api('/markets');
     mktData  = d.prices || {};
     renderTicker();
-    renderFeed(); // actualiza los Δ% reales de los chips de contexto
+    renderFeed(); // actualiza los Î”% reales de los chips de contexto
     const vix = mktData['VIX'];
     if(vix && vix.price){
       const vb = document.getElementById('vixBadge');
@@ -445,7 +445,7 @@ async function loadSquawk(){
     const ids = new Set(allNews.map(n=>n.id));
     squawkData.forEach(n=>{ if(!ids.has(n.id)) allNews.unshift(n); });
     if(lang==='es' && squawkData.length) translateNewsProgressive();
-    if(activeTab===5) renderFeed();
+    if(activeTab===6) renderFeed();
     // Update nitter status in header
     const si = document.getElementById('srcInfo');
     if(si && squawkData.length){
@@ -457,11 +457,13 @@ async function loadSquawk(){
 function setDot(s){ document.getElementById('statusDot').className = 'dot ' + s; }
 
 // ── FEED ─────────────────────────────────────────────────
+// Cada pestaña entrega SOLO su propia fuente (sin fugas de otras)
 const FILTERS=[
   _=>true,
+  n=>n.src==='FINANCIALJUICE',
   n=>n.trump||n.cat==='trump',
-  n=>['general'].includes(n.cat)||/REUTERS|AP/.test(n.src),
-  n=>n.cat==='fed',
+  n=>/REUTERS|AP\b/.test(n.src),
+  n=>/FED|RESERVE|SPEECH/i.test(n.src)||n.cat==='fed'||n.cat==='econ'||n.nasKey==='us_hot'||n.nasKey==='us_cold',
   n=>n.cat==='tech'||n.cat==='markets',
   n=>n.squawk||n.cat==='squawk',
   n=>n.cat==='econ',
@@ -488,7 +490,7 @@ function tagCl(g){return g==='NAS100'||g==='RALLY'?'nt-n':g==='VOL'?'nt-v':g==='
 
 // ── RAÍL DE CONTEXTO MULTI-ACTIVO ────────────────────────────
 // Por noticia: flecha = dirección ESPERADA (regla transparente del server,
-// n.cross); Δ% = cambio REAL ahora (mktData, /api/markets). Sin confianza inventada.
+// n.cross); Î”% = cambio REAL ahora (mktData, /api/markets). Sin confianza inventada.
 const CROSS_CFG = {
   NAS100:{lab:'NAS100', mk:'NAS100'}, US30:{lab:'US30', mk:'DOW'},
   SPX500:{lab:'SPX',   mk:'SPX'},   VIX:{lab:'VIX',  mk:'VIX'},
@@ -555,13 +557,13 @@ function renderFeed(){
   const el=document.getElementById('flist');
   if(!serverOk) return;
   // Calendario económico — pestaña 6
-  if(activeTab===6){ renderCalendar(el); return; }
+  if(activeTab===7){ renderCalendar(el); return; }
   const q=(document.getElementById('srch').value||'').toLowerCase();
   let items=allNews.filter(FILTERS[activeTab]||(_=>true));
   if(q) items=items.filter(n=>(n.title||'').toLowerCase().includes(q)||(n.body||'').toLowerCase().includes(q));
 
   // Squawk tab — @DeItaone @FirstSquawk @LiveSquawk
-  if(activeTab===5){
+  if(activeTab===6){
     const sqItems = squawkData.length ? squawkData : allNews.filter(n=>n.squawk||n.cat==='squawk');
     el.innerHTML='';
     if(!sqItems.length){
@@ -584,7 +586,7 @@ function renderFeed(){
 
       d.className=`sq sq-${cls}`;
       // Iniciales del avatar
-      const initials = hdl==='DeItaone'?'Δ1':hdl==='FirstSquawk'?'1S':'LS';
+      const initials = hdl==='DeItaone'?'Î”1':hdl==='FirstSquawk'?'1S':'LS';
 
       d.innerHTML=`<span class="sq-topbar" style="background:${color}"></span>
         <div class="sq-h">
@@ -609,7 +611,7 @@ function renderFeed(){
   }
 
   // Trump tab
-  if(activeTab===1){
+  if(activeTab===2){
     el.innerHTML='';
     items.forEach(n=>{
       const d=document.createElement('div');
@@ -804,7 +806,7 @@ async function loadCalendar(){
     econData = (d.ok && d.events) ? d.events : [];
     if(!serverOk) serverOk = true; // el calendario confirma que hay servidor
   } catch(e){ console.warn('Econ error:', e.message); }
-  if(activeTab===6) renderFeed();
+  if(activeTab===7) renderFeed();
   if(lang==='es') translateEconTitles();
 }
 
@@ -820,7 +822,7 @@ async function translateEconTitles(){
         e._esT = true;
         e.eventEs = await translateText(e.event, 'en', 'es');
       }));
-      if(activeTab===6) renderFeed();
+      if(activeTab===7) renderFeed();
     }
   } finally { econTransRun = false; }
 }
@@ -981,7 +983,7 @@ function setCalCur(c){
   calCur = c;
   localStorage.setItem('calCur', c);
   renderFeed();
-  if(activeTab===6){
+  if(activeTab===7){
     const el=document.getElementById('flist');
     if(el) el.scrollTop = 0;
   }
@@ -1036,8 +1038,8 @@ function checkBreaking(){
     eb.style.background='#333333';
     eb.style.color='#93c5fd';
   } else {
-    showBanner('🔴 '+(top.trump?'TRUMP: ':'')+top.title.slice(0,100), false);
-    if(top.trump){const eb=document.getElementById('evtBadge');eb.style.display='inline';eb.textContent='⚠ TRUMP';}
+    showBanner('ðŸ”´ '+(top.trump?'TRUMP: ':'')+top.title.slice(0,100), false);
+    if(top.trump){const eb=document.getElementById('evtBadge');eb.style.display='inline';eb.textContent='âš  TRUMP';}
   }
 }
 
@@ -1132,7 +1134,7 @@ function renderSesiones(){
     const falta = fmtFalta(st.faltaMs);
     const cnt = !falta ? '' : (st.abierta
       ? (lang==='es' ? '⏳ cierra en ' : '⏳ closes in ') + falta
-      : (lang==='es' ? '🕒 abre en '   : '🕒 opens in ')  + falta);
+      : (lang==='es' ? 'ðŸ•’ abre en '   : 'ðŸ•’ opens in ')  + falta);
     // Horario de apertura/cierre: hora LOCAL de la plaza + hora del usuario (zona elegida)
     const abreUTC0   = wallToUTC(s.tz, p.y, p.mo, p.d, s.open[0],  s.open[1]);
     const cierraUTC0 = wallToUTC(s.tz, p.y, p.mo, p.d, s.close[0], s.close[1]);
