@@ -2377,9 +2377,24 @@ function renderProgressDashboard(stats){
 // Fecha REAL (presente) en que se ejecuto el trade: el calendario de progreso
 // refleja el dia en que entrenaste, INDIFERENTE de las fechas simuladas de las
 // velas del grafico (un replay de velas de 2025 se pinta el dia real de hoy).
-// Records viejos sin realOpen/realClose caen a la fecha del sim (unico dato).
+// Cadena de recuperacion de la fecha real:
+//   1. realClose (estampado al cerrar, desde hoy)
+//   2. realOpen  (estampado al abrir, desde hoy)
+//   3. el ID "t-<Date.now()>": se genero con la fecha real al CREAR el trade,
+//      asi los trades viejos (tomados antes de la migracion) TAMBIEN se pintan
+//      en su dia real y los del dia de hoy aparecen el dia de hoy
+//   4. fallback: fecha del sim (unico dato disponible en records muy viejos)
+function tradeRealTS(t){
+  if(t.realClose)return t.realClose;
+  if(t.realOpen)return t.realOpen;
+  if(typeof t.id==="string"&&/^t-\d+$/.test(t.id)){
+    const idTs=+t.id.slice(2);
+    if(idTs>0)return idTs;
+  }
+  return 0;
+}
 function tradeRealISO(t){
-  const ts=t.realClose||t.realOpen;
+  const ts=tradeRealTS(t);
   if(ts)return new Date(ts).toISOString();
   return t.date||(t.entryTime?new Date(t.entryTime).toISOString():null);
 }
@@ -2393,14 +2408,13 @@ function renderCalendar(calendarData){
   calTradesData=calendarData||{};
   // Trades fusionados (server + navegador): base para pintar profit/perdida por dia
   const allTrades=(S.closed&&S.closed.length?S.closed:JSON.parse(localStorage.getItem("bt_trade_records")||"[]"));
-  // Sin navegacion manual: saltar al mes mas reciente CON trades de fecha REAL
-  // (los trades se estampan con realOpen/realClose al ejecutarse). Los records
-  // viejos (solo fecha del sim) NO mueven el calendario: se quedan donde el
-  // usuario navegue, para que el panel abra siempre en el presente.
+  // Sin navegacion manual: saltar al mes mas reciente CON trades de fecha REAL.
+  // tradeRealTS recupera la fecha real incluso de trades viejos (via su ID),
+  // asi los trades del dia de hoy aparecen en el mes presente.
   if(!calUserNav&&allTrades.length){
     let latest=null;
     allTrades.forEach(t=>{
-      const ts=t.realClose||t.realOpen;
+      const ts=tradeRealTS(t);
       if(!ts)return;
       const mk=new Date(ts).toISOString().slice(0,7); // YYYY-MM
       if(!latest||mk>latest)latest=mk;
@@ -2515,25 +2529,6 @@ function renderCalendar(calendarData){
       el.innerHTML=`<span class="day-num">${d}</span>`;
     }
     grid.appendChild(el);
-
-    // Resumen semanal cada viernes (o último día de la semana)
-    const dow=(dt.getDay()+6)%7;
-    const weekNum=Math.ceil((d+startDow)/7);
-    if(dow===4||d===lastDay.getDate()){ // Viernes o último día
-      const wd=weekData[weekNum];
-      if(wd&&wd.trades>0){
-        const ws=document.createElement("div");
-        ws.className="cal-week-summary";
-        const wr=wd.wins>0?((wd.wins/wd.trades)*100).toFixed(0):"0";
-        ws.innerHTML=`
-          <span class="ws-label">Week ${weekNum}</span>
-          <span class="ws-pnl ${wd.pnl>=0?'pos':'neg'}">${wd.pnl>=0?'+':''}$${Math.abs(wd.pnl).toFixed(2)}</span>
-          <span class="ws-trades">${wd.trades} trades</span>
-          <span class="ws-winrate">WR: ${wr}%</span>
-        `;
-        grid.appendChild(ws);
-      }
-    }
   }
 
   // Días del mes siguiente (para completar la grilla)
