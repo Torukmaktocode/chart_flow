@@ -260,8 +260,14 @@ function analyzeTrades(trades, balance) {
   // CRUCES DE SESION: trades abiertos en una sesion y cerrados en otra.
   // El cambio de sesion trae gaps de precio y spreads ampliados.
   const cross = { count: 0, pnl: 0, paths: {}, weekend: { count: 0, pnl: 0 } };
+  // PERDIDAS POR GAP: cerraron en la transicion y el precio se paso el stop
+  // (stop saltado por el hueco) o la perdida es mucho mayor que la tipica.
+  const gapLosses = { count: 0, pnl: 0, slipped: 0, list: [] };
   closed.forEach(t => {
     const a = sessOfTs(t.openTs || t.closeTs), b = sessOfTs(t.closeTs);
+    const isCross = a !== b;
+    const days = (t.closeTs - t.openTs) / 86400000;
+    const weekendGap = t.openTs && t.closeTs && ((new Date(t.openTs).getDay() === 5 && (new Date(t.closeTs).getDay() === 0 || new Date(t.closeTs).getDay() === 6)) || days >= 2);
     if (a !== b) {
       cross.count++; cross.pnl += t.profit;
       const key = a + " \u2192 " + b;
@@ -271,12 +277,32 @@ function analyzeTrades(trades, balance) {
     // gap de fin de semana: abre viernes, cierra domingo/lunes o tras 2+ dias
     if (t.openTs && t.closeTs) {
       const od = new Date(t.openTs).getDay(), cd = new Date(t.closeTs).getDay();
-      const days = (t.closeTs - t.openTs) / 86400000;
       if ((od === 5 && (cd === 0 || cd === 6)) || days >= 2) {
         cross.weekend.count++; cross.weekend.pnl += t.profit;
       }
     }
+    if (t.profit >= 0 || (!isCross && !weekendGap)) return;
+    // analisis del gap en la perdida
+    let slipped = false, slip = 0;
+    if (t.sl != null && t.openPrice != null && t.closePrice != null) {
+      const risk = Math.abs(t.openPrice - t.sl);
+      if (t.type === "LONG" && t.closePrice < t.sl) { slip = t.sl - t.closePrice; slipped = slip > 0; }
+      if (t.type === "SHORT" && t.closePrice > t.sl) { slip = t.closePrice - t.sl; slipped = slip > 0; }
+      slipped = slip > 0 && (risk > 0 ? slip / risk >= 0.1 : slip > 0);
+    }
+    const bigLoss = avgLoss > 0 ? Math.abs(t.profit) >= avgLoss * 1.5 : Math.abs(t.profit) > 0;
+    if (slipped || bigLoss) {
+      gapLosses.count++; gapLosses.pnl += t.profit;
+      if (slipped) gapLosses.slipped++;
+      gapLosses.list.push({
+        symbol: t.symbol, type: t.type,
+        date: new Date(t.closeTs).toLocaleString("es-ES"),
+        pnl: t.profit, slipped, slip,
+        transition: isCross ? (a + " \u2192 " + b) : (weekendGap ? "fin de semana" : "misma sesion")
+      });
+    }
   });
+  gapLosses.worst = gapLosses.list.length ? gapLosses.list.reduce((m, g) => g.pnl < m.pnl ? g : m, gapLosses.list[0]) : null;
   const hourly = bucket(t => String(new Date(t.openTs || t.closeTs).getHours()).padStart(2, "0") + ":00");
   const weekday = bucket(t => ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"][new Date(t.openTs || t.closeTs).getDay()]);
   const monthly = bucket(t => { const d = new Date(t.closeTs); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); });
@@ -293,6 +319,42 @@ function analyzeTrades(trades, balance) {
   });
   const costs = closed.reduce((s, t) => s + Math.abs(t.swap + t.commission), 0);
   const costRatio = gw > 0 ? costs / gw : 0;
+
+  // ---- TECNICA: estilo, buckets de duracion, ejecucion de TP y giro/continuacion ----
+  const byDur = [
+    { name: "Scalping (0-30 min)", test: d => d < 30 },
+    { name: "Intradía (30-240 min)", test: d => d >= 30 && d < 240 },
+    { name: "Swing (240+ min)", test: d => d >= 240 }
+  ].map(b => {
+    const g = closed.filter(t => { const d = (t.closeTs - t.openTs) / 60000; return d >= 0 && b.test(d); });
+    const pnl = g.reduce((s, t) => s + t.profit, 0);
+    return { name: b.name, trades: g.length, pnl, wr: g.length ? g.filter(t => t.profit > 0).length / g.length * 100 : 0 };
+  }).filter(b => b.trades > 0);
+  const medDur = durs.length ? durs.slice().sort((a, b) => a - b)[Math.floor(durs.length / 2)] : 0;
+  let style = "Intradía";
+  if (medDur < 30 && freqDay >= 3) style = "Scalping";
+  else if (medDur >= 240) style = "Swing";
+  // ejecucion de TP en ganadores: R realizado vs R ideal (profit dejado en la mesa)
+  let fullTP = 0, partialWin = 0, leftR = 0, leftCount = 0;
+  closed.forEach(t => {
+    if (t.profit <= 0) return;
+    if (t.sl == null || t.openPrice == null || t.closePrice == null || t.tp == null) return;
+    const risk = Math.abs(t.openPrice - t.sl);
+    if (risk <= 0) return;
+    const realR = Math.abs(t.closePrice - t.openPrice) / risk;
+    const idealR = Math.abs(t.tp - t.openPrice) / risk;
+    if (idealR > 0 && realR >= idealR * 0.8) fullTP++;
+    else { partialWin++; leftR += Math.max(0, idealR - realR); leftCount++; }
+  });
+  const leftRAvg = leftCount ? leftR / leftCount : 0;
+  // giro/reversion vs continuacion: direccion del trade vs el anterior mismo simbolo
+  const seqSameDir = { trades: 0, wins: 0, pnl: 0 }, seqRev = { trades: 0, wins: 0, pnl: 0 };
+  for (let i = 1; i < closed.length; i++) {
+    const prev = closed[i - 1], t = closed[i];
+    if (t.symbol !== prev.symbol) continue;
+    const g = t.type === prev.type ? seqSameDir : seqRev;
+    g.trades++; if (t.profit > 0) g.wins++; g.pnl += t.profit;
+  }
 
   // Monte Carlo bootstrap con reemplazo: percentiles del balance final y de la curva
   const pnlsAll = closed.map(t => t.profit);
@@ -330,7 +392,9 @@ function analyzeTrades(trades, balance) {
     balanceNow: balance + net
   };
   stats.crossSessions = { count: cross.count, pnl: cross.pnl, paths: cross.paths, weekend: cross.weekend };
+  stats.gapLosses = gapLosses;
   stats.mc = mc;
+  stats.technique = { style, medDur, byDur, fullTP, partialWin, leftRAvg, leftCount, wins: wins.length, rev: seqRev, same: seqSameDir };
 
   // ---- diagnostico: lo bueno / lo malo / a mejorar ----
   const insights = [];
@@ -392,6 +456,13 @@ function analyzeTrades(trades, balance) {
     push("improve", "Los cruces de sesión te han favorecido, por ahora", cross.count + " trades cruzaron sesiones con " + money(cross.pnl) + ". Ha funcionado, pero cada cambio de sesión trae gap y spread ampliado: no es rentable por diseño.");
   }
   if (cross.weekend.count && cross.weekend.pnl < 0) push("bad", "Trades cruzando el fin de semana", cross.weekend.count + " trades abiertos el viernes cerraron después del fin de semana con " + money(cross.weekend.pnl) + ". El gap de apertura de lunes puede saltarse tu stop: cierra el viernes o reduce tamaño.");
+  // Perdidas por gap entre sesiones: el stop se salto o el hueco costaba dolares
+  if (gapLosses.count && gapLosses.pnl < 0) {
+    const w = gapLosses.worst;
+    const worstTxt = w ? " Peor caso: " + w.symbol + " " + w.type + " el " + w.date + ", " + money(w.pnl) + (w.slipped ? " (stop saltado, deslizamiento " + w.slip.toFixed(5) + ")" : "") + " en " + w.transition + "." : "";
+    const slipTxt = gapLosses.slipped ? " Tu stop se saltó " + gapLosses.slipped + " de esas veces." : " No tenías stop de protección.";
+    push("bad", "El gap entre sesiones te costaba dólares de verdad", gapLosses.count + " pérdidas cerradas en la transición de sesión/fin de semana suman " + money(gapLosses.pnl) + "." + slipTxt + worstTxt + " Regla: sin posiciones abiertas en el cambio de sesión ni sostenidas el fin de semana.");
+  }
   // Monte Carlo
   if (mc) {
     if (mc.probPos >= 60) push("good", "Monte Carlo favorece tu sistema", "Reordenando tus trades al azar 1000 veces, el " + mc.probPos.toFixed(0) + "% de las secuencias termina en positivo (mediana " + money(mc.p50 - balance) + "). La ventaja sobrevive el azar del orden.");
@@ -401,6 +472,22 @@ function analyzeTrades(trades, balance) {
   // Expectancy
   if (expect > 0) push("good", "Expectancia positiva", "En promedio cada trade aporta " + money(expect) + ". Repetir el proceso es matemáticamente rentable.");
   else if (expect < 0 && pf < 1) push("bad", "Expectancia negativa", "Cada trade te cuesta " + money(expect).replace("-$", "$-") + " en promedio. Antes de escalar tamaño, necesitas un edge demostrado.");
+  // TECNICA: que estilo funciona y que falta para mas profit
+  if (byDur.length > 1) {
+    const bestD = byDur.reduce((m, b) => b.pnl > m.pnl ? b : m, byDur[0]);
+    const worstD = byDur.reduce((m, b) => b.pnl < m.pnl ? b : m, byDur[0]);
+    if (bestD.pnl > 0 && bestD !== worstD) push("good", "Tu técnica de " + bestD.name.split(" ")[0].toLowerCase() + " es la que deja dinero", bestD.trades + " trades, " + bestD.wr.toFixed(0) + "% WR, " + money(bestD.pnl) + ". Ese es tu edge real: ponle más peso.");
+    if (worstD.pnl < 0 && worstD !== bestD) push("improve", "La técnica de " + worstD.name.split(" ")[0].toLowerCase() + " te resta", worstD.trades + " trades con " + money(worstD.pnl) + ". Redúcela o elimínala: el profit extra está en tu otro estilo.");
+  }
+  if (leftCount > 0 && leftRAvg > 0.15) push("improve", "Profit que dejaste en la mesa", "En " + leftCount + " ganadores cerraste antes del TP dejando en promedio " + leftRAvg.toFixed(2) + "R cada uno. Solo " + fullTP + " de tus " + wins.length + " ganadores alcanzaron el TP ideal: con parciales y trailing, ese R no capturado se convierte en profit.");
+  else if (wins.length >= 5 && fullTP >= wins.length * 0.6) push("good", "Ejecución de TP sólida", fullTP + " de " + wins.length + " ganadores alcanzaron su TP ideal. Tu plan de salida se está cumpliendo tal como lo diseñaste.");
+  // Giro/reversion vs continuacion (proxy por secuencia de direccion propia)
+  if (seqRev.trades >= 3 && seqSameDir.trades >= 3) {
+    const revWR = seqRev.wins / seqRev.trades * 100, sameWR = seqSameDir.wins / seqSameDir.trades * 100;
+    if (seqRev.pnl > seqSameDir.pnl && seqRev.pnl > 0) push("good", "Tus giros/reversiones funcionan", seqRev.trades + " entradas a contra de tu dirección anterior: " + revWR.toFixed(0) + "% WR y " + money(seqRev.pnl) + ", frente a " + money(seqSameDir.pnl) + " siguiendo la dirección previa (" + sameWR.toFixed(0) + "% WR).");
+    else if (seqSameDir.pnl > seqRev.pnl && seqSameDir.pnl > 0) push("good", "La continuación es tu fuerza", seqSameDir.trades + " entradas en la misma dirección previa: " + sameWR.toFixed(0) + "% WR y " + money(seqSameDir.pnl) + ", frente a " + money(seqRev.pnl) + " en giros (" + revWR.toFixed(0) + "% WR).");
+    if (seqRev.pnl < 0 && seqRev.trades >= 5) push("improve", "Tus giros/reversiones fallan", seqRev.trades + " entradas contrarias a la dirección previa suman " + money(seqRev.pnl) + " (" + revWR.toFixed(0) + "% WR). Falta confirmación de estructura antes del giro: espera el retroceso completo, no el primer impulso contrario.");
+  }
 
   return {
     stats, equity,

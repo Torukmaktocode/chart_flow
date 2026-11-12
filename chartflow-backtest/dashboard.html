@@ -3927,6 +3927,20 @@ function renderAnalysis(d){
         ${insightCol("bad","LO MALO","var(--bear)")}
         ${insightCol("improve","A MEJORAR","#ffc800")}
       </div>
+      <div class="fx-break-grid" style="margin-top:16px">
+        ${(()=>{const t2=s.technique||{};const rev=t2.rev||{},same=t2.same||{};
+          const revWR=rev.trades?(rev.wins/rev.trades*100).toFixed(0)+"%":"-";
+          const sameWR=same.trades?(same.wins/same.trades*100).toFixed(0)+"%":"-";
+          return breakCard("TU TECNICA","#00d4ff",[
+            ["Estilo detectado",t2.style||"-"],
+            ["Duracion mediana",(t2.medDur||0).toFixed(0)+" min"],
+            ["Ganadores con TP ideal",(t2.fullTP||0)+" de "+(t2.wins||0)],
+            ["R dejado por cierre anticipado",(t2.leftCount||0)?(t2.leftRAvg||0).toFixed(2)+"R ("+t2.leftCount+" trades)":"0"],
+            ["Giro/reversion P&L",rev.trades?azMoney(rev.pnl)+" ("+revWR+")":"sin datos",rev.trades&&rev.pnl<0?"neg":"pos"],
+            ["Continuacion P&L",same.trades?azMoney(same.pnl)+" ("+sameWR+")":"sin datos",same.trades&&same.pnl<0?"neg":"pos"],
+            ["Por duracion",(t2.byDur||[]).map(b=>b.name.split(" ")[0]+": "+azMoney(b.pnl)).join(" · ")||"-"]
+          ]);})()}
+      </div>
     </div>
     <div class="fx-section">
       <h3>Monte Carlo <span class="fx-hint">1000 secuencias aleatorias de tus propios trades</span></h3>
