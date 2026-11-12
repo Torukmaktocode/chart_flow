@@ -497,7 +497,9 @@
 #progressGrid .progress-card{background:#10151c !important;border-color:rgba(255,255,255,.07) !important}
 #progressGrid .progress-card::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent) !important}
 #progressGrid .pc-value{color:#eef1fb !important}
-#pgPnLCard .pc-value{color:inherit !important}
+/* el P&L total se queda en verde/rojo: es un dato, no adorno */
+#pgPnLCard .pc-value.pos{color:var(--bull) !important}
+#pgPnLCard .pc-value.neg{color:var(--bear) !important}
 #pgPnLCard.positive::after{background:linear-gradient(90deg,transparent,var(--bull),transparent) !important}
 #pgPnLCard.negative::after{background:linear-gradient(90deg,transparent,var(--bear),transparent) !important}
 </style>
