@@ -109,9 +109,11 @@ const RSS_FEEDS = [
   // Federal Reserve — comunicados y discursos oficiales
   { url: 'https://www.federalreserve.gov/feeds/press_all.xml',      src: 'FED RESERVE',   cls: 'sf' },
   { url: 'https://www.federalreserve.gov/feeds/speeches.xml',       src: 'FED SPEECHES',  cls: 'sf' },
-  // Trump / Truth Social — RSS oficial cuenta @realDonaldTrump
-  // URL directa: https://truthsocial.com/@realDonaldTrump
-  { url: 'https://truthsocial.com/@realDonaldTrump/feed.rss', src: 'TRUMP DIRECTO', cls: 'st-direct', trump: true, trumpDirect: true },
+  // Trump / Truth Social — espejos RSS públicos (Truth Social NO publica RSS:
+  // su URL /feed.rss devuelve el HTML de la webapp y rss-parser falla en silencio)
+  // Perfil oficial: https://truthsocial.com/@realDonaldTrump
+  { url: 'https://www.trumpstruth.org/feed', src: 'TRUMP DIRECTO', cls: 'st-direct', trump: true, trumpDirect: true },  // espejo primario (~100 últimos posts, lag <2 min)
+  { url: 'https://trump.fm/rss/truth.xml',   src: 'TRUMP FM',      cls: 'st-direct', trump: true, trumpDirect: true },  // espejo backup
   // Barron's
   { url: 'https://www.barrons.com/rss/homepage',                    src: "BARRON'S",      cls: 'sbr' },
 ];
@@ -803,11 +805,20 @@ async function fetchOne(feed) {
     const parsed = await parser.parseURL(feed.url);
     // FinancialJuice publica ~100 titulares (bloques con hora) — es el feed
     // central del war room: trae mucho más que el resto (14).
-    const perFeed = feed.src === 'FINANCIALJUICE' ? 50 : 14;
+    // Los espejos de Trump también: Trump puede publicar 20+ posts al día.
+    const perFeed = feed.src === 'FINANCIALJUICE' ? 50 : feed.trump ? 40 : 14;
     const items = (parsed.items || []).slice(0, perFeed).map(item => {
-      const title = (item.title || '').trim().replace(/^FinancialJuice:\s*/i, '');
       const body  = (item.contentSnippet || item.summary || item.content || '')
                       .replace(/<[^>]+>/g, '').trim().slice(0, 400);
+      let title   = (item.title || '').trim().replace(/^FinancialJuice:\s*/i, '');
+      // El espejo trumpstruth.org titula los posts multimedia de forma genérica
+      // ("Image post from November 11, 2026") — usar el texto real si existe
+      if (feed.trump && /^(Image|Video|Quote|Text) post from [A-Z][a-z]+ \d{1,2}, \d{4}$/.test(title)) {
+        const bodyText = body.replace(/^View (video|image)\.?:?\s*/i, '').trim();
+        title = bodyText.length > 15
+          ? bodyText
+          : (/^Image/.test(title) ? '📷 ' : /^Video/.test(title) ? '🎬 ' : '🔁 ') + title;
+      }
       const full  = title + ' ' + body;
       const tags  = extractTags(full);
       const cat   = feed.trump ? 'trump' : categorize(full);
@@ -1273,6 +1284,9 @@ async function fetchAllSquawk() {
 // Clave de dedup honesta: URL real del articulo;
 // para tweets sin link propio se usa el titulo completo (antes 40-50 chars mataban titulares distintos)
 function dedupeKey(n) {
+  // Posts de Trump: los dos espejos (trumpstruth.org y trump.fm) comparten URL
+  // distinta pero mismo texto → deduplicar por titulo, no por URL
+  if (n.trump || n.trumpDirect) return 'tt:' + n.title.toLowerCase().replace(/\s+/g, '').slice(0, 80);
   if (n.url && !n.url.startsWith('https://x.com')) return 'u:' + n.url;
   return 't:' + n.title.toLowerCase().replace(/\s+/g, '');
 }
@@ -1306,7 +1320,17 @@ async function fetchAllNews() {
   all.sort((a, b) => b.ts - a.ts);
   // Conservar las noticias inyectadas del calendario económico (vigencia 2h)
   const keepEcon = newsCache.filter(n => n.econ && (Date.now() - n.ts) < 7200000 && !all.some(a => a.id === n.id));
-  newsCache = [...all, ...keepEcon].sort((a, b) => b.ts - a.ts).slice(0, 150);
+  // Garantizar hueco para los posts DIRECTOS de Trump: el corte por recencia
+  // (FJ 50 items + squawk con ts=ahora) expulsaba los posts de hace horas
+  const trumpFresh = all.filter(n => n.trump || n.trumpDirect).slice(0, 30);
+  const trumpIds   = new Set(trumpFresh.map(n => n.id));
+  newsCache = [...all.filter(n => !(n.trump || n.trumpDirect) || trumpIds.has(n.id)), ...keepEcon]
+    .sort((a, b) => b.ts - a.ts);
+  // Insertar los posts de Trump garantizados si el corte de 150 los expulsó
+  const inCache = new Set(newsCache.slice(0, 150).map(n => n.id));
+  const trumpMissing = trumpFresh.filter(n => !inCache.has(n.id));
+  newsCache = [...newsCache.slice(0, 150 - trumpMissing.length), ...trumpMissing]
+    .sort((a, b) => b.ts - a.ts).slice(0, 150);
   lastNewsFetch = Date.now();
 
   const srcs = [...new Set(newsCache.map(n => n.src))].length;

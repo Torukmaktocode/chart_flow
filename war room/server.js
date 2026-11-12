@@ -67,9 +67,11 @@ const RSS_FEEDS = [
   // Federal Reserve — comunicados y discursos oficiales
   { url: 'https://www.federalreserve.gov/feeds/press_all.xml',      src: 'FED RESERVE',   cls: 'sf' },
   { url: 'https://www.federalreserve.gov/feeds/speeches.xml',       src: 'FED SPEECHES',  cls: 'sf' },
-  // Trump / Truth Social — RSS oficial cuenta @realDonaldTrump
-  // URL directa: https://truthsocial.com/@realDonaldTrump
-  { url: 'https://truthsocial.com/@realDonaldTrump/feed.rss', src: 'TRUMP DIRECTO', cls: 'st-direct', trump: true, trumpDirect: true },
+  // Trump / Truth Social — espejos RSS públicos (Truth Social NO publica RSS:
+  // su URL /feed.rss devuelve el HTML de la webapp y rss-parser falla en silencio)
+  // Perfil oficial: https://truthsocial.com/@realDonaldTrump
+  { url: 'https://www.trumpstruth.org/feed', src: 'TRUMP DIRECTO', cls: 'st-direct', trump: true, trumpDirect: true },  // espejo primario (~100 últimos posts, lag <2 min)
+  { url: 'https://trump.fm/rss/truth.xml',   src: 'TRUMP FM',      cls: 'st-direct', trump: true, trumpDirect: true },  // espejo backup
   // Barron's
   { url: 'https://www.barrons.com/rss/homepage',                    src: "BARRON'S",      cls: 'sbr' },
 ];
@@ -177,10 +179,19 @@ function analyzeNas(title, body, cat, tags) {
 async function fetchOne(feed) {
   try {
     const parsed = await parser.parseURL(feed.url);
-    return (parsed.items || []).slice(0, 14).map(item => {
-      const title = (item.title || '').trim();
+    // Los espejos de Trump traen ~100 posts — Trump puede publicar 20+ al día
+    return (parsed.items || []).slice(0, feed.trump ? 40 : 14).map(item => {
       const body  = (item.contentSnippet || item.summary || item.content || '')
                       .replace(/<[^>]+>/g, '').trim().slice(0, 400);
+      let title   = (item.title || '').trim();
+      // El espejo trumpstruth.org titula los posts multimedia de forma genérica
+      // ("Image post from November 11, 2026") — usar el texto real si existe
+      if (feed.trump && /^(Image|Video|Quote|Text) post from [A-Z][a-z]+ \d{1,2}, \d{4}$/.test(title)) {
+        const bodyText = body.replace(/^View (video|image)\.?:?\s*/i, '').trim();
+        title = bodyText.length > 15
+          ? bodyText
+          : (/^Image/.test(title) ? '📷 ' : /^Video/.test(title) ? '🎬 ' : '🔁 ') + title;
+      }
       const full  = title + ' ' + body;
       const tags  = extractTags(full);
       const cat   = feed.trump ? 'trump' : categorize(full);
@@ -399,7 +410,13 @@ async function fetchAllNews() {
   });
 
   all.sort((a, b) => b.ts - a.ts);
-  newsCache     = all.slice(0, 150);
+  // Garantizar hueco para los posts DIRECTOS de Trump: el corte por recencia
+  // (squawk con ts=ahora + feeds frescos) expulsaba los posts de hace horas
+  const trumpFresh = all.filter(n => n.trump || n.trumpDirect).slice(0, 30);
+  newsCache     = [...all, ...trumpFresh]
+    .sort((a, b) => b.ts - a.ts)
+    .filter((n, i, arr) => arr.findIndex(m => m.id === n.id) === i)  // dedupe tras reinsertar
+    .slice(0, 150);
   lastNewsFetch = Date.now();
 
   const srcs = [...new Set(newsCache.map(n => n.src))].length;
