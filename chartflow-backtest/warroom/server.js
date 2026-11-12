@@ -1,4 +1,4 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 // TRADING WAR ROOM — Backend FREE EDITION v3.0
 // 100% gratuito — sin API keys — solo RSS públicos + Yahoo Finance
 // Fuentes: Reuters · AP · MarketWatch · CNBC · Yahoo · Truth Social · Fed
@@ -102,6 +102,8 @@ const RSS_FEEDS = [
   // Investing.com
   { url: 'https://www.investing.com/rss/news_301.rss',              src: 'INVESTING',     cls: 'si' },
   { url: 'https://www.investing.com/rss/news_285.rss',              src: 'INVEST FX',     cls: 'si' },
+  // FinancialJuice — EL feed que analiza sakeem/Zenith (titulares $MACRO + bancos centrales + geo)
+  { url: 'https://www.financialjuice.com/feed.ashx',                src: 'FINANCIALJUICE', cls: 'sfj' },
   // Bloomberg RSS (sin paywall en RSS)
   { url: 'https://feeds.bloomberg.com/markets/news.rss',            src: 'BLOOMBERG',     cls: 'sbl' },
   // Federal Reserve — comunicados y discursos oficiales
@@ -158,6 +160,38 @@ function mk(dir, key, mag, conf, es, en) { return { dir, key, mag, conf, es, en 
 function analyzeNas(title, body, cat, tags) {
   const tx = ((title || '') + ' ' + (body || '')).toLowerCase();
 
+  // GEO: escalada / desescalada — la guerra y la paz mueven todo a la vez
+  // SAKEEM/ZENITH: bloqueo de negociaciones sin resolución → "oil rise and
+  // GOLD LOWER and equities lower". La prima de refugio ya estaba pagada: el
+  // estancamiento la drena vía dólar/yields; el crudo sube si el bloqueo
+  // toca oferta (Hormuz). No confundir con el estallido de guerra real.
+  if (/deadlock|deadlocked|stalemate|rejects (us|peace|deal|talks)|no breakthrough|failed to meet|conditions are met|will not be reopened/.test(tx))
+    return mk('bear','war_stall','high',86,'Bloqueo de negociaciones sin resolución → oro cede (prima ya pagada vía dólar/yields), bolsas caen; crudo sube por riesgo de oferta','Deadlocked talks without resolution → gold fades, equities fall; oil rises on supply risk');
+  // (excluye procura/presupuesto de defensa: "missile supply delays" no es escalada)
+  const geoEsc = !(/defen[cs]e (procurement|budget|buildup|suppl)|supply (delay|shortage)|shortages of/.test(tx))
+    && /attack|strike|missile|drone strike|invasion|escalat|\bwar\b|nuclear|sanction|airspace|seize|explosion|tanker|hormuz/.test(tx);
+  if (geoEsc)
+    return mk('bear','war_esc','high',89,'Escalada geopolítica → risk-off: índices caen, oro/petróleo/dólar suben (si la escalada ya estaba descontada, el oro puede ceder por dólar/yields)','Geopolitical escalation → risk-off: indices fall, gold/oil/dollar rise (if already priced in, gold may fade on dollar/yields)');
+  if (/ceasefire|peace deal|peace talks|de-?escalat|truce|agreement reached|breakthrough|progress on .*talks|talks.*progress|resolution|summit.*agreement/.test(tx))
+    return mk('bull','war_deesc','high',84,'Desescalada geopolítica → riesgo-on: índices suben, refugios ceden','Geopolitical de-escalation → risk-on: indices rise, havens fade');
+
+  // BoJ: carry trade — el yen es el financiador del riesgo global
+  // Primero el lado dovish: "pushes back against early rate hike" ES dovish
+  if (/\bboj\b|bank of japan/.test(tx) && /dovish|hold(ing)? rates?|keep.*rate|slow.*pace|stimulus|accommodative|push(es|ing) back against|reject(s|ing) (early|anticipated|further) hike|(?<!not )opposed to increas/.test(tx))
+    return mk('bull','boj_dove','med',68,'BoJ dovish → yen débil → carry sigue → liquidez global → NAS100 sube','BoJ dovish → weak yen → carry intact → global liquidity → NAS100 higher');
+  if (/\bboj\b|bank of japan|japan.*(central bank|rate)/.test(tx) && /hawkish|hike|raise.*rate|tighten|intervene|intervention|not opposed to increas|open to increas|increas(e|es|ing) rates?/.test(tx))
+    return mk('bear','boj_hawk','high',82,'BoJ hawkish → yen sube → carry unwind → despalancamiento → NAS100 baja','BoJ hawkish → yen up → carry unwind → deleveraging → NAS100 lower');
+
+  // PBoC / China: estímulo = demanda global
+  if (/pboc|china.*inject|china.*stimul|china.*(cut|lower).*(rrr|rate)|beijing.*stimul|china.*support.*econom/.test(tx))
+    return mk('bull','china_stim','med',75,'Estímulo China → demanda global y metales/energía arriba → riesgo-on','China stimulus → global demand, metals/energy up → risk-on');
+
+  // PETRÓLEO: oferta y demanda
+  if (/opec.*(cut|reduc)|cut.*production|supply.*disrupt|pipeline (attack|outage)|refinery (attack|shut)|embargo|hormuz|inventor(y|ies) draw|sanction.*oil|oil.*embargo/.test(tx))
+    return mk('bull','oil_supply','med',78,'Riesgo en oferta de crudo → petróleo sube; inflación de energía presiona al riesgo','Oil supply risk → crude up; energy inflation pressures risk assets');
+  if (/opec.*(increase|boost)|output.*increase|oversupply|glut|inventor(y|ies) build|oil demand.*weak|crude.*fall|oil prices? (fall|drop|slump)/.test(tx))
+    return mk('bear','oil_glut','med',70,'Exceso de oferta o demanda débil → petróleo cae; alivio inflacionario favorece riesgo','Oversupply or weak demand → oil down; inflation relief favors risk');
+
   // Fed
   if (/rate cut|dovish|lower rate|pause hike|accommodat|cut rates/.test(tx))
     return mk('bull','fed_bull','high',91,'Fed dovish → tasas bajan → múltiplos tech se expanden → NAS100 sube','Dovish Fed → lower rates → tech multiples expand → NAS100 higher');
@@ -190,6 +224,14 @@ function analyzeNas(title, body, cat, tags) {
   if (/miss.*estimate|below.*expect|lower.*guidance|disappoint|weak.*outlook/.test(tx))
     return mk('bear','earn_bear','high',85,'Decepción earnings → sector vende → NAS100 bajo presión','Earnings miss → sector sells off → NAS100 under pressure');
 
+  // Ratings de analistas: upgrade/downgrade mueven el valor y su sector
+  // DEBEN evaluarse antes que las reglas generales de Fed (evita que "cut rating"
+  // o "lowered" se lean como tono dovish del banco central).
+  if (/downgrad|(lowers?|cuts?|reduces?|slashes?)[^.]{0,40}?rating|cut(s|ting)? (its|their)? ?(rating|price target)|lower(s|ed|ing)?[^.]{0,30}?price target|underperform|sell rating|bearish call/.test(tx))
+    return mk('bear','rating_bear','med',80,'Rebaja de calificación/precio objetivo → presión vendedora en el valor y su sector','Analyst downgrade → selling pressure on the stock and sector');
+  if (/upgrad|raise(s|d|ing)?[^.]{0,30}?price target|outperform|overweight|buy rating|initiat(es|ed|ing)? coverage|bullish call/.test(tx))
+    return mk('bull','rating_bull','med',78,'Mejora de calificación/precio objetivo → compras en el valor y su sector','Analyst upgrade → buying in the stock and sector');
+
   // Yields
   if (/yield.*rise|10.year.*high|treasury.*sell|bond.*sell/.test(tx))
     return mk('bear','yield_bear','med',83,'Yields suben → mayor tasa descuento flujos tech → NAS100 cae','Yields rise → higher discount rate for tech → NAS100 lower');
@@ -219,7 +261,7 @@ function analyzeNas(title, body, cat, tags) {
 // cada regla de analyzeNas mapea la dirección ESPERADA de cada activo.
 // dir: 'up' sube | 'dn' baja | '~' neutral/depende del régimen
 // ════════════════════════════════════════════════════════════════
-const CROSS_ASSETS = ['NAS100', 'US30', 'SPX500', 'VIX', 'BONOS', 'DOLAR', 'ORO'];
+const CROSS_ASSETS = ['NAS100', 'US30', 'SPX500', 'VIX', 'BONOS', 'DOLAR', 'ORO', 'PETROLEO', 'EURUSD', 'USDJPY'];
 const CROSS_MAP = {
   // ── Fed ──
   fed_bull:     { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'up', DOLAR:'dn', ORO:'up',
@@ -248,6 +290,11 @@ const CROSS_MAP = {
     tip: { es:'Earnings tech positivos: sector lidera; macro poco afectado', en:'Positive tech earnings: sector leads; macro barely moves' } },
   earn_bear:    { NAS100:'dn', US30:'~', SPX500:'dn', VIX:'up', BONOS:'~', DOLAR:'~', ORO:'~',
     tip: { es:'Earnings tech decepcionantes: presión sectorial; macro indiferente', en:'Disappointing tech earnings: sector pressure; macro neutral' } },
+  // ── Ratings de analistas ──
+  rating_bear:  { NAS100:'dn', US30:'~', SPX500:'dn', VIX:'up', BONOS:'~', DOLAR:'~', ORO:'~', PETROLEO:'~',
+    tip: { es:'Downgrade analista: presión vendedora en el valor y su sector; macro indiferente salvo que toque al índice', en:'Analyst downgrade: selling pressure on the stock and sector; macro indifferent unless index heavyweight' } },
+  rating_bull:  { NAS100:'up', US30:'~', SPX500:'up', VIX:'dn', BONOS:'~', DOLAR:'~', ORO:'~', PETROLEO:'~',
+    tip: { es:'Upgrade analista: compras en el valor y su sector; macro indiferente salvo que toque al índice', en:'Analyst upgrade: buying in the stock and sector; macro indifferent unless index heavyweight' } },
   // ── Tasas/bonos explicitos ──
   yield_bull:   { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'up', DOLAR:'dn', ORO:'~',
     tip: { es:'Yields bajan: growth más atractivo respecto a bonos', en:'Yields fall: growth more attractive versus bonds' } },
@@ -258,6 +305,32 @@ const CROSS_MAP = {
     tip: { es:'Risk-off: índices caen, refugios suben (oro, bonos, dólar, VIX)', en:'Risk-off: indices fall, havens rise (gold, bonds, dollar, VIX)' } },
   china_bear:   { NAS100:'dn', US30:'dn', SPX500:'~', VIX:'up', BONOS:'up', DOLAR:'~', ORO:'up',
     tip: { es:'Riesgo supply chain/China: tech expuesto; refugio parcial en oro', en:'China/supply-chain risk: tech exposed; partial gold havens' } },
+  // ── Datos $MACRO de EE.UU. (cadena sakeem: dólar/yields mandan) ──
+  us_hot:       { NAS100:'dn', US30:'dn', SPX500:'dn', VIX:'up', BONOS:'dn', DOLAR:'up', ORO:'dn', PETROLEO:'~', EURUSD:'dn', USDJPY:'up',
+    tip: { es:'Dato US mejor que previsión: dólar/yields ▲ → el oro cede por costo de oportunidad, NAS presionada por tasa de descuento, EURUSD cae y USDJPY sube', en:'US data beat: dollar/yields up → gold fades on opportunity cost, NAS pressured, EURUSD down, USDJPY up' } },
+  us_cold:      { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'up', DOLAR:'dn', ORO:'up', PETROLEO:'~', EURUSD:'up', USDJPY:'dn',
+    tip: { es:'Dato US peor que previsión: dólar/yields ▼ → el oro recupera, NAS respira, EURUSD sube y USDJPY cede', en:'US data miss: dollar/yields down → gold recovers, NAS breathes, EURUSD up, USDJPY down' } },
+  // ── Geopolítica: bloqueo de negociaciones (lectura sakeem) ──
+  war_stall:    { NAS100:'dn', US30:'dn', SPX500:'dn', VIX:'up', BONOS:'up', DOLAR:'up', ORO:'dn', PETROLEO:'up',
+    tip: { es:'Bloqueo sin resolución (Irán/Hormuz): la prima de refugio del oro ya estaba pagada y se drena; crudo sube por oferta cerrada; bolsas caen por incertidumbre', en:'Deadlocked talks (Iran/Hormuz): the safe-haven premium was already paid and drains; oil rises on closed supply; equities fall on uncertainty' } },
+  // ── Geopolítica: guerra y paz ──
+  war_esc:      { NAS100:'dn', US30:'dn', SPX500:'dn', VIX:'up', BONOS:'up', DOLAR:'up', ORO:'up', PETROLEO:'up',
+    tip: { es:'Escalada geopolítica: risk-off total — índices caen; refugios suben (oro, bonos, dólar) y el crudo sube por riesgo de oferta', en:'Geopolitical escalation: full risk-off — indices fall; havens rise (gold, bonds, dollar) and crude rises on supply risk' } },
+  war_deesc:    { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'dn', DOLAR:'dn', ORO:'dn', PETROLEO:'dn',
+    tip: { es:'Desescalada/paz: riesgo-on — índices suben; refugios ceden (oro, bonos) y el crudo pierde su prima de riesgo', en:'De-escalation/peace: risk-on — indices rise; havens fade (gold, bonds) and crude loses its risk premium' } },
+  // ── Petróleo: oferta y demanda ──
+  oil_supply:   { NAS100:'~', US30:'~', SPX500:'~', VIX:'up', BONOS:'~', DOLAR:'up', ORO:'up', PETROLEO:'up',
+    tip: { es:'Riesgo de oferta de crudo: petróleo arriba; alza inflación de energía (dólar/oro algo arriba); índices dependen de la magnitud', en:'Crude supply risk: oil up; energy inflation lifts dollar/gold somewhat; indices depend on magnitude' } },
+  oil_glut:     { NAS100:'up', US30:'~', SPX500:'up', VIX:'dn', BONOS:'~', DOLAR:'dn', ORO:'dn', PETROLEO:'dn',
+    tip: { es:'Exceso de oferta/demanda débil: crudo abajo; alivio inflacionario favorece riesgo', en:'Oversupply/weak demand: oil down; inflation relief favors risk' } },
+  // ── Japón: carry trade ──
+  boj_hawk:     { NAS100:'dn', US30:'dn', SPX500:'dn', VIX:'up', BONOS:'dn', DOLAR:'up', ORO:'dn', PETROLEO:'dn', EURUSD:'~', USDJPY:'dn',
+    tip: { es:'BoJ hawkish: yen sube (USDJPY cae) → carry unwind → despalancamiento global → riesgo cae', en:'BoJ hawkish: yen up (USDJPY down) → carry unwind → global deleveraging → risk falls' } },
+  boj_dove:     { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'up', DOLAR:'dn', ORO:'~', PETROLEO:'~', EURUSD:'~', USDJPY:'up',
+    tip: { es:'BoJ dovish: yen débil (USDJPY sube) → carry sigue → liquidez global favorece riesgo', en:'BoJ dovish: weak yen (USDJPY up) → carry intact → global liquidity favors risk' } },
+  // ── China: estímulo ──
+  china_stim:   { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'~', DOLAR:'~', ORO:'up', PETROLEO:'up',
+    tip: { es:'Estímulo China: demanda global arriba — energía y metales se benefician; riesgo-on', en:'China stimulus: global demand up — energy and metals benefit; risk-on' } },
   // ── Genéricos ──
   general_bull: { NAS100:'up', US30:'up', SPX500:'up', VIX:'dn', BONOS:'dn', DOLAR:'~', ORO:'dn',
     tip: { es:'Momentum alcista: riesgo-on; refugios ceden', en:'Bullish momentum: risk-on; havens fade' } },
@@ -265,14 +338,20 @@ const CROSS_MAP = {
     tip: { es:'Sell-off de riesgo: huida hacia refugios', en:'Risk sell-off: flight to havens' } },
 };
 // Devuelve {tip, assets:[{k,dir}]} solo si hay regla determinada; null si el
-// impacto no está determinado (la UI no muestra raíl en ese caso)
+// impacto no está determinado (la UI no muestra raíl en ese caso).
+// DIVISAS por código (sin IA): EURUSD es inverso del dólar; USDJPY lo sigue
+// (yen financiador del carry). Las reglas del BoJ definen su propio USDJPY
+// explícito en CROSS_MAP — ahí el yen manda sobre el dólar.
 function crossAssetContext(key) {
   const m = key ? CROSS_MAP[key] : null;
   if (!m) return null;
-  return {
-    tip: m.tip,
-    assets: CROSS_ASSETS.map(k => ({ k, dir: m[k] || '~' })),
-  };
+  const assets = CROSS_ASSETS.map(k => {
+    if (m[k]) return { k, dir: m[k] };
+    if (k === 'EURUSD') return { k, dir: m.DOLAR === 'up' ? 'dn' : m.DOLAR === 'dn' ? 'up' : '~' };
+    if (k === 'USDJPY') return { k, dir: m.DOLAR === 'up' ? 'up' : m.DOLAR === 'dn' ? 'dn' : '~' };
+    return { k, dir: m[k] || '~' };
+  });
+  return { tip: m.tip, assets };
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -492,6 +571,14 @@ function generateTradingSignal(newsItem, marketPrices) {
       action = isEsc ? 'SELL' : 'BUY'; direction = isEsc ? 'BEAR' : 'BULL';
       reason = isEsc ? 'Escalada geopolítica + Triple Filtro ROJO → VENDER NAS100' : 'Acuerdo de paz + Triple Filtro ROJO → COMPRAR NAS100';
       risk = '2%';
+    } else if (newsItem.nasKey === 'war_esc' || newsItem.nasKey === 'war_deesc') {
+      // Zenith: el titular ES el gatillo. Escalada/desescalada confirmada por la
+      // matriz (conf >= 80) → señal inmediata aunque el crudo/VIX no se hayan movido aún.
+      const isEsc = newsItem.nasKey === 'war_esc';
+      action = isEsc ? 'SELL' : 'BUY'; direction = isEsc ? 'BEAR' : 'BULL';
+      reason = (isEsc ? 'Escalada geopolítica desde el titular · risk-off: NAS ▼, refugios ▲' : 'Desescalada/paz desde el titular · riesgo-on: NAS ▲, refugios ▼')
+        + ' · Triple Filtro ' + tripleFilter.filter + ' (' + tripleFilter.conditions + '/3) — entra en scalps, confirma con el movimiento';
+      risk = '1.5%';
     } else { reason = 'Geopolítica sin Triple Filtro ROJO → ESPERAR'; }
   } else if (priority.score >= 800) {
     if (dataDeviation && dataDeviation.signal !== 'HOLD') {
@@ -516,8 +603,12 @@ function generateTradingSignal(newsItem, marketPrices) {
   }
 
   // ── FALLBACK: Normal news still gets sentiment-based signals ──
+  // El sentimiento FED solo aplica a noticias de contexto Fed/tasas: sin este
+  // guardia, un "downgrade"/"cut rating" corporativo leía 'cut' → dovish → BUY.
+  const fullText = ((title || '') + ' ' + (body || '')).toLowerCase();
+  const fedCtx = /\bfed\b|fomc|powell|interest rate|rate cut|rate hike|treasury|inflation|cpi\b|pce\b|yields?\b/.test(fullText);
   if (priority.score < 500 && action === 'HOLD') {
-    if (fedSentiment.nasSignal !== 0 && fedSentiment.severity !== 'low') {
+    if (fedCtx && fedSentiment.nasSignal !== 0 && fedSentiment.severity !== 'low') {
       action = fedSentiment.nasSignal === 1 ? 'BUY' : 'SELL';
       direction = fedSentiment.nasSignal === 1 ? 'BULL' : 'BEAR';
       reason = fedSentiment.reason;
@@ -551,6 +642,96 @@ function generateTradingSignal(newsItem, marketPrices) {
     tripleConditions: tripleFilter.conditions,
     dataDeviation: dataDeviation ? dataDeviation.deviation : null,
   };
+}
+
+// ── DATOS $MACRO EN EL TITULAR (estilo FinancialJuice — el feed de sakeem) ──
+// "UK GDP QOQ PRELIM ACTUAL 0.7% (FORECAST 0.7%, PREVIOUS 0.5%)"
+// Lectura determinística (sin IA): parseo de números + país→moneda.
+// EE.UU.: dato mejor que previsión → dólar ▲ · yields ▲ → ORO ▼ · NAS ▼ ·
+// EURUSD ▼ · USDJPY ▲ (cadena completa sakeem). Otro país: mueve ESA moneda.
+const MACRO_CCY = [
+  [/\buk\b|britain|kingdom|gilt/i, 'GBP'],
+  [/eurozone|europa\b|german|french|ecb|swedish|swiss|nordic/i, 'EUR'],
+  [/japan|japanese|boj/i, 'JPY'],
+  [/china|chinese|pboc/i, 'CNY'],
+  [/canada|canadian|loonie/i, 'CAD'],
+  [/australia|aussie|rba/i, 'AUD'],
+  [/new zealand|kiwi|rbnz/i, 'NZD'],
+  [/\bus\b|usa|united states|u\.s\.|americ/i, 'USD'],
+];
+const MACRO_INVERT = /unemploy|jobless|claims|layoff|deficit/i; // valor más alto = peor
+
+function analyzeMacroData(title, body) {
+  const tx = ((title || '') + ' ' + (body || '')).toLowerCase();
+  const m = tx.match(/actual[:\s]*([-+\d.,bkm%]+)\s*\(?\s*forecast[:\s]*([-+\d.,bkm%]+)/);
+  if (!m) return null;
+  const num = s => { const mm = String(s || '').replace(/,/g, '').match(/-?\d+(\.\d+)?/); return mm ? parseFloat(mm[0]) : null; };
+  const actual = num(m[1]), forecast = num(m[2]);
+  if (actual == null || forecast == null || actual === forecast) return null;
+  const hot = actual > forecast;                          // el número salió más alto
+  const good = hot !== MACRO_INVERT.test(tx);             // ¿es bueno para la moneda?
+  const ccy = (MACRO_CCY.find(([rx]) => rx.test(tx)) || [null, 'USD'])[1];
+  const isUS = ccy === 'USD';
+  const f = n => n == null ? '?' : String(n);
+  const dato = (good ? 'FUERTE' : 'DÉBIL');
+  let nas, cross = null;
+  if (isUS) {
+    // cadena sakeem completa: dólar/yields mandan sobre oro y divisas
+    nas = good
+      ? mk('bear','us_hot','med',82,'Dato US ' + dato + ': ' + f(actual) + ' vs prev. ' + f(forecast) + ' → dólar ▲ · yields ▲ → ORO ▼ · NAS ▼ · BONOS ▼ · EURUSD ▼ · USDJPY ▲','Hot US data → dollar up, yields up → gold down')
+      : mk('bull','us_cold','med',80,'Dato US ' + dato + ': ' + f(actual) + ' vs prev. ' + f(forecast) + ' → dólar ▼ · yields ▼ → ORO ▲ · NAS ▲ · BONOS ▲ · EURUSD ▲ · USDJPY ▼','Cool US data → dollar down, yields down → gold up');
+    cross = crossAssetContext(good ? 'us_hot' : 'us_cold');
+  } else {
+    // dato extranjero: mueve ESA moneda, no hay raíl falso para US
+    nas = good
+      ? mk('neu', null, 'low', 40, ccy + ' ▲: dato mejor que previsión (' + f(actual) + ' vs ' + f(forecast) + ') fortalece a la moneda','Stronger-than-forecast data supports ' + ccy)
+      : mk('neu', null, 'low', 40, ccy + ' ▼: dato peor que previsión (' + f(actual) + ' vs ' + f(forecast) + ') debilita a la moneda','Weaker-than-forecast data hurts ' + ccy);
+  }
+  return { nas, cross };
+}
+
+// ── SEÑAL ESTILO ZENITH POR TITULAR ──────────────────────────
+// Metodología sakeem (Session PREP): cada titular trae escenarios
+// BAJISTA/ALCISTA y la regla de oro "NO CONFIRMATION, NO ENTRY —
+// trade the reaction, not the speculation".
+const PREP_SCENARIOS = {
+  war_stall:   { bear: 'Más retórica dura o condiciones nuevas → bolsas siguen cediendo y el crudo presiona; el oro sigue drenando prima', bull: 'Reanudación de negociaciones o avance real → rebote de alivio en bolsas; el oro recupera demanda' },
+  war_esc:     { bear: 'Confirmación militar (ataque, cierre de estrecho) → risk-off se extiende: refugios y crudo aceleran', bull: 'Desescalada transitoria o retirada → rebote de alivio: cierra scalps de venta y refugios ceden' },
+  war_deesc:   { bear: 'Ruptura del acuerdo o nuevo ataque → reversión: refugios vuelven, bolsas devuelven el rebote', bull: 'Progresos confirmados por ambas partes → rally de alivio en bolsas; crudo y oro ceden' },
+  oil_supply:  { bear: 'Cierre confirmado de ruta o inventarios en fuerte caída → crudo acelera y arrastra inflación', bull: 'Reapertura o aumento de producción → el crudo devuelve la prima; alivio para bolsas' },
+  oil_glut:    { bear: 'Recortes sorpresa de OPEP o tensión en ruta → reversión del crudo al alza', bull: 'Más señales de exceso de oferta → el crudo sigue cediendo; alivio inflacionario para riesgo' },
+  boj_hawk:    { bear: 'Intervención o subida real de tasas → carry unwind acelera: liquidación global de riesgo', bull: 'Aclaración dovish del mismo miembro → el unwind se calma y el riesgo recupera' },
+  boj_dove:    { bear: 'Giro hawkish sorpresa del mismo BoJ → despalancamiento y NAS cede', bull: 'Continuidad dovish → carry intacto, liquidez sigue favoreciendo riesgo' },
+  china_stim:  { bear: 'Estímulo sin detalle o decepción del PBoC → los activos ligados a China devuelven ganancias', bull: 'Detalle de paquete fiscal/monetario mayor al esperado → metales, energía y riesgo continúan' },
+  fed_bull:    { bear: 'Giro hawkish de otro miembro FED → los múltiplos devuelven el rebote', bull: 'Más voces dovish confirman → NAS continúa al alza con dólar cediendo' },
+  fed_bear:    { bear: 'Más tono restrictivo o dato caliente después → NAS presiona mínimo nuevos', bull: 'Dato frío posterior o voz dovish → alivio: NAS recupera' },
+  cpi_bull:    { bear: 'Revisión al alza o core que sorprende → reversión del alivio', bull: 'Continuidad de desinflación → NAS extiende, dólar cede' },
+  cpi_bear:    { bear: 'Core acelera de nuevo → más presión Fed: NAS ▼, yields ▲, dólar ▲', bull: 'PPI/mes siguiente frío → el miedo hawkish se desinfla: rebote técnico' },
+  nfp_bull:    { bear: 'Revisión negativa de meses previos → confusión: protege ganancias', bull: 'Otro dato laboral débil → la puerta al recorte Fed se abre más' },
+  nfp_bear:    { bear: 'Nuevos datos calientes → la narrativa hawkish se consolida', bull: 'Salarios moderados tras NFP fuerte → el pánico hawkish se disipa' },
+  trump_deal:  { bear: 'El acuerdo se enfría o aranceles nuevos → reversión completa', bull: 'Firma o detalle del acuerdo → continuidad del riesgo-on' },
+  trump_tariff:{ bear: 'Aranceles entran en vigor con listas concretas → NAS y semis siguen cediendo', bull: 'Pausa o negociación anunciada → rebote de alivio fuerte' },
+  trump_dereg: { bear: 'La desregulación se retrasa o se cuestiona → múltiplos devuelven', bull: 'Executive order firmado → continuidad en el sector beneficiado' },
+  earn_bull:   { bear: 'Guidance decepciona en la conferencia → el gap al alza se revierte', bull: 'Confianza de gestión y upgrades posteriores → continuidad del rally' },
+  earn_bear:   { bear: 'Recorte de guidance explícito → aceleración de ventas en el sector', bull: 'Valor defende soporte clave → rebote técnico; no perseguir el vendido' },
+  rating_bear: { bear: 'Más rebajas de otros bancos → el sector acompaña la caída', bull: 'El valor defiende soporte → rebote técnico: el downgrade queda descontado' },
+  rating_bull: { bear: 'El repunte falla y pierde el nivel previo → el upgrade queda descontado', bull: 'Otros analistas se suman → continuidad compradora' },
+  yield_bull:  { bear: 'Subasta débil o dato caliente → yields vuelven a subir', bull: 'Más demanda de bonos → yields siguen cediendo, riesgo-on continúa' },
+  yield_bear:  { bear: 'Dato caliente o FED hawkish → yields rompen resistencia: NAS presiona', bull: 'Voz dovish → yields retroceden: NAS recupera' },
+  vix_bear:    { bear: 'VIX sigue subiendo con volumen → pánico: solo cortos o refugios', bull: 'VIX se estabiliza y retrocede → rebote de alivio violento en índices' },
+  china_bear:  { bear: 'Restricciones firmadas en lista oficial → semis siguen cayendo', bull: 'Se relaja la restricción → rebote fuerte en el sector' },
+  general_bull:{ bear: 'Pierde el nivel clave intradía → momentum se agota', bull: 'Volumen y amplitud confirman → continuidad intradía' },
+  general_bear:{ bear: 'Volumen de venta creciente → extensión a la baja', bull: 'Defensa de soporte con absorción → rebote técnico: NO perseguir' },
+};
+const PREP_RULE = 'NO CONFIRMATION, NO ENTRY — espera que el precio confirme la dirección; opera la reacción, no la especulación';
+
+function zenSignal(n) {
+  try {
+    const s = generateTradingSignal(n, mktCache);
+    if (!s || s.action === 'HOLD') return null;
+    const prep = PREP_SCENARIOS[n.nasKey] || null;
+    return { action: s.action, dir: s.direction, risk: s.risk, reason: s.reason, label: s.priorityLabel, level: s.priorityLevel, prep };
+  } catch { return null; }
 }
 
 // ── FETCH UN FEED ─────────────────────────────────────────────
@@ -627,7 +808,8 @@ async function fetchOne(feed) {
       const full  = title + ' ' + body;
       const tags  = extractTags(full);
       const cat   = feed.trump ? 'trump' : categorize(full);
-      const nas   = analyzeNas(title, body, cat, tags);
+      const mac   = analyzeMacroData(title, body);
+      const nas   = mac ? mac.nas : analyzeNas(title, body, cat, tags);
       // Anti clock-skew + memoria por URL: los feeds que re-mandan artículos
       // viejos sin fecha (o re-editados) no pueden "rejuvenecerlos" a ahora.
       const link = item.link || '';
@@ -643,7 +825,7 @@ async function fetchOne(feed) {
         body,
         tags,
         trump:       !!feed.trump,
-        trumpDirect: !!feed.trumpDirect,   // ← TRUE solo para @realDonaldTrump oficial
+        trumpDirect: !!feed.trumpDirect,   // â† TRUE solo para @realDonaldTrump oficial
         url:         item.link || '',
         nasDir:      nas.dir,
         nasKey:      nas.key,
@@ -651,7 +833,7 @@ async function fetchOne(feed) {
         conf:        nas.conf,
         nasEs:       nas.es,
         nasEn:       nas.en,
-        cross:       crossAssetContext(nas.key),
+        cross:       mac ? mac.cross : crossAssetContext(nas.key),
       };
     });
     markFeedHealth(feed.src, items.length > 0, items.length);
@@ -795,7 +977,8 @@ function parseNitterXML(xml, account) {
     const full   = title + ' ' + rawBody;
     const tags   = extractTags(full);
     const cat    = 'squawk';
-    const nas    = analyzeNas(title, rawBody, cat, tags);
+    const mac    = analyzeMacroData(title, rawBody);
+const nas    = mac ? mac.nas : analyzeNas(title, rawBody, cat, tags);
 
     items.push({
       id:          Buffer.from(title).toString('base64').slice(0, 18),
@@ -818,7 +1001,7 @@ function parseNitterXML(xml, account) {
       conf:        nas.conf,
       nasEs:       nas.es,
       nasEn:       nas.en,
-      cross:       crossAssetContext(nas.key),
+      cross: mac ? mac.cross : crossAssetContext(nas.key),
     });
   }
   return items;
@@ -841,7 +1024,8 @@ async function fetchLiveSquawkDirect() {
         const body  = (item.contentSnippet || '').slice(0, 300);
         const full  = title + ' ' + body;
         const tags  = extractTags(full);
-        const nas   = analyzeNas(title, body, 'squawk', tags);
+        const mac   = analyzeMacroData(title, body);
+const nas   = mac ? mac.nas : analyzeNas(title, body, 'squawk', tags);
         return {
           id: Buffer.from(title).toString('base64').slice(0,18),
           src: '@LiveSquawk', cls: 'sq-live',
@@ -852,7 +1036,7 @@ async function fetchLiveSquawkDirect() {
           url: item.link || 'https://x.com/LiveSquawk',
           nasDir:nas.dir, nasKey:nas.key, nasMag:nas.mag, conf:nas.conf,
           nasEs:nas.es, nasEn:nas.en,
-          cross: crossAssetContext(nas.key),
+          cross: mac ? mac.cross : crossAssetContext(nas.key),
         };
       });
 }
@@ -915,7 +1099,8 @@ function parseJinaSquawk(md, account) {
     seen.add(key);
     const full = text;
     const tags = extractTags(full);
-    const nas  = analyzeNas(text, '', 'squawk', tags);
+    const mac  = analyzeMacroData(text, '');
+const nas  = mac ? mac.nas : analyzeNas(text, '', 'squawk', tags);
     // Fecha: real de X ([46m](status)) si está; si no, memoria del titular
     const keyMem = 't:' + text.toLowerCase().replace(/\s+/g, ' ');
     if (!ts) ts = squawkTsMemory.get(keyMem) || now;
@@ -941,7 +1126,7 @@ function parseJinaSquawk(md, account) {
       conf:        nas.conf,
       nasEs:       nas.es,
       nasEn:       nas.en,
-      cross:       crossAssetContext(nas.key),
+      cross: mac ? mac.cross : crossAssetContext(nas.key),
     });
   });
   return items;
@@ -969,7 +1154,8 @@ async function fetchForexLiveFallback() {
       const body  = (item.contentSnippet || item.content || '').replace(/<[^>]+>/g, '').trim().slice(0, 300);
       const full  = title + ' ' + body;
       const tags  = extractTags(full);
-      const nas   = analyzeNas(title, body, 'squawk', tags);
+      const mac   = analyzeMacroData(title, body);
+const nas   = mac ? mac.nas : analyzeNas(title, body, 'squawk', tags);
       return {
         id: Buffer.from(title).toString('base64').slice(0, 18),
         src: 'FOREXLIVE', cls: 'sq-live',
@@ -980,7 +1166,7 @@ async function fetchForexLiveFallback() {
         url: item.link || 'https://www.forexlive.com',
         nasDir: nas.dir, nasKey: nas.key, nasMag: nas.mag, conf: nas.conf,
         nasEs: nas.es, nasEn: nas.en,
-        cross: crossAssetContext(nas.key),
+        cross: mac ? mac.cross : crossAssetContext(nas.key),
       };
     });
   } catch (e) {
@@ -1156,6 +1342,7 @@ app.get('/api/news', async (req, res) => {
     n.title.toLowerCase().includes(q.toLowerCase()) ||
     (n.body || '').toLowerCase().includes(q.toLowerCase())
   );
+  items.forEach(n => { if (n.zen === undefined) n.zen = zenSignal(n); });
   res.json({ ok: true, count: items.length, lastFetch: lastNewsFetch, items });
 });
 
@@ -1164,6 +1351,7 @@ app.get('/api/squawk', async (req, res) => {
   const staleSq = (Date.now() - lastSquawkFetch > SQUAWK_TTL) || !squawkCache.length;
   if (staleSq && !squawkFetching) kickSquawk();
   if (!squawkCache.length && squawkFetching) await Promise.race([squawkFetching, new Promise(r => setTimeout(r, 8000))]);
+  squawkCache.forEach(n => { if (n.zen === undefined) n.zen = zenSignal(n); });
   res.json({
     ok:         true,
     count:      squawkCache.length,
@@ -1368,7 +1556,7 @@ function econToNewsItem(e) {
     econ: true,
     econSpeech: !!e.isSpeech,
     ts: e.time,
-    title: (e.isSpeech ? '🔊 ' : '') + (e.currency || 'ECON') + ' — ' + e.event + suffix,
+    title: (e.isSpeech ? 'ðŸ”Š ' : '') + (e.currency || 'ECON') + ' — ' + e.event + suffix,
     body: e.isSpeech
       ? 'Discurso/comparecencia de ' + (e.currency || 'ECON') + ' (' + (e.src || 'calendario') + ') · puede mover el mercado por declaraciones'
       : 'Calendario Económico · impacto ' + e.impact + (e.actual ? '' : ' · dato por confirmar'),
@@ -1538,6 +1726,32 @@ function patchNewsActuals() {
       if (n.econPrevious) parts.push('ant. ' + n.econPrevious);
       n.title = (n.econCurrency || 'USD') + ' — ' + n.econEvent + ': ' + parts.join(' · ') + marker;
       n.body = 'Calendario Económico USD · impacto ' + n.econImpact + ' · dato confirmado';
+      // Dirección confirmada por tipo de dato: el real vs previsión decide
+      // la lectura (caliente/frío) y activa el raíl multi-activo real.
+      const ev = (n.econEvent || '').toLowerCase();
+      const hot = (a != null && f != null) ? a > f : null;
+      if (hot !== null) {
+        let key = null;
+        if (/cpi|inflation|pce|price index/.test(ev))                 key = hot ? 'cpi_bear' : 'cpi_bull';
+        else if (/payroll|nfp|employment|unemploy|jobless|jobs/.test(ev)) key = hot ? 'nfp_bear' : 'nfp_bull';
+        if (key) {
+          n.nasKey = key;
+          n.nasDir = key.endsWith('bear') ? 'bear' : 'bull';
+          n.nasMag = 'high'; n.conf = 90;
+          n.nasEs = hot
+            ? 'Dato CALIENTE: ' + actual + ' vs prev. ' + (n.econForecast || '?') + ' → presión Fed → raíles según matriz'
+            : 'Dato FRÍO: ' + actual + ' vs prev. ' + (n.econForecast || '?') + ' → abre puerta a Fed dovish';
+          n.nasEn = hot ? 'Hot data → Fed pressure' : 'Cool data → opens dovish Fed door';
+          n.cross = crossAssetContext(key);
+          n.zen = {
+            action: hot ? 'SELL' : 'BUY',
+            dir:    hot ? 'BEAR' : 'BULL',
+            risk:   '1.5%',
+            reason: n.nasEs,
+            label:  'FED DATA', level: 2,
+          };
+        }
+      }
       console.log(`[ECON] resultado confirmado: ${n.econEvent} = ${actual}${marker.trim()}`);
     }
   });
@@ -1562,6 +1776,26 @@ async function enrichEconActuals() {
   } catch (e) {
     // scrape silencioso; se reintenta en el próximo tick
   }
+}
+
+// ── GUIÓN DE DATO ECONÓMICO (estilo Zenith) ──────────────────
+// Antes del dato: qué escenarios buscar. Después: dirección confirmada.
+// Determinista y transparente — sin dirección inventada pre-evento.
+function econPlaybook(eventText) {
+  const e = (eventText || '').toLowerCase();
+  if (/cpi|inflation|pce|price index/.test(e))
+    return 'GUIÓN — CALIENTE (sobre previsión): dólar ▲ · yields ▲ → ORO ▼ · NAS ▼ · BONOS ▼ · EURUSD ▼ · USDJPY ▲ (más alzas Fed) | FRÍO: dólar ▼ · ORO ▲ · NAS ▲ · EURUSD ▲ (Fed recorta)';
+  if (/payroll|nfp|employment|unemploy|jobless|jobs/.test(e))
+    return 'GUIÓN — FUERTE (sobre previsión): dólar ▲ · yields ▲ → ORO ▼ · NAS ▼ · EURUSD ▼ | DÉBIL: dólar ▼ · ORO ▲ · NAS ▲ · EURUSD ▲ (ojo: muy débil puede leerse como recesión y el oro puede subir por refugio)';
+  if (/pmi|ism/.test(e))
+    return 'GUIÓN — SOBRE 50 y mejorando: dólar ▲ · ORO ▼ · NAS ▲ | BAJO 50: dólar ▼ · ORO ▲ · NAS ▼ | el marco decisivo es el componente de precios';
+  if (/retail sales|consumer/.test(e))
+    return 'GUIÓN — FUERTE: consumo resiste → dólar ▲, NAS ▲ (si no enciende inflación) | DÉBIL: dólar ▼ · ORO ▲, NAS ▼, pero si abre puerta a recorte Fed puede dar la vuelta';
+  if (/fomc|rate decision|interest rate/.test(e))
+    return 'GUIÓN — lee el TONO no solo la tasa: hawkish → dólar ▲ · yields ▲ → ORO ▼ · NAS ▼ · EURUSD ▼ · USDJPY ▲ | dovish → dólar ▼ · ORO ▲ · NAS ▲ · EURUSD ▲ | mira el dot plot y la conferencia';
+  if (/ppi|producer price/.test(e))
+    return 'GUIÓN — PPI anticipa al CPI: caliente → dólar ▲ · ORO ▼ · NAS ▼ (presiona costos) | frío → dólar ▼ · ORO ▲ · NAS ▲';
+  return 'GUIÓN — impacto alto en USD: ensancha spread y volatilidad; define entrada tras el primer impulso, no antes. Dólar/yields mandan: si suben, el oro cede y EURUSD baja';
 }
 
 async function econInjectionTick() {
@@ -1596,6 +1830,9 @@ async function econInjectionTick() {
         body: isSpeechEv
           ? 'Discurso miembro FED/FOMC en ' + mins + ' min · declaraciones pueden mover NAS100'
           : `Impacto ${e.impact}` + (e.forecast ? ` · previsión ${e.forecast}` : '') + (e.previous ? ` · ant. ${e.previous}` : '') + ' · preparado para volatilidad',
+        playbook: isSpeechEv
+          ? 'GUIÓN — Discurso FED: cuenta el TONO. Hawkish → NAS ▼ · DÓLAR ▲ · ORO ▼ | Dovish → NAS ▲ · DÓLAR ▼ · ORO ▲'
+          : econPlaybook(e.event),
         tags: isSpeechEv ? ['DISCURSO'] : (e.impact === 'High' ? ['NAS100'] : []),
         trump: false,
         trumpDirect: false,
@@ -1825,6 +2062,12 @@ async function scrapeEconWeek(weekParam) {
 app.get('/api/econcalendar', async (req, res) => {
   try {
     const data = await refreshEconCalendar();
+    // GUIÓN por evento: cómo se lee el dato según salga caliente o frío
+    (data.events || []).forEach(ev => {
+      if (ev.currency === 'USD' && (ev.impact === 'High' || ev.impact === 'Medium') && !ev.playbook) {
+        ev.playbook = econPlaybook(ev.event);
+      }
+    });
     res.json({ ok: true, ...data });
   } catch (e) {
     res.json({ ok: false, error: e.message });
@@ -2144,7 +2387,7 @@ async function fetchTreasuryYields() {
     yieldsCache = {
       yields,
       spread10Y2Y,
-      spreadLabel: spread10Y2Y < 0 ? 'INVERTED ⚠️' : spread10Y2Y < 0.2 ? 'FLAT' : 'NORMAL',
+      spreadLabel: spread10Y2Y < 0 ? 'INVERTED âš ï¸' : spread10Y2Y < 0.2 ? 'FLAT' : 'NORMAL',
       fedProbabilities,
       lastUpdate: new Date().toISOString(),
     };
@@ -2679,6 +2922,8 @@ const SYMBOLS = {
   // INDICES
   'NAS100': '^NDX', 'SPX': '^GSPC', 'DOW': '^DJI', 'VIX': '^VIX',
   'DXY': 'DX-Y.NYB', 'US10Y': '^TNX', 'GOLD': 'GC=F', 'CRUDE': 'CL=F', 'BTC': 'BTC-USD',
+  // DIVISAS
+  'EURUSD': 'EURUSD=X', 'USDJPY': 'JPY=X',
   // TECH MEGA-CAP
   'NVDA': 'NVDA', 'AAPL': 'AAPL', 'MSFT': 'MSFT', 'META': 'META', 'GOOGL': 'GOOGL',
   'AMZN': 'AMZN', 'TSLA': 'TSLA', 'AMD': 'AMD', 'AVGO': 'AVGO', 'QCOM': 'QCOM',

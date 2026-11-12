@@ -92,6 +92,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .sa{background:#7f1d1d;color:#fca5a5}.sc{background:#1a1a2e;color:#a0a8c0}
 .sy{background:#0a1628;color:#93c5fd}.si{background:#0d2010;color:#86efac}
 .ss{background:#1a0040;color:#c4b5fd}.sbl{background:#0d1626;color:#93c5fd}
+.sfj{background:#062a2a;color:#5eead4}
 .sec{background:#2a1a00;color:#fbbf24}
 .calsec{padding:10px 12px 5px;font-size:10px;letter-spacing:1.2px;color:var(--tx3);font-weight:700}
 .calstick{position:sticky;top:0;z-index:6;background:rgba(13,14,14,0.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--bd)}
@@ -207,6 +208,36 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .xc.dn{border-color:#7f1d1d}.xc.dn b{color:var(--rd)}.xc.dn i{color:#f87171}
 .xc.ne{opacity:.55}
 
+/* SEÑAL ESTILO ZENITH (titular → acción) */
+.z-sig{display:flex;gap:7px;align-items:baseline;flex-wrap:wrap;margin-top:6px;padding:4px 8px;background:rgba(0,0,0,.25);border:1px solid;border-radius:4px;flex-shrink:0}
+.z-act{font-size:10.5px;font-weight:700;letter-spacing:.04em;flex-shrink:0}
+.z-rsn{font-size:10px;color:var(--tx2);line-height:1.45;flex:1;min-width:120px}
+.z-risk{font-size:9px;color:var(--tx3);flex-shrink:0;font-weight:600}
+/* ESCENARIOS estilo sakeem (PREP) */
+.z-prep{margin-top:4px;padding:4px 8px;background:rgba(0,0,0,.2);border-left:2px solid var(--bd);border-radius:3px;font-size:9px;line-height:1.55;color:var(--tx3);flex-shrink:0}
+.z-prep b{color:var(--tx2)}
+.z-prep i{color:var(--tx4);opacity:.9}
+/* GUIÓN de dato económico (pre-aviso calendario) */
+.z-play{margin-top:6px;padding:4px 8px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.25);border-radius:4px;font-size:9.5px;line-height:1.55;color:#d8c98d;flex-shrink:0}
+
+/* ALERTA ECONÓMICA GRANDE (en todo, arriba del feed) */
+.econ-alert{display:flex;gap:10px;align-items:center;flex-shrink:0;margin:6px 10px;padding:10px 14px;border-radius:8px;border:2px solid;animation:eapulse 1.6s ease-in-out infinite;box-shadow:0 4px 22px rgba(0,0,0,.45)}
+.econ-alert.eb-pre{background:linear-gradient(90deg,rgba(251,191,36,.16),rgba(251,191,36,.04));border-color:#f59e0b}
+.econ-alert.eb-buy{background:linear-gradient(90deg,rgba(34,197,94,.20),rgba(34,197,94,.05));border-color:#22c55e}
+.econ-alert.eb-sell{background:linear-gradient(90deg,rgba(239,68,68,.20),rgba(239,68,68,.05));border-color:#ef4444}
+@keyframes eapulse{0%,100%{opacity:1}50%{opacity:.82}}
+.ea-l{display:flex;gap:10px;align-items:center;flex:1;min-width:0}
+.ea-fire{font-size:22px;flex-shrink:0}
+.ea-big{font-size:14px;font-weight:800;letter-spacing:.02em;color:#fff;line-height:1.35}
+.ea-sub{font-size:10.5px;color:var(--tx2);line-height:1.5;margin-top:2px}
+.ea-x{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:15px;flex-shrink:0;padding:4px}
+.ea-x:hover{color:#fff}
+/* modo persistente compacto: siempre visible con el próximo dato */
+.econ-alert.eb-idle{margin:4px 10px;padding:6px 14px;border-width:1px;border-style:solid;border-color:var(--bd);background:rgba(0,0,0,.35);animation:none;box-shadow:none}
+.eb-idle .ea-fire{font-size:14px}
+.eb-idle .ea-big{font-size:11.5px;font-weight:700;color:var(--tx2)}
+.eb-idle .ea-sub{display:none}
+
 /* TICKER */
 .ticker{background:#0a0a0a;border-top:1px solid var(--bd);padding:5px 9px;display:flex;gap:14px;overflow-x:auto;white-space:nowrap;flex-shrink:0}
 .ticker::-webkit-scrollbar{display:none}
@@ -237,6 +268,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <!-- SESIONES GLOBALES: relojes digitales en vivo (hora local de la plaza + tu zona horaria) -->
 <div class="sesrow" id="sesRow"></div>
+
+<!-- ALERTA ECONÓMICA GRANDE: cuenta atrás pre-dato y RESULTADO con dirección (estilo sakeem) -->
+<div class="econ-alert" id="econAlert" style="display:none"></div>
 
 <!-- ALERT BANNER -->
 <div class="banner" id="banner">
@@ -459,8 +493,28 @@ const CROSS_CFG = {
   NAS100:{lab:'NAS100', mk:'NAS100'}, US30:{lab:'US30', mk:'DOW'},
   SPX500:{lab:'SPX',   mk:'SPX'},   VIX:{lab:'VIX',  mk:'VIX'},
   BONOS:{lab:'BONOS',  mk:'US10Y', yld:true}, DOLAR:{lab:'DÓLAR', mk:'DXY'},
-  ORO:{lab:'ORO', mk:'GOLD'},
+  ORO:{lab:'ORO', mk:'GOLD'}, PETROLEO:{lab:'PETRÓLEO', mk:'CRUDE'},
+  EURUSD:{lab:'EURUSD', mk:'EURUSD', fx:true}, USDJPY:{lab:'USDJPY', mk:'JPY', fx:true},
 };
+// ── SEÑAL ESTILO ZENITH: titular → acción ejecutable ────────
+// "Took Nasdaq sell scalp from headline": chip BUY/SELL bajo el
+// titular con riesgo y racional, solo cuando hay acción real.
+function zenSig(n){
+  const z = n && n.zen;
+  if(!z || !z.action || z.action==='HOLD') return '';
+  const bull = z.action==='BUY';
+  const col  = bull ? '#22c55e' : '#ef4444';
+  const arrow= bull ? '▲' : '▼';
+  const rsn  = lang==='es' ? (z.reason||'') : (z.reason||'');
+  const prep = z.prep
+    ? `<div class="z-prep"><b>BAJISTA:</b> ${esc(z.prep.bear||'')}<br><b>ALCISTA:</b> ${esc(z.prep.bull||'')}<br><i>NO CONFIRMATION, NO ENTRY — opera la reacción, no la especulación</i></div>`
+    : '';
+  return `<div class="z-sig" style="border-color:${col}">
+    <span class="z-act" style="color:${col}">${arrow} ${z.action}</span>
+    <span class="z-rsn">${rsn}</span>
+    ${z.risk?`<span class="z-risk">riesgo ${z.risk}</span>`:''}
+  </div>${prep}`;
+}
 function crossRail(n){
   const x = n && n.cross;
   if(!x || !Array.isArray(x.assets)) return impMiniFallback(n);
@@ -544,6 +598,7 @@ function renderFeed(){
         </div>
         <div class="sq-body ${cls}">${tTitle(n)}</div>
         ${crossRail(n)}
+        ${zenSig(n)}
         <div class="sq-foot" style="color:${color}">
           <a href="https://x.com/${hdl}" target="_blank" style="color:${color};font-size:9px;text-decoration:none;display:flex;align-items:center;gap:3px">${xLogo} ver en X</a>
           ${n.url&&n.url!==`https://x.com/${hdl}`?`<a href="${n.url}" target="_blank" style="color:${color};font-size:9px;text-decoration:none">→ post</a>`:''}
@@ -607,6 +662,7 @@ function renderFeed(){
         </div>
         <div class="tc-body ${bodyCls}">${tTitle(n)}</div>
         ${crossRail(n)}
+        ${zenSig(n)}
         <div class="tc-foot ${footCls}">
           <a href="${profileUrl}" target="_blank" class="nc-link" style="color:${isDirect?'#3b82f6':'#f97316'}">→ perfil oficial</a>
           ${postUrl!==profileUrl?`<a href="${postUrl}" target="_blank" class="nc-link" style="margin-left:4px;color:${isDirect?'#3b82f6':'#f97316'}">→ ver post</a>`:''}
@@ -639,6 +695,7 @@ function renderFeed(){
         </div>
         <div class="tc-body direct">${tTitle(n)}</div>
         ${crossRail(n)}
+        ${zenSig(n)}
         <div class="tc-foot direct">
           <a href="https://truthsocial.com/@realDonaldTrump" target="_blank" class="nc-link" style="color:#3b82f6">→ perfil oficial</a>
           ${n.url?`<a href="${n.url}" target="_blank" class="nc-link" style="color:#3b82f6;margin-left:4px">→ ver post</a>`:''}
@@ -655,6 +712,8 @@ function renderFeed(){
       <div class="nc-title">${tTitle(n)}</div>
       ${n.body?`<div class="nc-body">${n.body.slice(0,260)}${n.body.length>260?'…':''}</div>`:''}
       ${crossRail(n)}
+      ${zenSig(n)}
+      ${n.playbook?`<div class="z-play">${esc(n.playbook)}</div>`:''}
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;align-items:center">
         ${tags}
         ${n.url?`<a href="${n.url}" target="_blank" class="nc-link" style="margin-left:auto">→ abrir</a>`:''}
@@ -665,6 +724,66 @@ function renderFeed(){
 }
 
 // ── TABS / LANG ────────────────────────────────────────────
+// ── ALERTA ECONÓMICA GRANDE ────────────────────────────────
+// Pre-dato: cuenta atrás + guión (ámbar). Dato salido: RESULTADO ▲/▼ con
+// la acción BUY/SELL del motor (verde/rojo), como las llamadas de sakeem.
+let econAlertDismissed = null; // { id, ts } — silenciar 5 min
+let econAlertCurrentId = null;
+function econAlertDismiss(){
+  econAlertDismissed = { id: econAlertCurrentId, ts: Date.now() };
+  const el = document.getElementById('econAlert');
+  if(el) el.style.display = 'none';
+}
+function updateEconAlert(){
+  const el = document.getElementById('econAlert');
+  if(!el || !serverOk) return;
+  const now = Date.now();
+  const muted = econAlertDismissed && (now - econAlertDismissed.ts < 5*60*1000);
+  el.style.display = 'flex';
+  // 1) RESULTADO — dato recién salido con dirección confirmada
+  const rel = allNews.filter(n => n.econ && !n.econPre && n.zen && n.zen.action && now - (n.ts||0) < 15*60*1000).sort((a,b)=>b.ts-a.ts)[0];
+  if(rel){
+    econAlertCurrentId = rel.id;
+    if(muted && econAlertDismissed.id === rel.id){ el.style.display = 'none'; return; }
+    const z = rel.zen, buy = z.action === 'BUY';
+    const mark = (rel.title||'').indexOf('▲') >= 0 ? '▲' : (rel.title||'').indexOf('▼') >= 0 ? '▼' : '';
+    el.className = 'econ-alert show ' + (buy ? 'eb-buy' : 'eb-sell');
+    el.innerHTML = '<div class="ea-l"><span class="ea-fire">🔥</span><div>'
+      + '<div class="ea-big">' + (buy ? '▲' : '▼') + ' ' + esc(rel.econCurrency || 'USD') + ' ' + esc(rel.econEvent || (rel.title||'').slice(0,60)) + ' ' + mark + ' → ' + (buy ? 'COMPRAR' : 'VENDER') + ' NAS100</div>'
+      + '<div class="ea-sub">' + esc(z.reason || '') + ' · riesgo ' + esc(z.risk || '1.5%') + '</div>'
+      + '</div></div><button class="ea-x" onclick="econAlertDismiss()">✕</button>';
+    return;
+  }
+  // 2) PRE-AVISO — próximo dato High de USD con cuenta atrás en vivo
+  const next = econData.filter(e => e.impact === 'High' && (e.currency || '') === 'USD' && e.time > now && e.time - now <= 10*60*1000).sort((a,b)=>a.time-b.time)[0];
+  if(next){
+    econAlertCurrentId = 'pre-' + (next.id || next.event);
+    if(muted && econAlertDismissed.id === econAlertCurrentId){ el.style.display = 'none'; return; }
+    const d = next.time - now, m = Math.floor(d/60000), s = Math.floor((d%60000)/1000);
+    el.className = 'econ-alert show eb-pre';
+    el.innerHTML = '<div class="ea-l"><span class="ea-fire">⏰</span><div>'
+      + '<div class="ea-big">EN ' + m + ':' + String(s).padStart(2,'0') + ' — USD ' + esc(next.event || '') + (next.forecast ? ' · previsión ' + esc(next.forecast) : '') + '</div>'
+      + '<div class="ea-sub">' + esc(next.playbook || 'Prepárate: define la entrada tras el primer impulso, no antes') + '</div>'
+      + '</div></div><button class="ea-x" onclick="econAlertDismiss()">✕</button>';
+    return;
+  }
+  // 3) PERSISTENTE — siempre visible en modo compacto: el próximo dato High de USD
+  const nextFar = econData.filter(e => e.impact === 'High' && (e.currency || '') === 'USD' && e.time > now).sort((a,b)=>a.time-b.time)[0];
+  if(nextFar){
+    econAlertCurrentId = null;
+    const dms = nextFar.time - now;
+    const dh = Math.floor(dms/3600000), dmm = Math.floor((dms%3600000)/60000);
+    const when = dh >= 24 ? (Math.floor(dh/24) + 'd ' + (dh%24) + 'h') : dh >= 1 ? (dh + 'h ' + dmm + 'm') : (dmm + 'm');
+    el.className = 'econ-alert show eb-idle';
+    el.innerHTML = '<div class="ea-l"><span class="ea-fire">📅</span><div>'
+      + '<div class="ea-big">PRÓXIMO DATO USD — ' + esc(nextFar.event || '') + ' · en ' + when + (nextFar.forecast ? ' · previsión ' + esc(nextFar.forecast) : '') + ' · la alerta grande salta 10 min antes</div>'
+      + '</div></div>';
+    return;
+  }
+  el.style.display = 'none';
+}
+setInterval(updateEconAlert, 1000);
+
 // ── CALENDARIO ECONÓMICO ───────────────────────────────────
 let econData = [];
 let calCur = localStorage.getItem('calCur') || 'ALL';
