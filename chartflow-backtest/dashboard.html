@@ -482,9 +482,24 @@
 .dash-metric-card.mc-blue .mc-icon,.dash-metric-card.mc-yellow .mc-icon,
 .dash-metric-card.mc-green .mc-icon,.dash-metric-card.mc-purple .mc-icon{background:rgba(255,255,255,.06)}
 .dash-metric-card .mc-bar-fill.green,.dash-metric-card .mc-bar-fill.red{background:linear-gradient(90deg,#eef1fb,#8a8f99)}
+/* iconos vacios tras quitar emoticones: no renderizar cajas grises */
+.pc-icon:empty,.mc-icon:empty,.streak-icon:empty{display:none !important}
 .dash-header{background:#10151c;border:1px solid rgba(255,255,255,.07)}
 .dash-header::before{content:none}
 .dash-header-right .streak-box{background:rgba(255,255,255,.05)}
+/* Franja de racha compacta + tarjetas monocromo ordenadas */
+.streak-banner{display:flex;align-items:center;justify-content:center;gap:16px;padding:14px 20px;margin:0 0 20px}
+.streak-banner .streak-col{display:flex;flex-direction:column;gap:3px;text-align:left}
+.streak-banner .streak-num{font-size:34px;margin:0}
+.streak-banner .streak-label{margin:0}
+.streak-banner .streak-sub{margin:0}
+#progressGrid{margin-bottom:16px}
+#progressGrid .progress-card{background:#10151c !important;border-color:rgba(255,255,255,.07) !important}
+#progressGrid .progress-card::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent) !important}
+#progressGrid .pc-value{color:#eef1fb !important}
+#pgPnLCard .pc-value{color:inherit !important}
+#pgPnLCard.positive::after{background:linear-gradient(90deg,transparent,var(--bull),transparent) !important}
+#pgPnLCard.negative::after{background:linear-gradient(90deg,transparent,var(--bear),transparent) !important}
 </style>
 </head>
 <body>
@@ -508,7 +523,7 @@
       <option value="730">2 años</option>
       <option value="0">Personalizado</option>
     </select>
-    <button class="btn" id="randomRangeBtn" title="Sortea un rango y una ventana de fechas al azar (memoriza las usadas para no repetir)" style="height:26px;padding:0 9px;font-size:12px">🎲</button>
+    <button class="btn" id="randomRangeBtn" title="Sortea un rango y una ventana de fechas al azar (memoriza las usadas para no repetir)" style="height:26px;padding:0 9px;font-size:12px">AZAR</button>
     <span class="lbl">Desde</span>
     <input type="date" id="dateFrom">
     <span class="lbl">Hasta</span>
@@ -519,7 +534,7 @@
     <span class="lbl">Riesgo%</span>
     <input type="number" id="riskIn" value="1" min="0.1" max="10" step="0.1" style="width:44px">
     <div class="sep"></div>
-    <span class="lbl">⏱️</span>
+    <span class="lbl">⏱</span>
     <select id="timerSelect">
       <option value="0">Sin límite</option>
       <option value="10">10 min</option>
@@ -532,11 +547,11 @@
     </div>
     <div class="spacer"></div>
     <select id="langSel" style="height:26px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:4px;padding:0 5px;font:11px var(--mono);cursor:pointer">
-      <option value="es">🇪🇸 ES</option>
-      <option value="en">🇺🇸 EN</option>
+      <option value="es">ES</option>
+      <option value="en">EN</option>
     </select>
     <div class="sep"></div>
-    <button class="btn" id="helpBtn" title="Help">❓</button>
+    <button class="btn" id="helpBtn" title="Help"></button>
     <button class="btn primary" id="startBtn" data-i18n="INICIAR">▶ INICIAR</button>
     <button class="btn danger" id="exitBtn" style="display:none" data-i18n="SALIR">✕ SALIR</button>
   </div>
@@ -547,8 +562,8 @@
         <canvas id="mainCanvas"></canvas>
         <div class="price-line" id="priceLine"></div>
         <div class="price-badge" id="priceBadge">--</div>
-        <div class="entry-mode-banner" id="entryBanner">🎯 MODO ENTRADA — Click en el gráfico para colocar la entrada</div>
-        <div class="drag-hint" id="dragHint">💡 Click en línea SL/TP para arrastrar · Scroll para zoom · Arrastra para mover</div>
+        <div class="entry-mode-banner" id="entryBanner">MODO ENTRADA — Click en el gráfico para colocar la entrada</div>
+        <div class="drag-hint" id="dragHint">Click en línea SL/TP para arrastrar · Scroll para zoom · Arrastra para mover</div>
         <div class="crosshair-label crosshair-date" id="crossDate"></div>
         <div class="crosshair-label crosshair-price" id="crossPrice"></div>
       </div>
@@ -556,7 +571,7 @@
     </div>
     <div class="side">
       <div class="side-section">
-        <h3 data-i18n="Operar">💹 Operar</h3>
+        <h3 data-i18n="Operar">Operar</h3>
         <!-- Buy/Sell y el tamano viven ahora en la barra inferior (estilo TradingView) -->
         <div id="tradeConfig" style="display:none;margin-top:8px">
           <div class="side-row"><label>Tipo</label>
@@ -578,14 +593,14 @@
         </div>
       </div>
       <div class="side-section" id="editSection" style="display:none">
-        <h3>✏️ Editar Trade</h3>
+        <h3>Editar Trade</h3>
         <div class="side-row"><label>SL</label><input type="number" id="editSL" step="0.1"><span class="unit">pips</span></div>
         <div class="side-row"><label>TP</label><input type="number" id="editTP" step="0.1"><span class="unit">pips</span></div>
         <div class="trade-actions" style="margin-top:5px">
           <button class="buy" id="saveEditBtn" style="font-size:10px">✓ GUARDAR</button>
           <button class="sell" id="cancelEditBtn" style="background:var(--s3);color:var(--dim);font-size:10px">✕ CERRAR</button>
         </div>
-        <button class="btn" id="breakevenBtn" style="width:100%;margin-top:5px;font-size:10px;background:var(--s3);border:1px solid var(--accent);color:var(--accent)">⚡ BREAKEVEN</button>
+        <button class="btn" id="breakevenBtn" style="width:100%;margin-top:5px;font-size:10px;background:var(--s3);border:1px solid var(--accent);color:var(--accent)">BREAKEVEN</button>
       </div>
       <div class="trades-wrap">
         <div class="trades-tabs">
@@ -605,8 +620,8 @@
         <div class="metric"><div class="ml" data-i18n="Trades">Trades</div><div class="mv" id="mTOT">0</div></div>
       </div>
       <div style="padding:5px 7px;border-top:1px solid var(--border);background:var(--s2);flex-shrink:0;display:flex;gap:5px">
-        <button class="btn" id="showProgress" style="flex:1;font-size:10px;background:var(--s3);border:1px solid var(--bull);color:var(--bull)" data-i18n="Progress">📈 MI PROGRESO</button>
-        <button class="btn" id="downloadExcel" style="flex:1;font-size:10px;background:var(--s3);border:1px solid var(--accent);color:var(--accent)" data-i18n="Excel">📊 EXCEL</button>
+        <button class="btn" id="showProgress" style="flex:1;font-size:10px;background:var(--s3);border:1px solid var(--bull);color:var(--bull)" data-i18n="Progress">MI PROGRESO</button>
+        <button class="btn" id="downloadExcel" style="flex:1;font-size:10px;background:var(--s3);border:1px solid var(--accent);color:var(--accent)" data-i18n="Excel">EXCEL</button>
       </div>
       <div class="equity-wrap"><canvas id="eqCanvas"></canvas></div>
     </div>
@@ -631,7 +646,7 @@
     <div class="bb-right">
       <div class="progress-bar" id="progBar"><div class="progress-fill" id="progFill" style="width:0%"></div></div>
       <div class="bb-info"><span class="cur" id="cIdx">0</span>/<span id="cTotal">0</span></div>
-      <div class="bb-info">⏱️ <span class="cur" id="trainTime">0 min</span></div>
+      <div class="bb-info">⏱<span class="cur" id="trainTime">0 min</span></div>
       <div class="bb-sep" id="countdownSep" style="display:none"></div>
       <div class="bb-info" id="countdownBottom" style="display:none;color:var(--accent);font-weight:700">⏳ <span id="countdownBottomValue">00:00</span></div>
       <div class="bb-balance" id="bbBalance">$100,000.00</div>
@@ -641,7 +656,7 @@
 </div>
 <div class="toast" id="toast"></div>
 <div class="ctx-menu" id="ctxMenu" style="display:none">
-  <div class="ctx-title">🎨 Configurar Velas</div>
+  <div class="ctx-title">Configurar Velas</div>
   <div class="ctx-title" style="font-size:9px;color:var(--dim)">Paletas rápidas</div>
   <div class="ctx-palette" id="ctxPalettes"></div>
   <div class="ctx-sep"></div>
@@ -670,25 +685,25 @@
     <button class="close-help" id="closeHelp">✕ Cerrar</button>
     <h2>Guía de Órdenes</h2>
     
-    <h3>📊 Tipos de Órdenes</h3>
+    <h3>Tipos de Órdenes</h3>
     <table>
       <tr><th>Tipo</th><th>Descripción</th></tr>
       <tr><td style="color:var(--accent)">Mercado</td><td>Entra al precio actual. La operación se activa inmediatamente al hacer click.</td></tr>
       <tr><td style="color:var(--accent)">Stop</td><td>Entra con momentum. La orden se activa cuando el precio cruza tu nivel.</td></tr>
     </table>
 
-    <h3>🎯 Stop — Ejemplos</h3>
+    <h3>Stop — Ejemplos</h3>
     <p><strong>LONG Stop</strong> — Precio actual: 20,000. Colocas entrada a 20,050. Si el precio SUBE a 20,050 → se activa tu compra. Compras en breakout.</p>
     <p><strong>SHORT Stop</strong> — Precio actual: 20,000. Colocas entrada a 19,950. Si el precio BAJA a 19,950 → se activa tu venta. Vendes en breakdown.</p>
 
-    <h3>📐 Resumen Rápido</h3>
+    <h3>Resumen Rápido</h3>
     <table>
       <tr><th></th><th>Stop</th></tr>
       <tr><td style="color:var(--bull)">LONG</td><td>Compra en breakout (momentum)</td></tr>
       <tr><td style="color:var(--bear)">SHORT</td><td>Venta en breakdown (momentum)</td></tr>
     </table>
 
-    <h3>🖱️ Cómo Operar</h3>
+    <h3>Cómo Operar</h3>
     <p>1. Selecciona <strong>LONG</strong> o <strong>SHORT</strong></p>
     <p>2. Elige el tipo de orden: <strong>Mercado / Limit / Stop</strong></p>
     <p>3. Haz click en el gráfico para colocar la entrada</p>
@@ -696,7 +711,7 @@
     <p>5. Haz click en <strong>CONFIRMAR</strong> para ejecutar</p>
     <p>6. Usa el botón play (▶) o flechas para avanzar el replay</p>
 
-    <h3>⌨️ Atajos de Teclado</h3>
+    <h3>⌨Atajos de Teclado</h3>
     <table>
       <tr><td><strong>Espacio</strong></td><td>Play / Pausa</td></tr>
       <tr><td><strong>→</strong></td><td>Avanzar 1 vela</td></tr>
@@ -720,7 +735,7 @@
       </div>
       <div class="dash-header-right">
         <div class="streak-box">
-          <div class="streak-icon">🏆</div>
+          <div class="streak-icon"></div>
           <div class="streak-text">
             <div class="streak-title" id="streakTitle">You are on a <span id="streakDays">0</span> day streak!</div>
             <div class="streak-sub">Backtest each day so your streak won't reset.</div>
@@ -734,21 +749,21 @@
       <div class="dash-metric-card mc-blue">
         <div class="mc-header">
           <span class="mc-title" data-i18n="TimeInvested">Time Invested</span>
-          <div class="mc-icon">📊</div>
+          <div class="mc-icon"></div>
         </div>
         <div class="mc-value" id="mcTimeInvested">0d 0h 0m</div>
       </div>
       <div class="dash-metric-card mc-yellow">
         <div class="mc-header">
           <span class="mc-title" data-i18n="HistTime">Historical time replayed</span>
-          <div class="mc-icon">⏱️</div>
+          <div class="mc-icon"></div>
         </div>
         <div class="mc-value" id="mcHistTime">0d 0h 0m</div>
       </div>
       <div class="dash-metric-card mc-green">
         <div class="mc-header">
           <span class="mc-title" data-i18n="TradesTaken">Trades taken</span>
-          <div class="mc-icon">💹</div>
+          <div class="mc-icon"></div>
         </div>
         <div class="mc-value" id="mcTradesTaken">0</div>
         <div class="mc-bar"><div class="mc-bar-fill green" id="mcBuyBar" style="width:50%"></div></div>
@@ -757,7 +772,7 @@
       <div class="dash-metric-card mc-purple">
         <div class="mc-header">
           <span class="mc-title" data-i18n="OverallWinRate">Overall win rate</span>
-          <div class="mc-icon">🏅</div>
+          <div class="mc-icon"></div>
         </div>
         <div class="mc-value" id="mcWinRate">0%</div>
       </div>
@@ -766,48 +781,44 @@
     <!-- Charts Row -->
     <div class="dash-charts">
       <div class="dash-chart-card">
-        <h4 data-i18n="TimeByDay">📊 Time invested by day <span>(min)</span></h4>
+        <h4 data-i18n="TimeByDay">Time invested by day <span>(min)</span></h4>
         <div class="dash-bar-vertical" id="chartTimeByDay"></div>
         <div class="dash-xaxis" id="chartTimeXaxis"></div>
       </div>
       <div class="dash-chart-card">
-        <h4 data-i18n="WRByDay">🎯 Win Rate by day <span>(%)</span></h4>
+        <h4 data-i18n="WRByDay">Win Rate by day <span>(%)</span></h4>
         <div class="dash-bar-vertical" id="chartWRByDay"></div>
         <div class="dash-xaxis" id="chartWRXaxis"></div>
       </div>
       <div class="dash-chart-card">
-        <h4 data-i18n="TradesBySym">💱 Trades by symbol</h4>
+        <h4 data-i18n="TradesBySym">Trades by symbol</h4>
         <div class="dash-bar-horizontal" id="chartTradesBySym"></div>
       </div>
     </div>
 
-    <div class="streak-banner" id="streakBanner">
-      <div class="streak-num" id="streakNum">0</div>
-      <div class="streak-label">🔥 DÍAS CONSECUTIVOS ENTRENANDO</div>
-      <div class="streak-sub" id="streakSub">¡Empieza tu racha hoy!</div>
-    </div>
-
     <div class="progress-grid" id="progressGrid">
       <div class="progress-card accent" style="border-color:rgba(0,212,255,.3);background:linear-gradient(145deg,rgba(0,212,255,.08),rgba(0,212,255,.02))">
-        <div class="pc-icon">💰</div>
+        <div class="pc-icon"></div>
         <div class="pc-value" id="pgCapital" style="color:var(--accent)">$100,000</div>
         <div class="pc-label" data-i18n="CapitalBase">Capital Base</div>
       </div>
       <div class="progress-card" id="pgPnLCard">
+        <div class="pc-icon"></div>
         <div class="pc-value" id="pgTotalPnL">$0</div>
         <div class="pc-label" data-i18n="ProfitTotal">Profit Total</div>
       </div>
       <div class="progress-card positive">
-        <div class="pc-icon">🎯</div>
+        <div class="pc-icon"></div>
         <div class="pc-value" id="pgWinRate">0%</div>
         <div class="pc-label" data-i18n="WinRate">Win Rate</div>
       </div>
       <div class="progress-card accent">
-        <div class="pc-icon">📊</div>
+        <div class="pc-icon"></div>
         <div class="pc-value" id="pgTotalTrades">0</div>
         <div class="pc-label" data-i18n="TotalTrades">Total Trades</div>
       </div>
       <div class="progress-card warning">
+        <div class="pc-icon"></div>
         <div class="pc-value" id="pgBestStreak">0</div>
         <div class="pc-label" data-i18n="MejorRacha">Mejor Racha</div>
       </div>
@@ -833,6 +844,15 @@
       </div>
     </div>
 
+    <!-- Racha de entrenamiento: franja compacta -->
+    <div class="streak-banner" id="streakBanner">
+      <div class="streak-num" id="streakNum">0</div>
+      <div class="streak-col">
+        <div class="streak-label">DÍAS CONSECUTIVOS ENTRENANDO</div>
+        <div class="streak-sub" id="streakSub">¡Empieza tu racha hoy!</div>
+      </div>
+    </div>
+
     <div class="calendar-section">
       <div class="cal-header">
         <div class="cal-nav"><button onclick="calNav(-1)">&lt;</button></div>
@@ -855,14 +875,14 @@
 
     <div class="stats-row">
       <div class="stats-card">
-        <h4 data-i18n="MejoresHorarios">🕐 Mejores Horarios</h4>
+        <h4 data-i18n="MejoresHorarios">Mejores Horarios</h4>
         <div class="hourly-chart" id="hourlyChart"></div>
         <div class="hourly-labels">
           <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
         </div>
       </div>
       <div class="stats-card">
-        <h4 data-i18n="Resumen">🏆 Resumen</h4>
+        <h4 data-i18n="Resumen">Resumen</h4>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div id="bestDayInfo" style="font:11px var(--mono);color:var(--text)">-</div>
           <div id="worstDayInfo" style="font:11px var(--mono);color:var(--text)">-</div>
@@ -872,7 +892,7 @@
 
     <!-- Performance by Side (estilo FX Replay) -->
     <div class="fx-section">
-      <h3 data-i18n="PerfBySide">⚖️ Performance by Side <span class="fx-hint">LONG vs SHORT</span></h3>
+      <h3 data-i18n="PerfBySide">Performance by Side <span class="fx-hint">LONG vs SHORT</span></h3>
       <div class="fx-break-grid">
         <div class="fx-break-card" style="--ka:#00e5a0">
           <h5>▲ LONG (BUY)</h5>
@@ -891,17 +911,17 @@
 
     <!-- Performance by Session (estilo FX Replay) -->
     <div class="fx-section">
-      <h3 data-i18n="PerfBySession">🌐 Performance by Session <span class="fx-hint">segun la hora del mercado simulado</span></h3>
+      <h3 data-i18n="PerfBySession">Performance by Session <span class="fx-hint">segun la hora del mercado simulado</span></h3>
       <div class="fx-break-grid">
-        <div class="fx-break-card" style="--ka:#b517ff"><h5>🌏 ASIA · 19:00–07:00</h5>
+        <div class="fx-break-card" style="--ka:#b517ff"><h5>ASIA · 19:00–07:00</h5>
           <div class="fx-break-row"><span>Trades</span><span id="sessAsiaT">0</span></div>
           <div class="fx-break-row"><span>Win Rate</span><span id="sessAsiaWr">0%</span></div>
           <div class="fx-break-row"><span>P&L</span><span id="sessAsiaPnl">$0.00</span></div></div>
-        <div class="fx-break-card" style="--ka:#00d4ff"><h5>🌍 LONDRES · 07:00–13:00</h5>
+        <div class="fx-break-card" style="--ka:#00d4ff"><h5>LONDRES · 07:00–13:00</h5>
           <div class="fx-break-row"><span>Trades</span><span id="sessLonT">0</span></div>
           <div class="fx-break-row"><span>Win Rate</span><span id="sessLonWr">0%</span></div>
           <div class="fx-break-row"><span>P&L</span><span id="sessLonPnl">$0.00</span></div></div>
-        <div class="fx-break-card" style="--ka:#ffb000"><h5>🗽 NEW YORK · 13:00–19:00</h5>
+        <div class="fx-break-card" style="--ka:#ffb000"><h5>NEW YORK · 13:00–19:00</h5>
           <div class="fx-break-row"><span>Trades</span><span id="sessNyT">0</span></div>
           <div class="fx-break-row"><span>Win Rate</span><span id="sessNyWr">0%</span></div>
           <div class="fx-break-row"><span>P&L</span><span id="sessNyPnl">$0.00</span></div></div>
@@ -910,7 +930,7 @@
 
     <!-- Performance by Time -->
     <div class="fx-section">
-      <h3 data-i18n="PerfByTime">📊 Performance by Time <select class="fx-dropdown" id="perfTimeMetric"><option>Total Profit/Loss</option></select></h3>
+      <h3 data-i18n="PerfByTime">Performance by Time <select class="fx-dropdown" id="perfTimeMetric"><option>Total Profit/Loss</option></select></h3>
       <div style="position:relative">
         <div class="perf-time-yaxis" id="perfTimeYaxis"></div>
         <div class="perf-time-chart" id="perfTimeChart"></div>
@@ -920,13 +940,13 @@
 
     <!-- Performance by Day -->
     <div class="fx-section">
-      <h3 data-i18n="PerfByDay">📅 Performance by Day</h3>
+      <h3 data-i18n="PerfByDay">Performance by Day</h3>
       <div class="perf-day-chart" id="perfDayChart"></div>
     </div>
 
     <!-- Performance by Month + YTD (estilo FX Replay) -->
     <div class="fx-section">
-      <h3 data-i18n="PerfByMonth">🗓️ Performance by Month <span class="fx-hint">% s/ capital base · fecha real</span></h3>
+      <h3 data-i18n="PerfByMonth">Performance by Month <span class="fx-hint">% s/ capital base · fecha real</span></h3>
       <div class="dash-bar-vertical" id="chartByMonth"></div>
       <div class="dash-xaxis" id="chartByMonthXaxis"></div>
       <div class="mc-meta">
@@ -937,7 +957,7 @@
 
     <!-- Equity Curve -->
     <div class="fx-section">
-      <h3 data-i18n="EquityCurve">📈 Profit &amp; Loss <span class="fx-hint">curva acumulada de la cuenta</span></h3>
+      <h3 data-i18n="EquityCurve">Profit &amp; Loss <span class="fx-hint">curva acumulada de la cuenta</span></h3>
       <div class="equity-curve-card">
         <canvas class="equity-curve-canvas" id="equityCurveCanvas"></canvas>
       </div>
@@ -945,7 +965,7 @@
 
     <!-- Monte Carlo (estilo FX Replay) -->
     <div class="fx-section">
-      <h3 data-i18n="MonteCarlo">🎲 Monte Carlo <span class="fx-hint">proyeccion reordenando tus trades al azar</span></h3>
+      <h3 data-i18n="MonteCarlo">Monte Carlo <span class="fx-hint">proyeccion reordenando tus trades al azar</span></h3>
       <div class="equity-curve-card">
         <canvas class="equity-curve-canvas" id="mcCanvas"></canvas>
       </div>
@@ -956,7 +976,7 @@
 
     <!-- RR Metrics -->
     <div class="fx-section">
-      <h3 data-i18n="RRMetrics">🎯 Risk/Reward Metrics</h3>
+      <h3 data-i18n="RRMetrics">Risk/Reward Metrics</h3>
       <div class="rr-grid">
         <div class="rr-card">
           <div class="rr-row"><span class="rr-label" data-i18n="AvgRR">Average RR</span><span class="rr-value" id="rrAvg">0.00</span></div>
@@ -977,10 +997,10 @@
 
     <!-- Winners & Losers -->
     <div class="fx-section">
-      <h3 data-i18n="WinnersLosers">🏆 Winners & Losers</h3>
+      <h3 data-i18n="WinnersLosers">Winners & Losers</h3>
       <div class="wl-grid">
         <div class="wl-card winners">
-          <h4 data-i18n="Winners">✅ Winners</h4>
+          <h4 data-i18n="Winners">Winners</h4>
           <div class="wl-row"><span class="wl-label" data-i18n="TotalWinners">Total winners</span><span class="wl-value" id="wlWinCount">0</span></div>
           <div class="wl-row"><span class="wl-label" data-i18n="BestWin">Best win</span><span class="wl-value" id="wlBestWin">0%</span></div>
           <div class="wl-row"><span class="wl-label" data-i18n="AvgWin">Average win</span><span class="wl-value" id="wlAvgWin">0%</span></div>
@@ -989,7 +1009,7 @@
           <div class="wl-row"><span class="wl-label" data-i18n="AvgConsecWin">Avg consecutive wins</span><span class="wl-value" id="wlAvgConsecWin">0</span></div>
         </div>
         <div class="wl-card losers">
-          <h4 data-i18n="Losers">❌ Losers</h4>
+          <h4 data-i18n="Losers">Losers</h4>
           <div class="wl-row"><span class="wl-label" data-i18n="TotalLosers">Total losers</span><span class="wl-value" id="wlLossCount">0</span></div>
           <div class="wl-row"><span class="wl-label" data-i18n="WorstLoss">Worst loss</span><span class="wl-value" id="wlWorstLoss">0%</span></div>
           <div class="wl-row"><span class="wl-label" data-i18n="AvgLoss">Average loss</span><span class="wl-value" id="wlAvgLoss">0%</span></div>
@@ -1017,12 +1037,12 @@ const LANG={
     "3meses":"3 meses","6meses":"6 meses","1año":"1 año","2años":"2 años",Personalizado:"Personalizado",
     "Sinlímite":"Sin límite","min":"min",INICIAR:"▶ INICIAR",SALIR:"✕ SALIR",
     // Buttons
-    Help:"❓",Excel:"📊 EXCEL",Progress:"📈 MI PROGRESO",
+    Help:"",Excel:"EXCEL",Progress:"MI PROGRESO",
     // Side panel
-    Operar:"💹 Operar",LONG:"▲ LONG",SHORT:"▼ SHORT",Tipo:"Tipo",Mercado:"Mercado",
+    Operar:"Operar",LONG:"▲ LONG",SHORT:"▼ SHORT",Tipo:"Tipo",Mercado:"Mercado",
     Stop:"Stop",Entrada:"Entrada",SL:"SL",TP:"TP",Tamaño:"Tamaño",lote:"lote",
-    Confirmar:"✓ CONFIRMAR",Cancelar:"✕ CANCELAR",Editar:"✏️ Editar Trade",
-    Guardar:"✓ GUARDAR",Cerrar:"✕ CERRAR",Breakeven:"⚡ BREAKEVEN",
+    Confirmar:"✓ CONFIRMAR",Cancelar:"✕ CANCELAR",Editar:"Editar Trade",
+    Guardar:"✓ GUARDAR",Cerrar:"✕ CERRAR",Breakeven:"BREAKEVEN",
     Abiertos:"Abiertos",Cerrados:"Cerrados",Sintrades:"Sin trades",
     Capital:"Capital","P&L":"P&L","WinRate":"Win Rate","ProfitFactor":"Profit Factor",
     MaxDD:"Max DD",Sharpe:"Sharpe",Expectancy:"Expectancy",Trades:"Trades",
@@ -1040,15 +1060,15 @@ const LANG={
     TotalTrades:"Total Trades","DíasGanancia":"Días Ganancia","DíasPérdida":"Días Pérdida",
     Sintrades:"Sin trades",Profit:"Profit",Pérdida:"Pérdida","BreakEven":"Break Even",
     // Stats
-    MejoresHorarios:"🕐 Mejores Horarios",Resumen:"🏆 Resumen",
+    MejoresHorarios:"Mejores Horarios",Resumen:"Resumen",
     MejorDía:"Mejor día",PeorDía:"Peor día","Sindatosaún":"Sin datos aún",
     // FX Sections
-    PerfByTime:"📊 Performance by Time",PerfByDay:"📅 Performance by Day",
-    EquityCurve:"📈 Equity Curve",RRMetrics:"🎯 Risk/Reward Metrics",
-    WinnersLosers:"🏆 Winners & Losers",
+    PerfByTime:"Performance by Time",PerfByDay:"Performance by Day",
+    EquityCurve:"Equity Curve",RRMetrics:"Risk/Reward Metrics",
+    WinnersLosers:"Winners & Losers",
     AvgRR:"Average RR",MaxRR:"Max RR",IdealAvgRR:"Ideal Avg RR",MaxIdealRR:"Max Ideal RR",
     CouldHave:"Could Have Profit/BE",
-    Winners:"✅ Winners",Losers:"❌ Losers",
+    Winners:"Winners",Losers:"Losers",
     TotalWinners:"Total winners",BestWin:"Best win",AvgWin:"Average win",
     AvgDuration:"Average duration",MaxConsecWin:"Max consecutive wins",AvgConsecWin:"Avg consecutive wins",
     TotalLosers:"Total losers",WorstLoss:"Worst loss",AvgLoss:"Average loss",
@@ -1072,12 +1092,12 @@ const LANG={
     "3meses":"3 months","6meses":"6 months","1año":"1 year","2años":"2 years",Personalizado:"Custom",
     "Sinlímite":"No limit",min:"min",INICIAR:"▶ START",SALIR:"✕ EXIT",
     // Buttons
-    Help:"❓",Excel:"📊 EXCEL",Progress:"📈 MY PROGRESS",
+    Help:"",Excel:"EXCEL",Progress:"MY PROGRESS",
     // Side panel
-    Operar:"💹 Trade",LONG:"▲ LONG",SHORT:"▼ SHORT",Tipo:"Type",Mercado:"Market",
+    Operar:"Trade",LONG:"▲ LONG",SHORT:"▼ SHORT",Tipo:"Type",Mercado:"Market",
     Stop:"Stop",Entrada:"Entry",SL:"SL",TP:"TP",Tamaño:"Size",lote:"lot",
-    Confirmar:"✓ CONFIRM",Cancelar:"✕ CANCEL",Editar:"✏️ Edit Trade",
-    Guardar:"✓ SAVE",Cerrar:"✕ CLOSE",Breakeven:"⚡ BREAKEVEN",
+    Confirmar:"✓ CONFIRM",Cancelar:"✕ CANCEL",Editar:"Edit Trade",
+    Guardar:"✓ SAVE",Cerrar:"✕ CLOSE",Breakeven:"BREAKEVEN",
     Abiertos:"Open",Cerrados:"Closed",Sintrades:"No trades",
     Capital:"Capital","P&L":"P&L","WinRate":"Win Rate","ProfitFactor":"Profit Factor",
     MaxDD:"Max DD",Sharpe:"Sharpe",Expectancy:"Expectancy",Trades:"Trades",
@@ -1095,15 +1115,15 @@ const LANG={
     TotalTrades:"Total Trades","DíasGanancia":"Win Days","DíasPérdida":"Loss Days",
     Sintrades:"No trades",Profit:"Profit",Pérdida:"Loss","BreakEven":"Break Even",
     // Stats
-    MejoresHorarios:"🕐 Best Hours",Resumen:"🏆 Summary",
+    MejoresHorarios:"Best Hours",Resumen:"Summary",
     MejorDía:"Best day",PeorDía:"Worst day","Sindatosaún":"No data yet",
     // FX Sections
-    PerfByTime:"📊 Performance by Time",PerfByDay:"📅 Performance by Day",
-    EquityCurve:"📈 Equity Curve",RRMetrics:"🎯 Risk/Reward Metrics",
-    WinnersLosers:"🏆 Winners & Losers",
+    PerfByTime:"Performance by Time",PerfByDay:"Performance by Day",
+    EquityCurve:"Equity Curve",RRMetrics:"Risk/Reward Metrics",
+    WinnersLosers:"Winners & Losers",
     AvgRR:"Average RR",MaxRR:"Max RR",IdealAvgRR:"Ideal Avg RR",MaxIdealRR:"Max Ideal RR",
     CouldHave:"Could Have Profit/BE",
-    Winners:"✅ Winners",Losers:"❌ Losers",
+    Winners:"Winners",Losers:"Losers",
     TotalWinners:"Total winners",BestWin:"Best win",AvgWin:"Average win",
     AvgDuration:"Average duration",MaxConsecWin:"Max consecutive wins",AvgConsecWin:"Avg consecutive wins",
     TotalLosers:"Total losers",WorstLoss:"Worst loss",AvgLoss:"Average loss",
@@ -1223,8 +1243,8 @@ let priceCenter=0; // Center price for zoom
   updateTzBadge();setInterval(updateTzBadge,1000);
   // REQUISITO: cambiar simbolo/TF SOLO muestra las velas del activo elegido (en pausa).
   // El replay avanza unicamente al pulsar INICIAR.
-  $("symSel").onchange=()=>{ if(S.open.length)toast("⚠ Cambiar de activo limpia los trades abiertos en curso"); loadBacktest(); };
-  $("tfSel").onchange=()=>{ if(S.open.length)toast("⚠ Cambiar de temporalidad limpia los trades abiertos en curso"); loadBacktest(); };
+  $("symSel").onchange=()=>{ if(S.open.length)toast("Cambiar de activo limpia los trades abiertos en curso"); loadBacktest(); };
+  $("tfSel").onchange=()=>{ if(S.open.length)toast("Cambiar de temporalidad limpia los trades abiertos en curso"); loadBacktest(); };
   $("playPause").onclick=togglePlay;$("stepFwd").onclick=stepFwd;$("stepBack").onclick=stepBack;
   $("buyBtn").onclick=()=>enterMode("LONG");$("sellBtn").onclick=()=>enterMode("SHORT");
   $("confirmBtn").onclick=confirmTrade;$("cancelBtn").onclick=exitMode;
@@ -1235,7 +1255,7 @@ let priceCenter=0; // Center price for zoom
   $("speedRange").addEventListener("change",e=>e.target.blur()); // no robar Space del play/pausa
   // Selector de TF del replay (barra inferior): mantiene tfSel sincronizado y recarga
   $("tfReplay").onchange=()=>{
-    if(S.open.length)toast("⚠ Cambiar de temporalidad limpia los trades abiertos en curso");
+    if(S.open.length)toast("Cambiar de temporalidad limpia los trades abiertos en curso");
     $("tfSel").value=$("tfReplay").value;
     saveBacktestConfig();
     loadBacktest();
@@ -1280,7 +1300,7 @@ let priceCenter=0; // Center price for zoom
     if(S.loaded)loadBacktest(); // el rango elegido manda: recarga el replay con el rango nuevo
   };
   // El preset por defecto define el rango; las fechas guardadas por el usuario tienen prioridad
-  // 🎲 Rango y fechas al azar GARANTIZADO con velas: sorteja solo dentro de la
+  // Rango y fechas al azar GARANTIZADO con velas: sorteja solo dentro de la
   // cobertura real del historial descargado, verifica la carga de cada ventana
   // (si no trae velas vuelve a sortear) y si la TF actual no tiene datos locales
   // cambia automaticamente a la TF con mas historial
@@ -1296,12 +1316,12 @@ let priceCenter=0; // Center price for zoom
     if(!covFor($("tfSel").value)){
       const withData=Object.keys(per||{}).filter(tf=>per[tf]&&(per[tf].count||0)>50)
         .sort((a,b)=>(per[b].count||0)-(per[a].count||0));
-      if(!withData.length){toast("🎲 Sin historial descargado para "+S.symbol);return}
+      if(!withData.length){toast("Sin historial descargado para "+S.symbol);return}
       $("tfSel").value=withData[0];$("tfReplay").value=withData[0];
-      toast("🎲 "+$("tfSel").value+" no tenia datos: replay en "+withData[0]);
+      toast(""+$("tfSel").value+" no tenia datos: replay en "+withData[0]);
     }
     const cov=covFor($("tfSel").value);
-    if(!cov||cov.count<=50){toast("🎲 Sin historial descargado");return}
+    if(!cov||cov.count<=50){toast("Sin historial descargado");return}
     // data-status entrega fechas ISO en texto -> convertir a timestamps reales
     const firstTs=Date.parse(cov.first),lastTs=Date.parse(cov.last);
     const spanDays=Math.max(3,Math.floor((lastTs-firstTs)/86400000)-1);
@@ -1331,11 +1351,11 @@ let priceCenter=0; // Center price for zoom
         hist.push({key,from,to,days,ts:Date.now()});
         if(hist.length>200)hist.splice(0,hist.length-200);
         try{localStorage.setItem("bt_used_ranges",JSON.stringify(hist))}catch(e){}
-        toast(`🎲 Sorteo: ${days} días · ${from} → ${to} · ${S.candles.length} velas`);
+        toast(`Sorteo: ${days} días · ${from} → ${to} · ${S.candles.length} velas`);
         return;
       }
     }
-    toast("🎲 Ninguna ventana trajo velas: refresca el historial (node download-history.js)");
+    toast("Ninguna ventana trajo velas: refresca el historial (node download-history.js)");
   };
   $("rangePreset").dispatchEvent(new Event("change"));
   if(hadSavedCfg){
@@ -1553,7 +1573,7 @@ function setBreakeven(){
   const t=S.open[S.selectedTrade];if(!t||t.status!=="OPEN")return;
   t.sl=t.entryPrice;t.slPips=0;
   $("editSL").value="0";
-  renderTrades();drawChart();toast("⚡ Breakeven aplicado — SL @ "+fmtP(t.entryPrice));
+  renderTrades();drawChart();toast("Breakeven aplicado — SL @ "+fmtP(t.entryPrice));
 }
 
 // BACKTEST
@@ -1711,7 +1731,7 @@ function initCountdown(){
   updateCountdownDisplay();
   S.countdownTimer=setInterval(updateCountdownDisplay,1000);
   
-  toast(`⏱️ Cronómetro: ${min} minutos`);
+  toast(`⏱Cronómetro: ${min} minutos`);
 }
 
 function updateCountdownDisplay(){
@@ -1735,7 +1755,7 @@ function updateCountdownDisplay(){
     
     // Guardar sesión automáticamente
     saveTrainingSession(S.countdownDuration/60000);
-    toast("⏱️ ¡Tiempo de entrenamiento completado! Sesión guardada.");
+    toast("⏱¡Tiempo de entrenamiento completado! Sesión guardada.");
     
     // Pausar replay si está corriendo
     if(S.playing)togglePlay();
@@ -1782,7 +1802,7 @@ function stopCountdown(){
     const elapsed=S.countdownDuration-(S.countdownEnd-Date.now());
     if(elapsed>60000){
       saveTrainingSession(elapsed/60000);
-      toast(`⏱️ Sesión guardada: ${Math.floor(elapsed/60000)} min`);
+      toast(`⏱Sesión guardada: ${Math.floor(elapsed/60000)} min`);
     }
     S.countdownEnd=null;
   }
@@ -1853,7 +1873,7 @@ function advanceTo(idx){
 
 // ENTRY MODE
 function enterMode(type){
-  if(!S.loaded||S.candles.length<2){toast("⚠ Carga un backtest primero (INICIAR)");return}
+  if(!S.loaded||S.candles.length<2){toast("Carga un backtest primero (INICIAR)");return}
   const currentPrice=S.candles[S.idx]?.c;
   if(!currentPrice){toast("Sin datos en la vela actual");return}
   // Orden a MERCADO: ejecucion inmediata estilo TradingView (Buy/Sell de la barra)
@@ -1872,7 +1892,7 @@ function enterMode(type){
   $("sellBtn").classList.toggle("active-entry",type==="SHORT");
   $("tradeConfig").style.display="block";
   $("entryBanner").classList.add("visible");
-  $("entryBanner").textContent=`🎯 ${type} — Click en el gráfico para colocar entrada`;
+  $("entryBanner").textContent=`${type} — Click en el gráfico para colocar entrada`;
   $("cfgEntry").value="Click en gráfico";$("cfgSL").value="";$("cfgTP").value="";$("cfgSize").value="1";
   $("chartWrap").style.cursor="crosshair";
 }
@@ -1948,7 +1968,7 @@ function saveTradeRecords(){
   try{
     fetch("/api/trades",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({records:S.closed})})
       .then(r=>r.json())
-      .then(d=>{console.log("Servidor:",d.count?"✅ Sync OK":"⚠️ Error")})
+      .then(d=>{console.log("Servidor:",d.count?"Sync OK":"Error")})
       .catch(()=>{console.log("Servidor offline - datos seguros en localStorage")});
   }catch(e){}
 }
@@ -1959,7 +1979,7 @@ function loadTradeRecords(){
     const local=localStorage.getItem("bt_trade_records");
     if(local){
       S.closed=JSON.parse(local);
-      console.log("📥 Cargados "+S.closed.length+" trades de localStorage");
+      console.log("Cargados "+S.closed.length+" trades de localStorage");
     }
   }catch(e){}
   
@@ -1977,7 +1997,7 @@ function loadTradeRecords(){
         if(merged.length!==S.closed.length||d.records.length>=S.closed.length){
           S.closed=merged;
           localStorage.setItem("bt_trade_records",JSON.stringify(S.closed));
-          console.log("📥 Sync con servidor: "+S.closed.length+" trades");
+          console.log("Sync con servidor: "+S.closed.length+" trades");
         }
       }
       renderTrades();renderMetrics();drawEquity();
@@ -2024,7 +2044,7 @@ function closeTrade(id,reason){
   saveTradeRecords();
   
   // Mostrar confirmación visual
-  const icon=t.pnl>=0?"✅":"❌";
+  const icon=t.pnl>=0?"":"";
   const color=t.pnl>=0?"var(--bull)":"var(--bear)";
   toast(`${icon} Trade guardado: ${t.pnl>=0?"+":""}$${t.pnl.toFixed(2)} (${reason})`);
   
@@ -2299,7 +2319,7 @@ function renderTrades(){
     // Breakeven info para trades abiertos
     let beInfo="";
     if(isOpen){
-      beInfo=`<span class="be-info">⚡BE ${fmtP(t.entryPrice)}</span>`;
+      beInfo=`<span class="be-info">BE ${fmtP(t.entryPrice)}</span>`;
     }
     
     return`<div class="trade-item ${sel}" ${onclick}><span class="tp ${t.type.toLowerCase()}">${t.type==="LONG"?"▲":"▼"}</span><span>${fmtP(t.entryPrice)}${isPending?" ⏳":""}</span><span class="pnl ${cls}">${pt}</span>${beInfo}${del}</div>`;
@@ -2341,7 +2361,7 @@ $("progressOverlay").onclick=e=>{if(e.target===$("progressOverlay"))$("progressO
 $("downloadExcel").onclick=()=>{
   if(S.closed.length===0){toast("No hay trades para exportar");return}
   exportToExcelClient();
-  toast("📊 Excel descargado con "+S.closed.length+" trades");
+  toast("Excel descargado con "+S.closed.length+" trades");
 };
 
 function exportToExcelClient(){
@@ -2480,11 +2500,11 @@ function renderProgressDashboard(stats){
   const habitStreak=stats.habitStreak||0;
   $("streakNum").textContent=habitStreak;
   if(habitStreak>=7){
-    $("streakSub").textContent="🔥 ¡Increíble! Una semana completa entrenando";
+    $("streakSub").textContent="¡Increíble! Una semana completa entrenando";
   }else if(habitStreak>=3){
-    $("streakSub").textContent="💪 ¡Buen ritmo! Sigue así";
+    $("streakSub").textContent="¡Buen ritmo! Sigue así";
   }else if(habitStreak>=1){
-    $("streakSub").textContent="🚀 ¡Buen comienzo! No pares";
+    $("streakSub").textContent="¡Buen comienzo! No pares";
   }else{
     $("streakSub").textContent="¡Empieza tu racha de hábitos hoy!";
   }
