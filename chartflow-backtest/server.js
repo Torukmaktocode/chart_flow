@@ -856,13 +856,21 @@ const server = http.createServer(async (req, res) => {
         try {
           const buf = Buffer.concat(chunks);
           const fname = url.searchParams.get("name") || "report.xlsx";
-          const bal = parseFloat(url.searchParams.get("bal")) || 10000;
-          const trades = await analyzer.parseTradesFile(buf, fname);
+          const balParam = parseFloat(url.searchParams.get("bal")) || 0;
+          const parsed = await analyzer.parseTradesFile(buf, fname);
+          const trades = parsed.trades || [];
+          const detected = parsed.capital || null;
           if (!trades.length) {
-            sendJson(res, 400, { error: "No se detectaron trades cerrados en el archivo. Revisa que sea un historial exportado de MT4/MT5 (Statement, historial de cuenta)." });
+            sendJson(res, 400, { error: "No se detectaron trades cerrados en el archivo. Revisa que sea un historial exportado de MT4/MT5 (Statement, historial de cuenta).", detectedCapital: detected });
             return;
           }
-          sendJson(res, 200, analyzer.analyzeTrades(trades, bal));
+          // capital automatico: el deposito detectado en el archivo manda si el
+          // cliente no fuerza uno manualmente (bal>0)
+          const bal = balParam > 0 ? balParam : (detected || 10000);
+          const result = analyzer.analyzeTrades(trades, bal);
+          result.detectedCapital = detected;
+          result.capitalSource = balParam > 0 ? "manual" : (detected ? "auto (deposito del archivo)" : "estimado 10000 (no detectado)");
+          sendJson(res, 200, result);
         } catch (e) {
           sendJson(res, 500, { error: String(e.message || e) });
         }

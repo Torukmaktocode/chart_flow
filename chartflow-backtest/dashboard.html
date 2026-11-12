@@ -756,8 +756,11 @@
           <div class="az-file" id="azFileName" style="display:none"></div>
         </div>
         <div class="az-opts">
-          <span class="lbl">Capital de tu cuenta</span>
-          <input type="number" id="azBalance" value="10000" min="1" step="100" style="height:26px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:4px;padding:0 6px;font:11px var(--mono);width:110px">
+          <label style="display:flex;align-items:center;gap:6px;font:600 10px var(--mono);color:var(--text);cursor:pointer">
+            <input type="checkbox" id="azAutoBal" checked style="accent-color:#2f6bff">Detectar capital del archivo
+          </label>
+          <span class="lbl">Capital manual (opcional)</span>
+          <input type="number" id="azBalance" value="" placeholder="auto" min="1" step="100" style="height:26px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:4px;padding:0 6px;font:11px var(--mono);width:110px">
           <button class="btn primary" id="azGo" style="min-width:120px">ANALIZAR</button>
           <span id="azStatus" style="font:10px var(--mono);color:var(--dim)"></span>
         </div>
@@ -3816,7 +3819,10 @@ $("azGo").onclick=async()=>{
   if(!azBuffer){azStatus("Elige o arrastra un archivo primero");return}
   azStatus("Analizando "+azName+"...");
   try{
-    const bal=+$("azBalance").value||10000;
+    // capital: auto (0 = el server extrae el deposito del archivo) o manual
+    const auto=$("azAutoBal").checked;
+    const manual=+$("azBalance").value||0;
+    const bal=auto?0:manual;
     const r=await fetch("/api/analyze?name="+encodeURIComponent(azName)+"&bal="+bal,{method:"POST",body:azBuffer,headers:{"Content-Type":"application/octet-stream"}});
     const j=await r.json();
     if(!r.ok)throw new Error(j.error||("HTTP "+r.status));
@@ -3869,7 +3875,7 @@ function renderAnalysis(d){
     <div class="dash-header" style="margin-bottom:16px">
       <div class="dash-header-left">
         <span class="dh-name">Analisis de tu operativa real</span>
-        <span class="dh-date">${azName} · balance final estimado $${(s.balanceNow||0).toFixed(2)}</span>
+        <span class="dh-date">${azName} · capital $${((s.balanceNow||0)-(s.net||s.totalPnL||0)).toFixed(2)} (${d.capitalSource||"auto"}) · balance final estimado $${(s.balanceNow||0).toFixed(2)}</span>
       </div>
     </div>
     <div class="progress-grid" style="grid-template-columns:repeat(6,1fr)">
@@ -3889,6 +3895,14 @@ function renderAnalysis(d){
         ["▼ SHORT P&L",moneyRow(d.side.SHORT),(d.side.SHORT||{}).pnl>=0?"pos":"neg"]
       ])}
       ${breakCard("POR SESION","#00d4ff",["Asia","Londres","New York"].map(nm=>[nm+" P&L",moneyRow(d.session[nm]),(d.session[nm]||{}).pnl>=0?"pos":"neg"]))}
+      ${breakCard("CRUCE DE SESIONES (gaps)","#ffb000",(()=>{
+        const cs=d.crossSessions||{count:0,pnl:0,paths:{},weekend:{}};
+        const top=Object.entries(cs.paths||{}).sort((a,b)=>Math.abs(b[1].pnl)-Math.abs(a[1].pnl))[0];
+        const rows=[["Trades que cruzan sesion",cs.count??0],["P&L de esos trades",moneyRow({pnl:cs.pnl||0}),(cs.pnl||0)>=0?"pos":"neg"]];
+        if(top)rows.push(["Peor transicion",top[0]+" ("+azMoney(top[1].pnl)+")",top[1].pnl<0?"neg":"pos"]);
+        if(cs.weekend&&cs.weekend.count)rows.push(["Cruzan fin de semana",cs.weekend.count+" · "+azMoney(cs.weekend.pnl),cs.weekend.pnl<0?"neg":"pos"]);
+        return rows;
+      })())}
       ${breakCard("POR SIMBOLO","#b517ff",Object.entries(d.symbols).sort((a,b)=>b[1].trades-a[1].trades).slice(0,4).map(([k,v])=>[k,moneyRow(v),v.pnl>=0?"pos":"neg"]))}
     </div>
     <div class="fx-section">
@@ -3914,6 +3928,11 @@ function renderAnalysis(d){
         ${insightCol("improve","A MEJORAR","#ffc800")}
       </div>
     </div>
+    <div class="fx-section">
+      <h3>Monte Carlo <span class="fx-hint">1000 secuencias aleatorias de tus propios trades</span></h3>
+      <div class="equity-curve-card"><canvas class="equity-curve-canvas" id="azMc"></canvas></div>
+      <div class="mc-meta" id="azMcMeta"></div>
+    </div>
   `;
   $("azBack").onclick=()=>{res.style.display="none";$("analyzerUpload").style.display=""};
   // barras
@@ -3927,6 +3946,56 @@ function renderAnalysis(d){
   azBars("azHourBars",hourE);
   $("azHourX").innerHTML=hourE.map(e=>`<span>${e[0]}</span>`).join("");
   drawAzCurve(d.equity,s.totalPnL);
+  drawAzMc(d.mc,s);
+}
+function drawAzMc(mc,s){
+  const canvas=$("azMc");if(!canvas)return;
+  const ctx=canvas.getContext("2d");
+  const rect=canvas.parentElement.getBoundingClientRect();
+  if(rect.width<10||rect.height<10)return;
+  canvas.width=rect.width*2;canvas.height=rect.height*2;
+  ctx.scale(2,2);
+  const W=rect.width,H=rect.height;
+  ctx.clearRect(0,0,W,H);
+  if(!mc||!mc.paths){
+    ctx.fillStyle="rgba(255,255,255,.35)";ctx.font="11px 'JetBrains Mono'";ctx.textAlign="center";
+    ctx.fillText("Necesitas 4+ trades cerrados para simular",W/2,H/2);
+    const meta=$("azMcMeta");if(meta)meta.innerHTML='<span class="mc-chip">—</span>';
+    return;
+  }
+  const paths=[mc.paths.p5,mc.paths.p25,mc.paths.p50,mc.paths.p75,mc.paths.p95];
+  let min=Infinity,max=-Infinity;
+  paths.forEach(p=>p.forEach(v=>{if(v<min)min=v;if(v>max)max=v}));
+  const pad=(max-min)*0.06||1;min-=pad;max+=pad;const rng=max-min||1;
+  ctx.strokeStyle="rgba(255,255,255,.06)";ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  for(let i=0;i<=4;i++){const y=H*(i/4);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    ctx.fillStyle="rgba(255,255,255,.3)";ctx.font="9px 'JetBrains Mono'";ctx.textAlign="left";
+    ctx.fillText("$"+((max-rng*(i/4))/1000).toFixed(1)+"k",5,y-3)}
+  ctx.setLineDash([]);
+  // banda p5-p95 y p25-p75
+  const n=mc.paths.p50.length;
+  const band=(lo,hi,fill)=>{ctx.beginPath();
+    lo.forEach((v,i)=>{const x=(i/(n-1))*W,y=H-((v-min)/rng)*H;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});
+    for(let i=n-1;i>=0;i--){const x=(i/(n-1))*W,y=H-((hi[i]-min)/rng)*H;ctx.lineTo(x,y)}
+    ctx.closePath();ctx.fillStyle=fill;ctx.fill()};
+  band(mc.paths.p5,mc.paths.p95,"rgba(238,241,251,.07)");
+  band(mc.paths.p25,mc.paths.p75,"rgba(238,241,251,.10)");
+  // linea cero
+  const y0=H-((s.balanceNow-s.totalPnL-min)/rng)*H;
+  ctx.strokeStyle="rgba(255,255,255,.3)";ctx.setLineDash([2,3]);
+  ctx.beginPath();ctx.moveTo(0,y0);ctx.lineTo(W,y0);ctx.stroke();ctx.setLineDash([]);
+  // mediana
+  ctx.beginPath();
+  mc.paths.p50.forEach((v,i)=>{const x=(i/(n-1))*W,y=H-((v-min)/rng)*H;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});
+  ctx.strokeStyle="#eef1fb";ctx.lineWidth=2;ctx.stroke();
+  const meta=$("azMcMeta");
+  if(meta)meta.innerHTML=`
+    <span class="mc-chip">${mc.n} simulaciones</span>
+    <span class="mc-chip">p5 <b style="color:${mc.p5<s.balanceNow?'var(--bear)':'var(--bull)'}">$${mc.p5.toFixed(0)}</b></span>
+    <span class="mc-chip">p50 <b>$${mc.p50.toFixed(0)}</b></span>
+    <span class="mc-chip">p95 <b style="color:${mc.p95>s.balanceNow?'var(--bull)':'var(--bear)'}">$${mc.p95.toFixed(0)}</b></span>
+    <span class="mc-chip">Prob. terminar en positivo: <b style="color:${mc.probPos>=50?'var(--bull)':'var(--bear)'}">${mc.probPos.toFixed(1)}%</b></span>
+  `;
 }
 function drawAzCurve(equity,totalPnL){
   const canvas=$("azCurve");if(!canvas)return;

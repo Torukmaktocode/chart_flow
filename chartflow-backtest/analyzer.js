@@ -64,10 +64,10 @@ async function extractRows(buffer, filename) {
         });
         rows.push(vals);
       });
-      const trades = rowsToTrades(rows);
-      if (trades.length) return trades;
+      const out = rowsToTrades(rows);
+      if (out.trades.length) return out;
     }
-    return [];
+    return { trades: [], capital: null };
   }
   const text = buffer.toString("utf8").replace(/^\uFEFF/, "");
   let rows;
@@ -156,7 +156,38 @@ function rowsToTrades(rows) {
   }
   // dedupe por ticket
   const seen = new Set();
-  return out.filter(t => { const k = t.ticket; if (seen.has(k)) return false; seen.add(k); return true; });
+  const trades = out.filter(t => { const k = t.ticket; if (seen.has(k)) return false; seen.add(k); return true; });
+
+  // ---- capital automatico desde el archivo ----
+  let capital = null;
+  // 1) filas de deposito/balance del historial (MT4: Type=balance, el deposito va en Profit)
+  rows.forEach(cells => {
+    if (capital != null) return;
+    const typeCell = cells.find(c => /^(balance|deposito|deposit)$/i.test(String(c).trim()));
+    if (typeCell) {
+      const idx = cells.indexOf(typeCell);
+      for (let j = cells.length - 1; j > idx; j--) {
+        const v = parseNum(cells[j]);
+        if (v != null && v > 0) { capital = v; return; }
+      }
+    }
+  });
+  // 2) etiquetas de informes HTML: Initial Deposit / Deposito inicial / Deposit / Balance previo
+  if (capital == null) {
+    rows.forEach(cells => {
+      if (capital != null) return;
+      cells.forEach((c, i) => {
+        if (capital != null) return;
+        if (/deposito inicial|initial deposit|^deposito\b|^deposit\b|balance previo|previous balance/i.test(String(c).trim())) {
+          for (let j = i + 1; j < Math.min(i + 3, cells.length); j++) {
+            const v = parseNum(cells[j]);
+            if (v != null && v > 0) { capital = v; return; }
+          }
+        }
+      });
+    });
+  }
+  return { trades, capital };
 }
 
 // ---- analitica + diagnostico ----
@@ -224,7 +255,28 @@ function analyzeTrades(trades, balance) {
     return m;
   };
   const side = bucket(t => t.type);
-  const session = bucket(t => { const h = new Date(t.openTs || t.closeTs).getHours(); return (h >= 19 || h < 7) ? "Asia" : (h < 13 ? "Londres" : "New York"); });
+  const sessOfTs = ts => { const h = new Date(ts).getHours(); return (h >= 19 || h < 7) ? "Asia" : (h < 13 ? "Londres" : "New York"); };
+  const session = bucket(t => sessOfTs(t.openTs || t.closeTs));
+  // CRUCES DE SESION: trades abiertos en una sesion y cerrados en otra.
+  // El cambio de sesion trae gaps de precio y spreads ampliados.
+  const cross = { count: 0, pnl: 0, paths: {}, weekend: { count: 0, pnl: 0 } };
+  closed.forEach(t => {
+    const a = sessOfTs(t.openTs || t.closeTs), b = sessOfTs(t.closeTs);
+    if (a !== b) {
+      cross.count++; cross.pnl += t.profit;
+      const key = a + " \u2192 " + b;
+      if (!cross.paths[key]) cross.paths[key] = { count: 0, pnl: 0, wins: 0 };
+      cross.paths[key].count++; cross.paths[key].pnl += t.profit; if (t.profit > 0) cross.paths[key].wins++;
+    }
+    // gap de fin de semana: abre viernes, cierra domingo/lunes o tras 2+ dias
+    if (t.openTs && t.closeTs) {
+      const od = new Date(t.openTs).getDay(), cd = new Date(t.closeTs).getDay();
+      const days = (t.closeTs - t.openTs) / 86400000;
+      if ((od === 5 && (cd === 0 || cd === 6)) || days >= 2) {
+        cross.weekend.count++; cross.weekend.pnl += t.profit;
+      }
+    }
+  });
   const hourly = bucket(t => String(new Date(t.openTs || t.closeTs).getHours()).padStart(2, "0") + ":00");
   const weekday = bucket(t => ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"][new Date(t.openTs || t.closeTs).getDay()]);
   const monthly = bucket(t => { const d = new Date(t.closeTs); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); });
@@ -242,6 +294,31 @@ function analyzeTrades(trades, balance) {
   const costs = closed.reduce((s, t) => s + Math.abs(t.swap + t.commission), 0);
   const costRatio = gw > 0 ? costs / gw : 0;
 
+  // Monte Carlo bootstrap con reemplazo: percentiles del balance final y de la curva
+  const pnlsAll = closed.map(t => t.profit);
+  let mc = null;
+  if (pnlsAll.length >= 4) {
+    const N = 1000, n = pnlsAll.length;
+    const finals = [], pathCols = Array.from({ length: n + 1 }, () => []);
+    for (let s = 0; s < N; s++) {
+      let b = balance;
+      pathCols[0].push(b);
+      for (let k = 0; k < n; k++) {
+        b += pnlsAll[Math.floor(Math.random() * n)];
+        pathCols[k + 1].push(b);
+      }
+      finals.push(b);
+    }
+    const pct = (arr, p) => { const s2 = arr.slice().sort((a, b) => a - b); return s2[Math.floor(s2.length * p)] ?? balance; };
+    const q = p => pathCols.map(col => pct(col, p));
+    mc = {
+      n: N,
+      p5: pct(finals, .05), p25: pct(finals, .25), p50: pct(finals, .5), p75: pct(finals, .75), p95: pct(finals, .95),
+      probPos: finals.filter(f => f > balance).length / N * 100,
+      paths: { p5: q(.05), p25: q(.25), p50: q(.5), p75: q(.75), p95: q(.95) }
+    };
+  }
+
   const stats = {
     count: closed.length, wins: wins.length, losses: losses.length, be: beTrades.length,
     totalPnL, net, winRate, pf, avgWin, avgLoss, expect, avgR,
@@ -252,6 +329,8 @@ function analyzeTrades(trades, balance) {
     bestWin: wins.length ? wins.reduce((m, t) => Math.max(m, t.profit), 0) : 0,
     balanceNow: balance + net
   };
+  stats.crossSessions = { count: cross.count, pnl: cross.pnl, paths: cross.paths, weekend: cross.weekend };
+  stats.mc = mc;
 
   // ---- diagnostico: lo bueno / lo malo / a mejorar ----
   const insights = [];
@@ -305,6 +384,20 @@ function analyzeTrades(trades, balance) {
   // Rachas
   if (maxConsecLoss >= 5) push("improve", "Rachas de pérdida largas", "Hasta " + maxConsecLoss + " pérdidas seguidas. Regla práctica: tras 3 pérdidas consecutivas, pausa el día y revisa el journal.");
   if (maxConsecWin >= 4) push("good", "Capacidad de rachas ganadoras", "Encadenaste " + maxConsecWin + " aciertos seguidos: la ejecución cuando estás en racha es sólida.");
+  // Cruce de sesiones: gaps de precio y spreads ampliados en el cambio
+  if (cross.count >= 3 && cross.pnl < 0) {
+    const topPath = Object.entries(cross.paths).sort((a, b) => Math.abs(b[1].pnl) - Math.abs(a[1].pnl))[0];
+    push("bad", "Trades que cruzan sesiones te cuestan dinero", cross.count + " trades se abrieron en una sesión y cerraron en otra, sumando " + money(cross.pnl) + " (peor transición: " + topPath[0] + ", " + money(topPath[1].pnl) + " en " + topPath[1].count + " trades). El cambio de sesión trae gaps de precio y spread ampliado: cierra o pasa a breakeven antes del cambio.");
+  } else if (cross.count >= 3 && cross.pnl > 0) {
+    push("improve", "Los cruces de sesión te han favorecido, por ahora", cross.count + " trades cruzaron sesiones con " + money(cross.pnl) + ". Ha funcionado, pero cada cambio de sesión trae gap y spread ampliado: no es rentable por diseño.");
+  }
+  if (cross.weekend.count && cross.weekend.pnl < 0) push("bad", "Trades cruzando el fin de semana", cross.weekend.count + " trades abiertos el viernes cerraron después del fin de semana con " + money(cross.weekend.pnl) + ". El gap de apertura de lunes puede saltarse tu stop: cierra el viernes o reduce tamaño.");
+  // Monte Carlo
+  if (mc) {
+    if (mc.probPos >= 60) push("good", "Monte Carlo favorece tu sistema", "Reordenando tus trades al azar 1000 veces, el " + mc.probPos.toFixed(0) + "% de las secuencias termina en positivo (mediana " + money(mc.p50 - balance) + "). La ventaja sobrevive el azar del orden.");
+    else if (mc.probPos <= 40) push("bad", "Monte Carlo desfavorable", "En 1000 secuencias aleatorias de tus propios trades, solo el " + mc.probPos.toFixed(0) + "% termina en positivo (peor caso p5: " + money(mc.p5 - balance) + "). El orden del azar puede destruir este resultado: no hay margen para mala suerte.");
+    else push("improve", "Monte Carlo al filo", "El " + mc.probPos.toFixed(0) + "% de las secuencias aleatorias termina en positivo (p5 " + money(mc.p5 - balance) + ", mediana " + money(mc.p50 - balance) + "). Estás en el filo: cada mejora de win rate o RR empuja la probabilidad a tu favor.");
+  }
   // Expectancy
   if (expect > 0) push("good", "Expectancia positiva", "En promedio cada trade aporta " + money(expect) + ". Repetir el proceso es matemáticamente rentable.");
   else if (expect < 0 && pf < 1) push("bad", "Expectancia negativa", "Cada trade te cuesta " + money(expect).replace("-$", "$-") + " en promedio. Antes de escalar tamaño, necesitas un edge demostrado.");
@@ -313,6 +406,8 @@ function analyzeTrades(trades, balance) {
     stats, equity,
     days: dayMap,
     side, session, hourly, weekday, monthly, symbols,
+    crossSessions: { count: cross.count, pnl: cross.pnl, paths: cross.paths, weekend: cross.weekend },
+    mc,
     insights,
     balanceNow: balance + net
   };
