@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const ExcelJS = require("exceljs");
+const analyzer = require("./analyzer");
 
 const ROOT = __dirname;
 const PORT = 8790;
@@ -839,6 +840,33 @@ const server = http.createServer(async (req, res) => {
       } else {
         sendJson(res, 500, { error: "No se pudo generar el Excel" });
       }
+      return;
+    }
+    if (url.pathname === "/api/analyze") {
+      // ANALIZADOR: sube un historial MT4/MT5 (xlsx/html/csv) y recibe el
+      // analisis completo estilo MI PROGRESO con diagnostico de tu operativa
+      const chunks = [];
+      let size = 0;
+      req.on("data", c => {
+        size += c.length;
+        if (size > 30 * 1024 * 1024) { req.destroy(); return; }
+        chunks.push(c);
+      });
+      req.on("end", async () => {
+        try {
+          const buf = Buffer.concat(chunks);
+          const fname = url.searchParams.get("name") || "report.xlsx";
+          const bal = parseFloat(url.searchParams.get("bal")) || 10000;
+          const trades = await analyzer.parseTradesFile(buf, fname);
+          if (!trades.length) {
+            sendJson(res, 400, { error: "No se detectaron trades cerrados en el archivo. Revisa que sea un historial exportado de MT4/MT5 (Statement, historial de cuenta)." });
+            return;
+          }
+          sendJson(res, 200, analyzer.analyzeTrades(trades, bal));
+        } catch (e) {
+          sendJson(res, 500, { error: String(e.message || e) });
+        }
+      });
       return;
     }
     if (url.pathname === "/api/habit-stats") {
