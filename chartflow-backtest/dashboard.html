@@ -168,7 +168,7 @@
 .progress-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
 .progress-card{background:linear-gradient(145deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px;text-align:center;position:relative;overflow:hidden;transition:all .2s;backdrop-filter:blur(5px)}
 .progress-card:hover{border-color:rgba(0,212,255,.3);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
-.progress-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity .2s}
+.progress-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);opacity:0;transition:opacity .2s}
 .progress-card:hover::before{opacity:1}
 .progress-card .pc-icon{font-size:20px;margin-bottom:6px}
 .progress-card .pc-value{font:800 22px var(--mono);margin-bottom:4px;line-height:1}
@@ -398,6 +398,93 @@
 .help-modal td{padding:4px 6px;color:var(--text);border-bottom:1px solid var(--border)}
 .help-modal .close-help{float:right;background:none;border:1px solid var(--border);color:var(--dim);border-radius:4px;padding:2px 8px;cursor:pointer;font:10px var(--mono)}
 .help-modal .close-help:hover{color:var(--bear);border-color:var(--bear)}
+
+/* ============================================================
+   MI PROGRESO — REDISEÑO ESTILO FX REPLAY
+   Superficie negra plana, tarjetas #10151c con borde fino,
+   acento de color por familia (2px superior), barras redondeadas
+   con degradado y numeros en mono bold. Anula los degradados
+   grises/azulados de las reglas anteriores al venir al final.
+   ============================================================ */
+.progress-overlay{background:rgba(4,6,10,.94)}
+.progress-modal{background:#0a0d12;border:1px solid rgba(255,255,255,.07);border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+.progress-modal h2{background:none;-webkit-text-fill-color:initial;color:var(--text);font:800 20px var(--mono);letter-spacing:-.3px}
+.progress-modal h2 .fxr-brand{color:var(--accent)}
+.streak-banner{background:#10151c;border:1px solid rgba(255,255,255,.08);border-radius:16px}
+.streak-banner::before{content:none}
+@keyframes streakPulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+.streak-banner .streak-num{background:none;-webkit-background-clip:initial;-webkit-text-fill-color:initial;color:#fff;text-shadow:none;font:800 56px var(--mono);position:relative}
+.dash-metric-card,.dash-chart-card,.fx-section,.stats-card,.progress-card,.rr-card,.wl-card{
+  background:#10151c !important;border:1px solid rgba(255,255,255,.06) !important;border-radius:14px;
+  box-shadow:none;backdrop-filter:none}
+.dash-metric-card{position:relative;overflow:hidden;padding:16px}
+.dash-metric-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:rgba(255,255,255,.22)}
+.dash-metric-card .mc-value{font:800 26px var(--mono);letter-spacing:-.5px}
+.progress-card{border-radius:14px;padding:18px}
+.progress-card::before{height:2px;opacity:.9}
+.progress-card .pc-value{font:800 24px var(--mono)}
+.fx-section{padding:18px;margin-bottom:16px}
+.fx-section h3{font:800 12px var(--mono);color:var(--text);letter-spacing:.3px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.fx-section h3 .fx-hint{font:600 9px var(--mono);color:var(--dim);margin-left:auto;letter-spacing:.4px}
+.stats-card h4,.dash-chart-card h4{font:700 11px var(--mono);color:var(--text);letter-spacing:.3px}
+.equity-curve-card{height:220px;border-radius:10px;background:#0c1017;border:1px solid rgba(255,255,255,.04)}
+.equity-curve-canvas{border-radius:10px}
+/* Barras: redondeadas y con relleno solido degradado */
+.dash-bar-vertical{padding-top:14px}
+.dash-bar-v .bar-v{width:78% !important;border-radius:6px 6px 3px 3px !important;box-shadow:0 0 14px rgba(0,0,0,.35)}
+.dash-bar-v .bar-v-val{opacity:1;font:800 10px var(--mono);color:var(--text) !important;top:-16px !important}
+.perf-time-bar .bar-pos{border-radius:3px 3px 0 0}
+.perf-time-bar .bar-neg{border-radius:0 0 3px 3px}
+.perf-time-bar:hover{transform:scaleX(1.06);z-index:5}
+.hourly-bar{border-radius:4px 4px 0 0 !important;transition:height .25s}
+.perf-day-bar{border-radius:4px !important}
+.perf-day-row{padding:7px 0}
+/* Tarjetas KPI y rows */
+.rr-card{border-radius:14px;padding:14px 16px}
+.rr-row{padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.rr-row:last-child{border-bottom:none}
+.rr-label{font:600 10px var(--ui) !important;color:var(--dim) !important;letter-spacing:.2px}
+.rr-value{font:800 13px var(--mono) !important}
+.rr-value.pos{color:var(--bull)}.rr-value.neg{color:var(--bear)}
+.wl-card{border-radius:14px}
+.wl-row{padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.wl-row:last-child{border-bottom:none}
+.wl-value{font:800 12px var(--mono) !important}
+/* Breakdowns nuevos (side / sesion / mes / montecarlo) */
+.fx-break-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.fx-break-card{background:#0c1017;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden}
+.fx-break-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:rgba(255,255,255,.18)}
+.fx-break-card h5{font:700 11px var(--mono);color:var(--text);margin-bottom:10px;letter-spacing:.4px}
+.fx-break-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
+.fx-break-row span:first-child{font:600 10px var(--ui);color:var(--dim)}
+.fx-break-row span:last-child{font:800 12px var(--mono);color:var(--text)}
+.fx-break-row .pos{color:var(--bull)}.fx-break-row .neg{color:var(--bear)}
+/* Calendario FXR: celdas con relleno y borde por resultado */
+.cal-day{border-radius:10px !important;background:#0c1017 !important;border:1px solid rgba(255,255,255,.04)}
+.cal-day.no-trade{opacity:.55}
+.cal-day.today{border-color:var(--accent) !important;box-shadow:0 0 0 1px rgba(0,212,255,.35)}
+.cal-day.profit{background:rgba(0,229,160,.13) !important;border-color:rgba(0,229,160,.35) !important}
+.cal-day.loss{background:rgba(255,51,85,.12) !important;border-color:rgba(255,51,85,.32) !important}
+.cal-day.neutral{background:rgba(255,200,0,.08) !important;border-color:rgba(255,200,0,.25) !important}
+.cal-day .day-pnl{font:800 11px var(--mono)}
+.cal-day .day-num{font:700 12px var(--mono)}
+.cal-metric{background:#0c1017;border:1px solid rgba(255,255,255,.05);border-radius:10px}
+.cal-metric .cm-value{font:800 14px var(--mono)}
+.cal-metric .cm-value.pos{color:var(--bull)}.cal-metric .cm-value.neg{color:var(--bear)}
+.motivational{border-radius:14px}
+/* Monte Carlo */
+.mc-meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+.mc-chip{font:700 10px var(--mono);color:var(--text);background:#0c1017;border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:6px 12px}
+.mc-chip b{font-weight:800}
+/* Monocromo total del header de progreso: bordes e iconos sin color */
+.dash-metric-card.mc-blue::before,.dash-metric-card.mc-yellow::before,
+.dash-metric-card.mc-green::before,.dash-metric-card.mc-purple::before{background:rgba(255,255,255,.22)}
+.dash-metric-card.mc-blue .mc-icon,.dash-metric-card.mc-yellow .mc-icon,
+.dash-metric-card.mc-green .mc-icon,.dash-metric-card.mc-purple .mc-icon{background:rgba(255,255,255,.06)}
+.dash-metric-card .mc-bar-fill.green,.dash-metric-card .mc-bar-fill.red{background:linear-gradient(90deg,#eef1fb,#8a8f99)}
+.dash-header{background:#10151c;border:1px solid rgba(255,255,255,.07)}
+.dash-header::before{content:none}
+.dash-header-right .streak-box{background:rgba(255,255,255,.05)}
 </style>
 </head>
 <body>
@@ -726,6 +813,26 @@
       </div>
     </div>
 
+    <!-- KPIs estilo FX Replay: PF, Expectancy, Avg R, Drawdown, Breakeven, Frecuencia -->
+    <div class="rr-grid" style="margin:14px 0">
+      <div class="rr-card">
+        <div class="rr-row"><span class="rr-label" data-i18n="PctGain">Ganancia % s/ capital base</span><span class="rr-value" id="pgPctGain">0%</span></div>
+        <div class="rr-row"><span class="rr-label" data-i18n="ProfitFactor">Profit Factor</span><span class="rr-value" id="pgPF">0.00</span></div>
+      </div>
+      <div class="rr-card">
+        <div class="rr-row"><span class="rr-label" data-i18n="Expectancy">Expectancy por trade</span><span class="rr-value" id="pgExpect">$0.00</span></div>
+        <div class="rr-row"><span class="rr-label" data-i18n="AvgR">Average R (RR real)</span><span class="rr-value" id="pgAvgR">0.00</span></div>
+      </div>
+      <div class="rr-card">
+        <div class="rr-row"><span class="rr-label" data-i18n="MaxDD">Max Drawdown</span><span class="rr-value" id="pgMaxDD">0%</span></div>
+        <div class="rr-row"><span class="rr-label" data-i18n="MaxDDInfo">Drawdown $ · duracion</span><span class="rr-value" id="pgMaxDDInfo">$0 · 0 velas</span></div>
+      </div>
+      <div class="rr-card">
+        <div class="rr-row"><span class="rr-label" data-i18n="BETrades">Trades Breakeven</span><span class="rr-value" id="pgBE">0</span></div>
+        <div class="rr-row"><span class="rr-label" data-i18n="Frequency">Frecuencia (dia/sem/mes)</span><span class="rr-value" id="pgFreq">0 / 0 / 0</span></div>
+      </div>
+    </div>
+
     <div class="calendar-section">
       <div class="cal-header">
         <div class="cal-nav"><button onclick="calNav(-1)">&lt;</button></div>
@@ -763,6 +870,44 @@
       </div>
     </div>
 
+    <!-- Performance by Side (estilo FX Replay) -->
+    <div class="fx-section">
+      <h3 data-i18n="PerfBySide">⚖️ Performance by Side <span class="fx-hint">LONG vs SHORT</span></h3>
+      <div class="fx-break-grid">
+        <div class="fx-break-card" style="--ka:#00e5a0">
+          <h5>▲ LONG (BUY)</h5>
+          <div class="fx-break-row"><span>Trades</span><span id="sideLongTrades">0</span></div>
+          <div class="fx-break-row"><span>Win Rate</span><span id="sideLongWr">0%</span></div>
+          <div class="fx-break-row"><span>P&L</span><span id="sideLongPnl">$0.00</span></div>
+        </div>
+        <div class="fx-break-card" style="--ka:#ff3355">
+          <h5>▼ SHORT (SELL)</h5>
+          <div class="fx-break-row"><span>Trades</span><span id="sideShortTrades">0</span></div>
+          <div class="fx-break-row"><span>Win Rate</span><span id="sideShortWr">0%</span></div>
+          <div class="fx-break-row"><span>P&L</span><span id="sideShortPnl">$0.00</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance by Session (estilo FX Replay) -->
+    <div class="fx-section">
+      <h3 data-i18n="PerfBySession">🌐 Performance by Session <span class="fx-hint">segun la hora del mercado simulado</span></h3>
+      <div class="fx-break-grid">
+        <div class="fx-break-card" style="--ka:#b517ff"><h5>🌏 ASIA · 19:00–07:00</h5>
+          <div class="fx-break-row"><span>Trades</span><span id="sessAsiaT">0</span></div>
+          <div class="fx-break-row"><span>Win Rate</span><span id="sessAsiaWr">0%</span></div>
+          <div class="fx-break-row"><span>P&L</span><span id="sessAsiaPnl">$0.00</span></div></div>
+        <div class="fx-break-card" style="--ka:#00d4ff"><h5>🌍 LONDRES · 07:00–13:00</h5>
+          <div class="fx-break-row"><span>Trades</span><span id="sessLonT">0</span></div>
+          <div class="fx-break-row"><span>Win Rate</span><span id="sessLonWr">0%</span></div>
+          <div class="fx-break-row"><span>P&L</span><span id="sessLonPnl">$0.00</span></div></div>
+        <div class="fx-break-card" style="--ka:#ffb000"><h5>🗽 NEW YORK · 13:00–19:00</h5>
+          <div class="fx-break-row"><span>Trades</span><span id="sessNyT">0</span></div>
+          <div class="fx-break-row"><span>Win Rate</span><span id="sessNyWr">0%</span></div>
+          <div class="fx-break-row"><span>P&L</span><span id="sessNyPnl">$0.00</span></div></div>
+      </div>
+    </div>
+
     <!-- Performance by Time -->
     <div class="fx-section">
       <h3 data-i18n="PerfByTime">📊 Performance by Time <select class="fx-dropdown" id="perfTimeMetric"><option>Total Profit/Loss</option></select></h3>
@@ -779,11 +924,33 @@
       <div class="perf-day-chart" id="perfDayChart"></div>
     </div>
 
+    <!-- Performance by Month + YTD (estilo FX Replay) -->
+    <div class="fx-section">
+      <h3 data-i18n="PerfByMonth">🗓️ Performance by Month <span class="fx-hint">% s/ capital base · fecha real</span></h3>
+      <div class="dash-bar-vertical" id="chartByMonth"></div>
+      <div class="dash-xaxis" id="chartByMonthXaxis"></div>
+      <div class="mc-meta">
+        <span class="mc-chip">YTD: <b id="pgYTD">$0.00</b></span>
+        <span class="mc-chip">Total histórico: <b id="pgTotalGain">$0.00</b></span>
+      </div>
+    </div>
+
     <!-- Equity Curve -->
     <div class="fx-section">
-      <h3 data-i18n="EquityCurve">📈 Equity Curve</h3>
+      <h3 data-i18n="EquityCurve">📈 Profit &amp; Loss <span class="fx-hint">curva acumulada de la cuenta</span></h3>
       <div class="equity-curve-card">
         <canvas class="equity-curve-canvas" id="equityCurveCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Monte Carlo (estilo FX Replay) -->
+    <div class="fx-section">
+      <h3 data-i18n="MonteCarlo">🎲 Monte Carlo <span class="fx-hint">proyeccion reordenando tus trades al azar</span></h3>
+      <div class="equity-curve-card">
+        <canvas class="equity-curve-canvas" id="mcCanvas"></canvas>
+      </div>
+      <div class="mc-meta">
+        <span class="mc-chip" id="mcInfo">—</span>
       </div>
     </div>
 
@@ -2350,6 +2517,11 @@ function renderProgressDashboard(stats){
   renderRRMetrics(allTrades);
   renderWinnersLosers(allTrades);
 
+  // Analytics estilo FX Replay: KPIs + breakdowns + Monte Carlo
+  renderFXExtras(allTrades);
+  renderByMonth(allTrades);
+  renderMonteCarlo(allTrades);
+
   // Dashboard UI charts
   renderDashboardHeader();
   renderDashboardMetrics(allTrades);
@@ -2747,10 +2919,10 @@ function renderEquityCurve(trades){
   }
   ctx.setLineDash([]);
   
-  // Area fill
+  // Area fill (monocromo: curva blanca sobre negro)
   const gradient=ctx.createLinearGradient(0,0,0,H);
-  gradient.addColorStop(0,"rgba(0,109,255,.25)");
-  gradient.addColorStop(1,"rgba(0,109,255,.02)");
+  gradient.addColorStop(0,"rgba(238,241,251,.20)");
+  gradient.addColorStop(1,"rgba(238,241,251,.02)");
   
   ctx.beginPath();
   ctx.moveTo(0,H);
@@ -2771,7 +2943,7 @@ function renderEquityCurve(trades){
     const y=H-((v-min)/range)*H;
     if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
   });
-  ctx.strokeStyle="#006dff";
+  ctx.strokeStyle="#eef1fb";
   ctx.lineWidth=2;
   ctx.stroke();
 }
@@ -2847,8 +3019,8 @@ function renderRRMini(canvasId,data){
   
   // Area
   const grad=ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,"rgba(0,109,255,.2)");
-  grad.addColorStop(1,"rgba(0,109,255,.02)");
+  grad.addColorStop(0,"rgba(238,241,251,.18)");
+  grad.addColorStop(1,"rgba(238,241,251,.02)");
   
   ctx.beginPath();
   ctx.moveTo(0,H);
@@ -2869,7 +3041,7 @@ function renderRRMini(canvasId,data){
     const y=H-((v-min)/range)*H;
     if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
   });
-  ctx.strokeStyle="#006dff";
+  ctx.strokeStyle="#eef1fb";
   ctx.lineWidth=1.5;
   ctx.stroke();
 }
@@ -2932,6 +3104,228 @@ function renderWinnersLosers(trades){
   $("wlAvgConsecLoss").textContent=avgConsecLoss.toFixed(1);
 }
 
+// ============ ANALYTICS ESTILO FX REPLAY ============
+// Sesiones por la hora del MERCADO SIMULADO (entrada del trade)
+const fxSessionOf=h=>(h>=19||h<7)?"Asia":(h<13?"Londres":"New York");
+
+function computeProgressExtras(trades,balance){
+  const ex={pctGain:0,pf:0,pfInf:false,expect:0,avgR:0,maxDDPct:0,maxDD$:0,maxDDBars:0,be:0,
+    freqD:0,freqW:0,freqM:0,side:{LONG:null,SHORT:null},sess:{},months:[],ytd:0,totalPct:0};
+  const closed=trades.filter(t=>t.status==="CLOSED"||t.exitPrice!=null);
+  if(!closed.length)return ex;
+  const wins=closed.filter(t=>t.pnl>0),losses=closed.filter(t=>t.pnl<0);
+  const gw=wins.reduce((s,t)=>s+(t.pnl||0),0);
+  const gl=Math.abs(losses.reduce((s,t)=>s+(t.pnl||0),0));
+  ex.pf=gl>0?gw/gl:(gw>0?-1:0); // -1 = infinito
+  ex.expect=closed.reduce((s,t)=>s+(t.pnl||0),0)/closed.length;
+  const totalPnl=closed.reduce((s,t)=>s+(t.pnl||0),0);
+  ex.pctGain=balance>0?(totalPnl/balance)*100:0;
+  ex.totalPct=ex.pctGain;
+  ex.be=closed.filter(t=>Math.abs(t.pnl||0)<1e-9).length;
+  // Average R: RR real obtenido (salida vs riesgo hasta el SL)
+  const rs=closed.map(t=>{
+    if(!t.sl||!t.entryPrice||t.exitPrice==null)return 0;
+    const risk=Math.abs(t.entryPrice-t.sl),rew=Math.abs(t.exitPrice-t.entryPrice);
+    return risk>0?rew/risk:0;
+  }).filter(v=>v>0);
+  ex.avgR=rs.length?rs.reduce((a,b)=>a+b,0)/rs.length:0;
+  // Max Drawdown sobre la equity ordenada por cierre
+  const seq=closed.slice().sort((a,b)=>(a.exitTime||0)-(b.exitTime||0));
+  let eq=balance,peak=balance,ddBars=0,maxDD=0;
+  seq.forEach(t=>{
+    eq+=t.pnl||0;
+    if(eq>peak){peak=eq;ddBars=0}
+    else{
+      ddBars++;
+      const dd=peak-eq;
+      if(dd>maxDD){maxDD=dd;ex.maxDDPct=peak>0?(dd/peak)*100:0;ex.maxDDBars=ddBars}
+    }
+  });
+  ex.maxDD$=maxDD;
+  // Frecuencia de trades
+  const daySet=new Set();
+  let firstTs=Infinity,lastTs=-Infinity;
+  closed.forEach(t=>{
+    const iso=tradeRealISO(t);if(!iso)return;
+    daySet.add(iso.slice(0,10));
+    const ts=t.realClose||t.realOpen||t.entryTime||0;
+    if(ts){firstTs=Math.min(firstTs,ts);lastTs=Math.max(lastTs,ts)}
+  });
+  const spanDays=Math.max(1,(lastTs-firstTs)/86400000);
+  ex.freqD=closed.length/Math.max(1,daySet.size);
+  ex.freqW=closed.length/Math.max(1,spanDays/7);
+  ex.freqM=closed.length/Math.max(1,spanDays/30.4);
+  // Por lado
+  ["LONG","SHORT"].forEach(side=>{
+    const g=closed.filter(t=>t.type===side);
+    if(!g.length)return;
+    const w=g.filter(t=>t.pnl>0).length;
+    ex.side[side]={trades:g.length,wr:g.length?(w/g.length)*100:0,pnl:g.reduce((s,t)=>s+(t.pnl||0),0)};
+  });
+  // Por sesion
+  closed.forEach(t=>{
+    const s=fxSessionOf(new Date(t.entryTime||0).getHours());
+    if(!ex.sess[s])ex.sess[s]={trades:0,wins:0,pnl:0};
+    ex.sess[s].trades++;
+    if(t.pnl>0)ex.sess[s].wins++;
+    ex.sess[s].pnl+=t.pnl||0;
+  });
+  // Por mes (fecha REAL de ejecucion)
+  const mm={};
+  closed.forEach(t=>{
+    const iso=tradeRealISO(t);if(!iso)return;
+    const k=iso.slice(0,7);
+    if(!mm[k])mm[k]={pnl:0,trades:0};
+    mm[k].pnl+=t.pnl||0;mm[k].trades++;
+  });
+  ex.months=Object.keys(mm).sort().map(k=>({k,pnl:mm[k].pnl,trades:mm[k].trades}));
+  const yearNow=new Date().getFullYear();
+  ex.ytd=ex.months.filter(m=>m.k.startsWith(String(yearNow))).reduce((s,m)=>s+m.pnl,0)/balance*100;
+  return ex;
+}
+
+function setFXValue(id,txt,cls){
+  const el=$(id);if(!el)return;
+  el.textContent=txt;
+  if(cls)el.className="rr-value "+cls;
+}
+
+function renderFXExtras(allTrades){
+  const balance=parseFloat($("balIn")?.value)||100000;
+  const ex=computeProgressExtras(allTrades,balance);
+  setFXValue("pgPctGain",(ex.pctGain>=0?"+":"")+ex.pctGain.toFixed(2)+"%",ex.pctGain>=0?"pos":"neg");
+  setFXValue("pgPF",ex.pf===-1?"∞":ex.pf.toFixed(2),ex.pf===-1||ex.pf>=1?"pos":"neg");
+  setFXValue("pgExpect",(ex.expect>=0?"+":"")+"$"+ex.expect.toFixed(2),ex.expect>=0?"pos":"neg");
+  setFXValue("pgAvgR",ex.avgR.toFixed(2),ex.avgR>=1?"pos":"neg");
+  setFXValue("pgMaxDD","-"+ex.maxDDPct.toFixed(2)+"%","neg");
+  setFXValue("pgMaxDDInfo","$"+ex.maxDD$.toFixed(0)+" · "+ex.maxDDBars+" velas",ex.maxDD$>0?"neg":"");
+  setFXValue("pgBE",String(ex.be),"");
+  setFXValue("pgFreq",ex.freqD.toFixed(1)+" / "+ex.freqW.toFixed(1)+" / "+ex.freqM.toFixed(1),"");
+  // Performance by Side
+  [["LONG","sideLong"],["SHORT","sideShort"]].forEach(([side,pre])=>{
+    const d=ex.side[side];
+    setFXValue(pre+"Trades",d?String(d.trades):"—","" );
+    setFXValue(pre+"Wr",d?d.wr.toFixed(1)+"%":"—",d?(d.wr>=50?"pos":"neg"):"");
+    setFXValue(pre+"Pnl",d?(d.pnl>=0?"+":"")+"$"+d.pnl.toFixed(2):"—",d?(d.pnl>=0?"pos":"neg"):"");
+  });
+  // Performance by Session
+  const sessMap={Asia:["sessAsia","Asia"],Londres:["sessLon","Londres"],"New York":["sessNy","New York"]};
+  Object.values(sessMap).forEach(([pre,name])=>{
+    const d=ex.sess[name];
+    setFXValue(pre+"T",d?String(d.trades):"—","");
+    setFXValue(pre+"Wr",d?(d.trades?((d.wins/d.trades)*100).toFixed(1)+"%":"0%"):"—",d?(d.trades&&(d.wins/d.trades)>=0.5?"pos":"neg"):"");
+    setFXValue(pre+"Pnl",d?(d.pnl>=0?"+":"")+"$"+d.pnl.toFixed(2):"—",d?(d.pnl>=0?"pos":"neg"):"");
+  });
+  // YTD / total en la seccion de meses
+  setFXValue("pgYTD",(ex.ytd>=0?"+":"")+"$"+(ex.ytd/100*balance).toFixed(2),ex.ytd>=0?"pos":"neg");
+  setFXValue("pgTotalGain",(ex.totalPct>=0?"+":"")+"$"+(ex.totalPct/100*balance).toFixed(2),ex.totalPct>=0?"pos":"neg");
+}
+
+function renderByMonth(allTrades){
+  const container=$("chartByMonth");const xaxis=$("chartByMonthXaxis");
+  if(!container)return;
+  container.innerHTML="";xaxis.innerHTML="";
+  const balance=parseFloat($("balIn")?.value)||100000;
+  const ex=computeProgressExtras(allTrades,balance);
+  const months=ex.months.slice(-8); // ultimos 8 meses con trades
+  if(!months.length){
+    container.innerHTML='<div style="font:10px var(--mono);color:var(--dim);text-align:center;padding:30px 0">Sin trades cerrados aún</div>';
+    return;
+  }
+  const maxAbs=Math.max(...months.map(m=>Math.abs(m.pnl)),1);
+  const MESES=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  months.forEach(m=>{
+    const pct=Math.max(2,(Math.abs(m.pnl)/maxAbs)*100);
+    const bar=document.createElement("div");
+    bar.className="dash-bar-v";
+    const cls=m.pnl>=0?"pos":"neg";
+    const color=m.pnl>=0?"linear-gradient(180deg,#00e5a0,rgba(0,229,160,.35))":"linear-gradient(180deg,#ff3355,rgba(255,51,85,.35))";
+    bar.innerHTML=`
+      <div class="bar-v" style="height:${pct}%;background:${color}">
+        <div class="bar-v-val">${m.pnl>=0?"+":"-"}$${Math.abs(m.pnl).toFixed(0)}</div>
+      </div>
+      <span class="bar-v-label">${MESES[+m.k.slice(5,7)-1]} ${m.k.slice(2,4)}</span>
+    `;
+    container.appendChild(bar);
+    const span=document.createElement("span");
+    span.textContent=MESES[+m.k.slice(5,7)-1]+" "+m.k.slice(2,4);
+    xaxis.appendChild(span);
+  });
+}
+
+function renderMonteCarlo(allTrades){
+  const canvas=$("mcCanvas");if(!canvas)return;
+  const ctx=canvas.getContext("2d");
+  const rect=canvas.parentElement.getBoundingClientRect();
+  if(rect.width<10||rect.height<10)return;
+  canvas.width=rect.width*2;canvas.height=rect.height*2;
+  ctx.scale(2,2);
+  const W=rect.width,H=rect.height;
+  ctx.clearRect(0,0,W,H);
+  const balance=parseFloat($("balIn")?.value)||100000;
+  const closed=allTrades.filter(t=>t.status==="CLOSED"||t.exitPrice!=null);
+  const pnls=closed.map(t=>t.pnl||0);
+  const info=$("mcInfo");
+  if(pnls.length<4){
+    ctx.fillStyle="rgba(255,255,255,.35)";
+    ctx.font="11px 'JetBrains Mono'";ctx.textAlign="center";
+    ctx.fillText("Necesitas 4+ trades cerrados para simular",W/2,H/2);
+    if(info)info.textContent="—";
+    return;
+  }
+  const N=400;
+  const finals=[];const sample=[];
+  // Monte Carlo real: muestreo CON reemplazo (bootstrap). Un simple shuffle
+  // conservaria la suma y todos los finales serian identicos.
+  for(let s=0;s<N;s++){
+    const eq=[balance];let b=balance;
+    for(let k=0;k<pnls.length;k++){
+      b+=pnls[Math.floor(Math.random()*pnls.length)];
+      eq.push(b);
+    }
+    if(s<80)sample.push(eq);
+    finals.push(b);
+  }
+  finals.sort((a,b)=>a-b);
+  const p5=finals[Math.floor(N*.05)],p50=finals[Math.floor(N*.5)],p95=finals[Math.floor(N*.95)];
+  let min=Math.min(balance,...finals),max=Math.max(balance,...finals);
+  min=Math.max(0,min-(max-min)*0.05-(min*0.01));max=max+(max-min)*0.05;
+  const rng=max-min||1;
+  // gridlines
+  ctx.strokeStyle="rgba(255,255,255,.06)";ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  for(let i=0;i<=4;i++){const y=H*(i/4);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    ctx.fillStyle="rgba(255,255,255,.3)";ctx.font="9px 'JetBrains Mono'";ctx.textAlign="left";
+    ctx.fillText("$"+((max-rng*(i/4))/1000).toFixed(1)+"k",5,y-3)}
+  ctx.setLineDash([]);
+  // balance inicial de referencia
+  const y0=H-((balance-min)/rng)*H;
+  ctx.strokeStyle="rgba(255,255,255,.25)";ctx.setLineDash([2,3]);
+  ctx.beginPath();ctx.moveTo(0,y0);ctx.lineTo(W,y0);ctx.stroke();ctx.setLineDash([]);
+  // trayectorias translucidas
+  sample.forEach(eq=>{
+    ctx.beginPath();
+    eq.forEach((v,i)=>{
+      const x=(i/(eq.length-1))*W,y=H-((v-min)/rng)*H;
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle="rgba(238,241,251,.08)";ctx.lineWidth=1;ctx.stroke();
+  });
+  // mediana de la muestra (percentil 50 del recorrido aproximado: ordeno por paso)
+  const n=sample[0].length;
+  const median=[];
+  for(let i=0;i<n;i++){
+    const col=sample.map(eq=>eq[i]).sort((a,b)=>a-b);
+    median.push(col[Math.floor(col.length/2)]);
+  }
+  ctx.beginPath();
+  median.forEach((v,i)=>{
+    const x=(i/(n-1))*W,y=H-((v-min)/rng)*H;
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle="#eef1fb";ctx.lineWidth=2;ctx.stroke();
+  if(info)info.innerHTML=`${N} simulaciones · Final p5 <b style="color:var(--bear)">$${p5.toFixed(0)}</b> · p50 <b>$${p50.toFixed(0)}</b> · p95 <b style="color:var(--bull)">$${p95.toFixed(0)}</b>`;
+}
+
 function formatDuration(ms){
   if(!ms||ms<=0)return "0h 0m";
   const hours=Math.floor(ms/3600000);
@@ -2970,10 +3364,9 @@ function renderDashboardMetrics(trades){
   const sessions=JSON.parse(localStorage.getItem("bt_training_sessions")||"{}");
   let totalMinutes=0;
   Object.values(sessions).forEach(d=>totalMinutes+=d.totalMinutes||0);
-  
   const days=Math.floor(totalMinutes/1440);
   const hours=Math.floor((totalMinutes%1440)/60);
-  const mins=totalMinutes%60;
+  const mins=Math.floor(totalMinutes%60); // CRASH FIX visual: sin decimales infinitos
   $("mcTimeInvested").textContent=days+"d "+hours+"h "+mins+"m";
   
   // Historical time (sum of candle data duration): el contador se guarda al cargar
@@ -3010,36 +3403,39 @@ function renderDashboardTimeByDay(trades){
   const xaxis=$("chartTimeXaxis");
   if(!container)return;
   container.innerHTML="";xaxis.innerHTML="";
-  
+
   const dayKeys=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const dayNames=dayKeys.map(k=>t(k));
   const dayMinutes=new Array(7).fill(0);
-  
-  // Group by day of week con duracion REAL del trade (antes +5min fijos por trade)
-  trades.forEach(t=>{
-    const iso=tradeRealISO(t);if(!iso)return;
-    const d=new Date(iso);
+
+  // Tiempo REAL invertido por dia: las sesiones de entrenamiento se guardan
+  // por fecha real (bt_training_sessions), como el TIME INVESTED del header.
+  // (antes se graficaban duraciones simuladas de velas: salian 4380 "min")
+  const sessions=JSON.parse(localStorage.getItem("bt_training_sessions")||"{}");
+  Object.keys(sessions).forEach(dateKey=>{
+    const d=new Date(dateKey+"T12:00:00");
+    if(isNaN(d))return;
     const dow=(d.getDay()+6)%7; // Monday=0
-    const durMin=(t.exitTime&&t.entryTime)?(t.exitTime-t.entryTime)/60000:5;
-    dayMinutes[dow]+=Math.max(0,durMin);
+    dayMinutes[dow]+=sessions[dateKey].totalMinutes||0;
   });
-  
+
   const maxMin=Math.max(...dayMinutes,1);
-  
+
   dayNames.forEach((day,i)=>{
     const min=dayMinutes[i];
+    if(min<=0)return;
     const pct=Math.max(2,(min/maxMin)*100);
-    
+
     const bar=document.createElement("div");
     bar.className="dash-bar-v";
     bar.innerHTML=`
-      <div class="bar-v" style="height:${pct}%;background:linear-gradient(180deg,#ffb000,#ff6b6b)">
-        <div class="bar-v-val">${min} ${t("min")}</div>
+      <div class="bar-v" style="height:${pct}%;background:linear-gradient(180deg,#eef1fb,rgba(238,241,251,.25))">
+        <div class="bar-v-val">${Math.floor(min)} ${t("min")}</div>
       </div>
       <span class="bar-v-label">${day}</span>
     `;
     container.appendChild(bar);
-    
+
     const span=document.createElement("span");
     span.textContent=day;
     xaxis.appendChild(span);
@@ -3074,7 +3470,7 @@ function renderDashboardWRByDay(trades){
     const bar=document.createElement("div");
     bar.className="dash-bar-v";
     bar.innerHTML=`
-      <div class="bar-v" style="height:${pct}%;background:linear-gradient(180deg,#0d6efd,#00c896)">
+      <div class="bar-v" style="height:${pct}%;background:linear-gradient(180deg,#eef1fb,rgba(238,241,251,.25))">
         <div class="bar-v-val">${wr.toFixed(0)}%</div>
       </div>
       <span class="bar-v-label">${day}</span>
@@ -3102,7 +3498,8 @@ function renderDashboardTradesBySymbol(trades){
   const sorted=Object.entries(symCount).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const maxCount=Math.max(...sorted.map(s=>s[1]),1);
   
-  const colors=["#b517ff","#0d6efd","#00c896","#ffb000","#ff6b6b","#00d4ff"];
+  // monocromo: escala de grises/blancos (el color queda para el P&L)
+  const colors=["#eef1fb","#c9cdd6","#a3a8b3","#7d828c","#5b6069","#42464e"];
   
   sorted.forEach(([sym,count],i)=>{
     const pct=(count/maxCount)*100;
