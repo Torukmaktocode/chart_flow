@@ -2362,41 +2362,57 @@ $("progressOverlay").onclick=e=>{if(e.target===$("progressOverlay"))$("progressO
 // Download Excel - genera directamente en el navegador
 $("downloadExcel").onclick=()=>{
   if(S.closed.length===0){toast("No hay trades para exportar");return}
-  exportToExcelClient();
-  toast("Excel descargado con "+S.closed.length+" trades");
+  toast("Generando Excel ("+S.closed.length+" trades)...");
+  // XLSX estilo MI PROGRESO generado por el server con el balance real
+  fetch("/api/download-excel?bal="+encodeURIComponent(S.balance)).then(r=>{
+    if(!r.ok)throw new Error(r.status);
+    return r.blob();
+  }).then(blob=>{
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="chartflow-progreso.xlsx";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast("Excel descargado: "+S.closed.length+" trades");
+  }).catch(()=>{
+    // fallback: CSV simple si el server no responde
+    exportToExcelClient();
+    toast("Excel descargado (CSV simple)");
+  });
 };
 
 function exportToExcelClient(){
-  // Crear CSV simple que se puede abrir en Excel
-  const headers=["ID","Tipo","Entrada","Salida","SL","TP","P&L","Razón","Fecha Entrada","Fecha Salida"];
-  const rows=S.closed.map(t=>[
-    t.id,
-    t.type,
-    t.entryPrice?.toFixed(2)||"",
-    t.exitPrice?.toFixed(2)||"",
-    t.sl?.toFixed(2)||"",
-    t.tp?.toFixed(2)||"",
-    t.pnl?.toFixed(2)||"",
-    t.reason||"",
-    t.entryTime?new Date(t.entryTime).toLocaleString("es-ES"):"",
-    t.exitTime?new Date(t.exitTime).toLocaleString("es-ES"):""
-  ]);
-  
-  // Calcular resumen
+  // Respaldo si el server no responde: CSV BIEN formado.
+  // Separador ; (Excel en locale ES), campos entre comillas si contienen ; o
+  // saltos, BOM UTF-8 al inicio para que los acentos no salgan como RazÃ³n.
+  const esc=v=>{v=String(v==null?"":v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const bal=S.balance||100000;
+  const headers=["Simbolo","Lado","Orden","Entrada","Salida","SL","TP","Lotes","P&L $","P&L % capital","Cierre","Duracion","Fecha REAL","Fecha sim (vela)"];
+  const rows=S.closed.map(t=>{
+    const dur=(t.entryTime&&t.exitTime)?Math.round((t.exitTime-t.entryTime)/60000)+"m":"";
+    const realTs=t.realClose||t.realOpen||(typeof t.id==="string"&&/^t-\d+$/.test(t.id)?+t.id.slice(2):0);
+    const riso=realTs?new Date(realTs).toLocaleString("es-ES"):"";
+    const num=v=>typeof v==="number"?v.toFixed(2):"";
+    return [
+      t.symbol||"N/D",t.type||"",t.orderType||"",
+      num(t.entryPrice),num(t.exitPrice),num(t.sl),num(t.tp),
+      t.size??1,
+      (t.pnl||0).toFixed(2),
+      bal>0?((t.pnl||0)/bal*100).toFixed(2)+"%":"",
+      t.reason||"",dur,riso,
+      t.entryTime?new Date(t.entryTime).toLocaleString("es-ES"):""
+    ].map(esc).join(";");
+  });
   const wins=S.closed.filter(t=>t.pnl>0);
-  const losses=S.closed.filter(t=>t.pnl<=0);
   const totalPnL=S.closed.reduce((s,t)=>s+(t.pnl||0),0);
-  const winRate=S.closed.length>0?((wins.length/S.closed.length)*100).toFixed(1):0;
-  
-  let csv=headers.join(",")+"\n";
-  rows.forEach(r=>csv+=r.join(",")+"\n");
-  csv+="\nRESUMEN\n";
-  csv+="Total Trades,"+S.closed.length+"\n";
-  csv+="Wins,"+wins.length+"\n";
-  csv+="Losses,"+losses.length+"\n";
-  csv+="Win Rate,"+winRate+"%\n";
-  csv+="Total P&L,$"+totalPnL.toFixed(2)+"\n";
-  
+  let csv="\uFEFF"+headers.map(esc).join(";")+"\n";
+  rows.forEach(r=>csv+=r+"\n");
+  csv+="\n";
+  csv+="RESUMEN MI PROGRESO\n";
+  csv+=["Capital base",bal.toFixed(2)].map(esc).join(";")+"\n";
+  csv+=["P&L Total",totalPnL.toFixed(2)].map(esc).join(";")+"\n";
+  csv+=["Win Rate",(S.closed.length?(wins.length/S.closed.length*100).toFixed(2):0)+"%"].map(esc).join(";")+"\n";
+
   // Descargar
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
   const link=document.createElement("a");

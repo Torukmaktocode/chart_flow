@@ -275,195 +275,303 @@ function getWeekKey(date) {
 }
 
 // Export trades to Excel
-async function exportToExcel(records) {
+// ============ EXPORT EXCEL ESTILO MI PROGRESO ============
+// Fecha REAL de ejecucion (misma cadena que el cliente):
+// realClose -> realOpen -> ID t-<Date.now()> -> fecha del sim
+function fxRealTS(t) {
+  if (t.realClose) return t.realClose;
+  if (t.realOpen) return t.realOpen;
+  if (typeof t.id === "string" && /^t-\d+$/.test(t.id)) {
+    const idTs = +t.id.slice(2);
+    if (idTs > 0) return idTs;
+  }
+  return 0;
+}
+function fxRealISO(t) {
+  const ts = fxRealTS(t);
+  if (ts) return new Date(ts).toISOString();
+  return t.date || (t.entryTime ? new Date(t.entryTime).toISOString() : null);
+}
+const fxSessionOf = h => (h >= 19 || h < 7) ? "Asia" : (h < 13 ? "Londres" : "New York");
+const FX_GREEN = "FF00A86B", FX_RED = "FFE5484D", FX_AMBER = "FFFFC800";
+const FX_HEADER_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0A0D12' } };
+const FX_HEADER_FONT = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10, name: 'Consolas' };
+const FX_SUB_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF10151C' } };
+const FX_MONEY = '"$"#,##0.00';
+const FX_PCT = '0.00"%"';
+
+function fxStyleHeaderRow(row) {
+  row.eachCell(cell => {
+    cell.fill = FX_HEADER_FILL;
+    cell.font = FX_HEADER_FONT;
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border = { top: { style: 'thin', color: { argb: 'FF2A2F3A' } }, bottom: { style: 'thin', color: { argb: 'FF2A2F3A' } }, left: { style: 'thin', color: { argb: 'FF2A2F3A' } }, right: { style: 'thin', color: { argb: 'FF2A2F3A' } } };
+  });
+  row.height = 22;
+}
+function fxSectionTitle(sheet, row, text, span = 2) {
+  sheet.mergeCells(row, 1, row, span);
+  const cell = sheet.getCell(row, 1);
+  cell.value = text;
+  cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10, name: 'Consolas' };
+  cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2F6BFF' } };
+  cell.alignment = { vertical: 'middle' };
+  row.height = 18;
+}
+function fxKv(sheet, row, label, value, { money = false, pct = false, color = null, bold = false } = {}) {
+  sheet.getCell(row, 1).value = label;
+  sheet.getCell(row, 1).font = { color: { argb: 'FF5F5F68' }, size: 10, name: 'Consolas' };
+  const c = sheet.getCell(row, 2);
+  c.value = value;
+  c.font = { bold: bold || color != null, color: { argb: color || 'FFEEF1FB' }, size: 10, name: 'Consolas' };
+  c.alignment = { horizontal: 'right' };
+  if (money) c.numFmt = FX_MONEY;
+  if (pct) c.numFmt = FX_PCT;
+}
+
+async function exportToExcel(records, balance = 100000) {
   try {
-    // Crear directorio si no existe
-    if (!fs.existsSync(EXCEL_DIR)) {
-      fs.mkdirSync(EXCEL_DIR, { recursive: true });
+    if (!fs.existsSync(EXCEL_DIR)) fs.mkdirSync(EXCEL_DIR, { recursive: true });
+
+    const closed = (records || []).filter(t => t.status === "CLOSED" || t.exitPrice != null)
+      .slice().sort((a, b) => (a.exitTime || 0) - (b.exitTime || 0));
+    const all = (records || []).slice().sort((a, b) => (a.exitTime || 0) - (b.exitTime || 0));
+    const wins = closed.filter(t => t.pnl > 0);
+    const losses = closed.filter(t => t.pnl < 0);
+    const beTrades = closed.filter(t => Math.abs(t.pnl || 0) < 1e-9);
+    const totalPnL = closed.reduce((s, t) => s + (t.pnl || 0), 0);
+    const gw = wins.reduce((s, t) => s + t.pnl, 0);
+    const gl = Math.abs(losses.reduce((s, t) => s + t.pnl, 0));
+    const pf = gl > 0 ? gw / gl : (gw > 0 ? Infinity : 0);
+    const expectancy = closed.length ? totalPnL / closed.length : 0;
+    const avgRVals = closed.map(t => {
+      if (!t.sl || !t.entryPrice || t.exitPrice == null) return 0;
+      const risk = Math.abs(t.entryPrice - t.sl), rew = Math.abs(t.exitPrice - t.entryPrice);
+      return risk > 0 ? rew / risk : 0;
+    }).filter(v => v > 0);
+    const avgR = avgRVals.length ? avgRVals.reduce((a, b) => a + b, 0) / avgRVals.length : 0;
+    // Max drawdown sobre equity ordenada por cierre
+    let eq = balance, peak = balance, ddBars = 0, maxDD = 0, maxDDPct = 0, maxDDBars = 0;
+    closed.forEach(t => {
+      eq += t.pnl || 0;
+      if (eq > peak) { peak = eq; ddBars = 0; }
+      else { ddBars++; const dd = peak - eq; if (dd > maxDD) { maxDD = dd; maxDDPct = peak > 0 ? dd / peak * 100 : 0; maxDDBars = ddBars; } }
+    });
+    // Frecuencia + dias reales
+    const daySet = new Set(); let firstTs = Infinity, lastTs = -Infinity;
+    const byDay = {};
+    closed.forEach(t => {
+      const iso = fxRealISO(t); if (!iso) return;
+      const dk = iso.slice(0, 10);
+      daySet.add(dk);
+      if (!byDay[dk]) byDay[dk] = { pnl: 0, trades: 0 };
+      byDay[dk].pnl += t.pnl || 0; byDay[dk].trades++;
+      const ts = fxRealTS(t) || t.entryTime || 0;
+      if (ts) { firstTs = Math.min(firstTs, ts); lastTs = Math.max(lastTs, ts); }
+    });
+    const spanDays = Math.max(1, (lastTs - firstTs) / 86400000);
+    const freqD = closed.length / Math.max(1, daySet.size);
+    const freqW = closed.length / Math.max(1, spanDays / 7);
+    const freqM = closed.length / Math.max(1, spanDays / 30.4);
+    let bestDay = null, worstDay = null;
+    Object.keys(byDay).forEach(k => {
+      if (!bestDay || byDay[k].pnl > byDay[bestDay].pnl) bestDay = k;
+      if (!worstDay || byDay[k].pnl < byDay[worstDay].pnl) worstDay = k;
+    });
+    // Por lado / sesion / hora / dia semana / mes (fecha real)
+    const bySide = {};
+    closed.forEach(t => {
+      const s = t.type || "?";
+      if (!bySide[s]) bySide[s] = { trades: 0, wins: 0, pnl: 0 };
+      bySide[s].trades++; if (t.pnl > 0) bySide[s].wins++; bySide[s].pnl += t.pnl || 0;
+    });
+    const bySess = {}, byHour = {}, byDow = {};
+    const DOWS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+    closed.forEach(t => {
+      const s = fxSessionOf(new Date(t.entryTime || 0).getHours());
+      if (!bySess[s]) bySess[s] = { trades: 0, wins: 0, pnl: 0 };
+      bySess[s].trades++; if (t.pnl > 0) bySess[s].wins++; bySess[s].pnl += t.pnl || 0;
+      const h = new Date(t.entryTime || 0).getHours();
+      if (!byHour[h]) byHour[h] = { trades: 0, wins: 0, pnl: 0 };
+      byHour[h].trades++; if (t.pnl > 0) byHour[h].wins++; byHour[h].pnl += t.pnl || 0;
+      const iso = fxRealISO(t); if (!iso) return;
+      const dw = new Date(iso).getDay();
+      if (!byDow[dw]) byDow[dw] = { trades: 0, wins: 0, pnl: 0 };
+      byDow[dw].trades++; if (t.pnl > 0) byDow[dw].wins++; byDow[dw].pnl += t.pnl || 0;
+    });
+    const byMonth = {};
+    closed.forEach(t => {
+      const iso = fxRealISO(t); if (!iso) return;
+      const k = iso.slice(0, 7);
+      if (!byMonth[k]) byMonth[k] = { pnl: 0, trades: 0 };
+      byMonth[k].pnl += t.pnl || 0; byMonth[k].trades++;
+    });
+    const monthKeys = Object.keys(byMonth).sort();
+    const yearNow = new Date().getFullYear();
+    const ytd = monthKeys.filter(k => k.startsWith(String(yearNow))).reduce((s, k) => s + byMonth[k].pnl, 0);
+    // Monte Carlo bootstrap
+    const pnls = closed.map(t => t.pnl || 0);
+    let mcLine = "Necesita 4+ trades cerrados";
+    let mcProbPos = 0;
+    if (pnls.length >= 4) {
+      const N = 1000; const finals = [];
+      for (let s = 0; s < N; s++) {
+        let b = balance;
+        for (let k = 0; k < pnls.length; k++) b += pnls[Math.floor(Math.random() * pnls.length)];
+        finals.push(b);
+      }
+      finals.sort((a, b) => a - b);
+      const p5 = finals[Math.floor(N * .05)], p50 = finals[Math.floor(N * .5)], p95 = finals[Math.floor(N * .95)];
+      mcProbPos = (finals.filter(f => f > balance).length / N) * 100;
+      mcLine = `p5 $${p5.toFixed(0)} · p50 $${p50.toFixed(0)} · p95 $${p95.toFixed(0)} · prob > balance: ${mcProbPos.toFixed(1)}%`;
     }
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'ChartFlow Backtest';
     workbook.created = new Date();
 
-    // Hoja de resumen
-    const summarySheet = workbook.addWorksheet('Resumen', {
-      properties: { tabColor: { argb: '00D4FF' } }
+    // ---- HOJA RESUMEN (KPIs de MI PROGRESO) ----
+    const ws = workbook.addWorksheet('Resumen', { properties: { tabColor: { argb: 'FF2F6BFF' } } });
+    ws.columns = [{ width: 34 }, { width: 26 }];
+    ws.addRow(['CHARTFLOW BACKTEST - MI PROGRESO', '']);
+    ws.mergeCells(1, 1, 1, 2);
+    const t1 = ws.getCell(1, 1);
+    t1.font = { bold: true, size: 14, color: { argb: 'FFEEF1FB' }, name: 'Consolas' };
+    t1.fill = FX_HEADER_FILL;
+    t1.alignment = { vertical: 'middle' };
+    ws.getRow(1).height = 26;
+    let r = 3;
+    fxSectionTitle(ws, r, 'GENERAL', 2); r++;
+    fxKv(ws, r, 'Capital base', balance, { money: true }); r++;
+    fxKv(ws, r, 'P&L Total', totalPnL, { money: true, color: totalPnL >= 0 ? FX_GREEN : FX_RED, bold: true }); r++;
+    fxKv(ws, r, 'Ganancia % s/ capital', totalPnL / balance * 100, { pct: true, color: totalPnL >= 0 ? FX_GREEN : FX_RED }); r++;
+    fxKv(ws, r, 'Trades cerrados', closed.length); r++;
+    fxKv(ws, r, `Ganadores / Perdedores / Breakeven`, `${wins.length} / ${losses.length} / ${beTrades.length}`); r++;
+    fxKv(ws, r, 'Win Rate', closed.length ? wins.length / closed.length * 100 : 0, { pct: true, color: closed.length && wins.length / closed.length >= .5 ? FX_GREEN : FX_RED }); r++;
+    fxKv(ws, r, 'Profit Factor', pf === Infinity ? '∞' : pf, { color: pf === Infinity || pf >= 1 ? FX_GREEN : FX_RED, bold: true }); r++;
+    fxKv(ws, r, 'Expectancy por trade', expectancy, { money: true, color: expectancy >= 0 ? FX_GREEN : FX_RED }); r++;
+    fxKv(ws, r, 'Average R (RR real)', avgR, { color: avgR >= 1 ? FX_GREEN : FX_RED }); r++;
+    fxSectionTitle(ws, r, 'RIESGO', 2); r++;
+    fxKv(ws, r, 'Max Drawdown', -maxDDPct, { pct: true, color: FX_RED }); r++;
+    fxKv(ws, r, 'Drawdown $ · duración', `$${maxDD.toFixed(0)} · ${maxDDBars} velas`, { color: FX_RED }); r++;
+    fxKv(ws, r, 'Frecuencia (día/sem/mes)', `${freqD.toFixed(1)} / ${freqW.toFixed(1)} / ${freqM.toFixed(1)}`); r++;
+    fxSectionTitle(ws, r, 'DÍAS (fecha real)', 2); r++;
+    fxKv(ws, r, 'Mejor día', bestDay ? `${new Date(bestDay).toLocaleDateString('es-ES')} · $${byDay[bestDay].pnl.toFixed(2)}` : '-', { color: FX_GREEN }); r++;
+    fxKv(ws, r, 'Peor día', worstDay ? `${new Date(worstDay).toLocaleDateString('es-ES')} · $${byDay[worstDay].pnl.toFixed(2)}` : '-', { color: FX_RED }); r++;
+    fxKv(ws, r, 'YTD (año actual)', ytd, { money: true, color: ytd >= 0 ? FX_GREEN : FX_RED }); r++;
+    fxSectionTitle(ws, r, 'MONTE CARLO (1000 simulaciones)', 2); r++;
+    fxKv(ws, r, 'Proyección de balance final', mcLine); r++;
+    ws.eachRow(row => {
+      if (!row.getCell(2).fill || row.getCell(2).fill.type !== 'pattern') {
+        if (row.number % 2 === 0) row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF6F7F9' } };
+      }
     });
 
-    // Estilo del encabezado
-    const headerStyle = {
-      font: { bold: true, color: { argb: 'FFFFFF' }, size: 11 },
-      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: '00D4FF' } },
-      alignment: { horizontal: 'center', vertical: 'middle' },
-      border: {
-        top: { style: 'thin' },
-        bottom: { style: 'thin' },
-        left: { style: 'thin' },
-        right: { style: 'thin' }
-      }
-    };
-
-    // Encabezados de resumen
-    summarySheet.columns = [
-      { header: 'Métrica', key: 'metric', width: 25 },
-      { header: 'Valor', key: 'value', width: 20 }
+    // ---- HOJA TRADES ----
+    const tradesCols = [
+      { header: 'Simbolo', key: 'symbol', width: 11 },
+      { header: 'Lado', key: 'type', width: 8 },
+      { header: 'Orden', key: 'orderType', width: 9 },
+      { header: 'Entrada', key: 'entryPrice', width: 12 },
+      { header: 'Salida', key: 'exitPrice', width: 12 },
+      { header: 'SL', key: 'sl', width: 12 },
+      { header: 'TP', key: 'tp', width: 12 },
+      { header: 'R:R ideal', key: 'rrIdeal', width: 9 },
+      { header: 'Lotes', key: 'size', width: 8 },
+      { header: 'P&L $', key: 'pnl', width: 12 },
+      { header: 'P&L % capital', key: 'pnlPct', width: 12 },
+      { header: 'Cierre', key: 'reason', width: 9 },
+      { header: 'Duracion', key: 'duration', width: 11 },
+      { header: 'Fecha REAL', key: 'realDate', width: 17 },
+      { header: 'Fecha sim (vela)', key: 'simDate', width: 17 }
     ];
-
-    // Calcular métricas
-    const totalTrades = records.length;
-    const wins = records.filter(t => t.pnl > 0);
-    const losses = records.filter(t => t.pnl <= 0);
-    const winRate = totalTrades > 0 ? (wins.length / totalTrades * 100).toFixed(1) : 0;
-    const totalPnL = records.reduce((sum, t) => sum + (t.pnl || 0), 0);
-    const avgWin = wins.length > 0 ? wins.reduce((sum, t) => sum + t.pnl, 0) / wins.length : 0;
-    const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((sum, t) => sum + t.pnl, 0) / losses.length) : 0;
-    const profitFactor = avgLoss > 0 ? (avgWin * wins.length) / (avgLoss * losses.length) : avgWin > 0 ? Infinity : 0;
-    const expectancy = totalTrades > 0 ? totalPnL / totalTrades : 0;
-
-    // Agregar métricas
-    const metrics = [
-      { metric: 'Fecha de Exportación', value: new Date().toLocaleString('es-ES') },
-      { metric: 'Total de Trades', value: totalTrades },
-      { metric: 'Trades Ganadores', value: wins.length },
-      { metric: 'Trades Perdedores', value: losses.length },
-      { metric: 'Win Rate', value: winRate + '%' },
-      { metric: 'P&L Total', value: '$' + totalPnL.toFixed(2) },
-      { metric: 'Promedio Ganancia', value: '$' + avgWin.toFixed(2) },
-      { metric: 'Promedio Pérdida', value: '$' + avgLoss.toFixed(2) },
-      { metric: 'Profit Factor', value: profitFactor === Infinity ? '∞' : profitFactor.toFixed(2) },
-      { metric: 'Expectancy', value: '$' + expectancy.toFixed(2) }
-    ];
-
-    metrics.forEach(m => summarySheet.addRow(m));
-
-    // Estilo para las métricas
-    summarySheet.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) {
-        row.eachCell(cell => {
-          cell.font = headerStyle.font;
-          cell.fill = headerStyle.fill;
-          cell.alignment = headerStyle.alignment;
-          cell.border = headerStyle.border;
+    function fillTradeSheet(sheet, list, tabColor) {
+      const s = workbook.addWorksheet(sheet, { properties: { tabColor: { argb: tabColor } } });
+      s.columns = tradesCols;
+      list.forEach(t => {
+        const dur = (t.entryTime && t.exitTime) ? (() => {
+          const h = Math.floor((t.exitTime - t.entryTime) / 3600000), m = Math.floor(((t.exitTime - t.entryTime) % 3600000) / 60000);
+          return h > 0 ? `${h}h ${m}m` : `${m}m`;
+        })() : '-';
+        const rrIdeal = (t.sl && t.entryPrice && t.tp) ? Math.abs(t.tp - t.entryPrice) / Math.abs(t.entryPrice - t.sl) : null;
+        const rrTxt = (rrIdeal != null && isFinite(rrIdeal)) ? rrIdeal.toFixed(2) : '-';
+        const riso = fxRealISO(t);
+        const row = s.addRow({
+          symbol: t.symbol || 'N/D',
+          type: t.type || '-',
+          orderType: t.orderType || '-',
+          entryPrice: t.entryPrice, exitPrice: t.exitPrice ?? '-', sl: t.sl ?? '-', tp: t.tp ?? '-',
+          rrIdeal: rrTxt,
+          size: t.size ?? 1,
+          pnl: t.pnl || 0,
+          pnlPct: balance > 0 ? (t.pnl || 0) / balance * 100 : 0,
+          reason: t.reason || '-',
+          duration: dur,
+          realDate: riso ? new Date(riso).toLocaleString('es-ES') : '-',
+          simDate: t.entryTime ? new Date(t.entryTime).toLocaleString('es-ES') : '-'
         });
-      } else {
-        row.getCell(1).font = { bold: true };
-        row.getCell(2).alignment = { horizontal: 'right' };
-      }
-    });
-
-    // Hoja de todos los trades
-    const tradesSheet = workbook.addWorksheet('Todos los Trades', {
-      properties: { tabColor: { argb: '00E5A0' } }
-    });
-
-    tradesSheet.columns = [
-      { header: 'ID', key: 'id', width: 15 },
-      { header: 'Tipo', key: 'type', width: 10 },
-      { header: 'Par', key: 'symbol', width: 12 },
-      { header: 'Timeframe', key: 'timeframe', width: 10 },
-      { header: 'Precio Entrada', key: 'entryPrice', width: 15 },
-      { header: 'Precio Salida', key: 'exitPrice', width: 15 },
-      { header: 'Stop Loss', key: 'sl', width: 12 },
-      { header: 'Take Profit', key: 'tp', width: 12 },
-      { header: 'Tamaño', key: 'size', width: 10 },
-      { header: 'P&L ($)', key: 'pnl', width: 12 },
-      { header: 'P&L (%)', key: 'pnlPercent', width: 12 },
-      { header: 'Razón Cierre', key: 'reason', width: 15 },
-      { header: 'Fecha Entrada', key: 'entryTime', width: 20 },
-      { header: 'Fecha Salida', key: 'exitTime', width: 20 },
-      { header: 'Duración', key: 'duration', width: 15 }
-    ];
-
-    // Agregar trades con estilo
-    records.forEach(trade => {
-      const entryDate = trade.entryTime ? new Date(trade.entryTime) : null;
-      const exitDate = trade.exitTime ? new Date(trade.exitTime) : null;
-      let duration = '-';
-      if (entryDate && exitDate) {
-        const diff = exitDate - entryDate;
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-      }
-
-      const pnlPercent = trade.entryPrice > 0 ? ((trade.pnl / (trade.entryPrice * trade.size)) * 100).toFixed(2) : 0;
-
-      tradesSheet.addRow({
-        id: trade.id,
-        type: trade.type,
-        symbol: trade.symbol || '-',
-        timeframe: trade.timeframe || '-',
-        entryPrice: trade.entryPrice,
-        exitPrice: trade.exitPrice || '-',
-        sl: trade.sl || '-',
-        tp: trade.tp || '-',
-        size: trade.size,
-        pnl: trade.pnl || 0,
-        pnlPercent: pnlPercent + '%',
-        reason: trade.reason || '-',
-        entryTime: entryDate ? entryDate.toLocaleString('es-ES') : '-',
-        exitTime: exitDate ? exitDate.toLocaleString('es-ES') : '-',
-        duration: duration
+        row.getCell('entryPrice').numFmt = '0.00';
+        row.getCell('exitPrice').numFmt = '0.00';
+        row.getCell('sl').numFmt = '0.00';
+        row.getCell('tp').numFmt = '0.00';
+        row.getCell('pnl').numFmt = FX_MONEY;
+        row.getCell('pnlPct').numFmt = FX_PCT;
+        const pc = row.getCell('pnl');
+        pc.font = { bold: true, color: { argb: (t.pnl || 0) > 0 ? FX_GREEN : ((t.pnl || 0) < 0 ? FX_RED : FX_AMBER) } };
       });
-    });
+      fxStyleHeaderRow(s.getRow(1));
+      s.views = [{ state: 'frozen', ySplit: 1 }];
+      s.autoFilter = { from: 'A1', to: 'O1' };
+      return s;
+    }
+    fillTradeSheet('Trades', all, 'FF2F6BFF');
+    fillTradeSheet('Ganadores', wins, FX_GREEN);
+    fillTradeSheet('Perdedores', losses, FX_RED);
 
-    // Estilo de encabezados para hoja de trades
-    tradesSheet.getRow(1).eachCell(cell => {
-      cell.font = headerStyle.font;
-      cell.fill = headerStyle.fill;
-      cell.alignment = headerStyle.alignment;
-      cell.border = headerStyle.border;
+    // ---- HOJA CALENDARIO (dias reales) ----
+    const cal = workbook.addWorksheet('Calendario', { properties: { tabColor: { argb: FX_AMBER } } });
+    cal.columns = [{ header: 'Fecha', key: 'd', width: 14 }, { header: 'Trades', key: 't', width: 9 }, { header: 'P&L $', key: 'p', width: 13 }, { header: 'P&L % capital', key: 'pc', width: 13 }, { header: 'Resultado', key: 'r', width: 12 }];
+    Object.keys(byDay).sort().reverse().forEach(k => {
+      const d = byDay[k];
+      const res = d.pnl > 0 ? 'PROFIT' : (d.pnl < 0 ? 'PÉRDIDA' : 'BREAKEVEN');
+      const row = cal.addRow({ d: new Date(k + 'T12:00:00').toLocaleDateString('es-ES'), t: d.trades, p: d.pnl, pc: d.pnl / balance * 100, r: res });
+      row.getCell('p').numFmt = FX_MONEY; row.getCell('pc').numFmt = FX_PCT;
+      row.getCell('p').font = { bold: true, color: { argb: d.pnl > 0 ? FX_GREEN : (d.pnl < 0 ? FX_RED : FX_AMBER) } };
+      row.getCell('r').font = { color: { argb: d.pnl > 0 ? FX_GREEN : (d.pnl < 0 ? FX_RED : FX_AMBER) } };
     });
+    fxStyleHeaderRow(cal.getRow(1));
+    cal.views = [{ state: 'frozen', ySplit: 1 }];
 
-    // Colorear filas según P&L
-    tradesSheet.eachRow((row, rowNumber) => {
-      if (rowNumber > 1) {
-        const pnlCell = row.getCell('pnl');
-        const pnlValue = pnlCell.value;
-        if (pnlValue > 0) {
-          row.eachCell(cell => {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6FFE6' } };
-          });
-          pnlCell.font = { color: { argb: '006600' }, bold: true };
-        } else if (pnlValue < 0) {
-          row.eachCell(cell => {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6' } };
-          });
-          pnlCell.font = { color: { argb: 'CC0000' }, bold: true };
-        }
-      }
-    });
-
-    // Hoja de trades ganadores
-    const winnersSheet = workbook.addWorksheet('Ganadores', {
-      properties: { tabColor: { argb: '00E5A0' } }
-    });
-    winnersSheet.columns = tradesSheet.columns;
-    wins.forEach(trade => winnersSheet.addRow(trade));
-    winnersSheet.getRow(1).eachCell(cell => {
-      cell.font = headerStyle.font;
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '00E5A0' } };
-      cell.alignment = headerStyle.alignment;
-      cell.border = headerStyle.border;
-    });
-
-    // Hoja de trades perdedores
-    const losersSheet = workbook.addWorksheet('Perdedores', {
-      properties: { tabColor: { argb: 'FF3355' } }
-    });
-    losersSheet.columns = tradesSheet.columns;
-    losses.forEach(trade => losersSheet.addRow(trade));
-    losersSheet.getRow(1).eachCell(cell => {
-      cell.font = headerStyle.font;
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3355' } };
-      cell.alignment = headerStyle.alignment;
-      cell.border = headerStyle.border;
-    });
+    // ---- HOJA PERFORMANCE (lado/sesion/hora/dia/mes) ----
+    const perf = workbook.addWorksheet('Performance', { properties: { tabColor: { argb: 'FF00D4FF' } } });
+    perf.columns = [{ width: 22 }, { width: 10 }, { width: 10 }, { width: 14 }];
+    let pr = 1;
+    function perfBlock(title, rows, labels) {
+      fxSectionTitle(perf, pr, title, 4); pr++;
+      perf.getRow(pr).values = ['', ...labels];
+      fxStyleHeaderRow(perf.getRow(pr)); pr++;
+      rows.forEach(([name, d]) => {
+        const wr = d.trades ? d.wins / d.trades * 100 : 0;
+        const row = perf.addRow([name, d.trades, wr, d.pnl]);
+        row.getCell(3).numFmt = FX_PCT;
+        row.getCell(4).numFmt = FX_MONEY;
+        row.getCell(4).font = { bold: true, color: { argb: d.pnl > 0 ? FX_GREEN : (d.pnl < 0 ? FX_RED : FX_AMBER) } };
+        pr++;
+      });
+      pr++;
+    }
+    perfBlock('POR LADO', Object.keys(bySide).map(k => [k === 'LONG' ? '▲ LONG' : '▼ SHORT', bySide[k]]), ['Trades', 'Win Rate', 'P&L $']);
+    perfBlock('POR SESIÓN', ['Asia', 'Londres', 'New York'].map(k => [k, bySess[k] || { trades: 0, wins: 0, pnl: 0 }]), ['Trades', 'Win Rate', 'P&L $']);
+    perfBlock('POR HORA', Object.keys(byHour).map(Number).sort((a, b) => a - b).map(h => [String(h).padStart(2, '0') + ':00', byHour[h]]), ['Trades', 'Win Rate', 'P&L $']);
+    perfBlock('POR DÍA DE SEMANA', [1, 2, 3, 4, 5, 6, 0].filter(d => byDow[d]).map(d => [DOWS[d], byDow[d]]), ['Trades', 'Win Rate', 'P&L $']);
+    perfBlock('POR MES (fecha real)', monthKeys.map(k => [k, byMonth[k]]), ['Trades', 'Win Rate', 'P&L $']);
+    fxSectionTitle(perf, pr, 'MONTE CARLO · 1000 SIMULACIONES', 4); pr++;
+    perf.getCell(pr, 1).value = mcLine;
+    perf.getCell(pr, 1).font = { name: 'Consolas', size: 10, color: { argb: 'FFEEF1FB' } };
 
     // Guardar archivo
     await workbook.xlsx.writeFile(EXCEL_FILE);
-    console.log(`📊 Excel exportado: ${EXCEL_FILE}`);
+    console.log(`Excel exportado (estilo MI PROGRESO): ${EXCEL_FILE}`);
     return true;
   } catch (e) {
     console.error("Error exporting to Excel:", e.message);
@@ -697,7 +805,7 @@ function handleDataStatus(req, res) {
   sendJson(res, 200, { dataDir: DATA_DIR, symbols: status });
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
     if (url.pathname === "/api/chart") {
@@ -713,16 +821,23 @@ const server = http.createServer((req, res) => {
       return;
     }
     if (url.pathname === "/api/download-excel") {
-      // Descargar archivo Excel
+      // Regenerar el Excel al momento (con el balance real de la sesion) y descargarlo
+      const records = loadTradeRecords();
+      if (!records.length) {
+        sendJson(res, 404, { error: "No hay trades para exportar" });
+        return;
+      }
+      const bal = parseFloat(url.searchParams.get("bal")) || 100000;
+      await exportToExcel(records, bal);
       if (fs.existsSync(EXCEL_FILE)) {
         res.writeHead(200, {
           "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          "Content-Disposition": "attachment; filename=trades-backtest.xlsx",
+          "Content-Disposition": "attachment; filename=chartflow-progreso.xlsx",
           "Cache-Control": "no-store"
         });
         fs.createReadStream(EXCEL_FILE).pipe(res);
       } else {
-        sendJson(res, 404, { error: "No hay trades para exportar" });
+        sendJson(res, 500, { error: "No se pudo generar el Excel" });
       }
       return;
     }
