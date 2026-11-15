@@ -14,6 +14,9 @@ const path = require("path");
 const net = require("net");
 const http = require("http");
 const fs = require("fs");
+// puerto de depuracion para agentes/entrenamiento con agent-browser:
+// DEBE registrarse antes de whenReady o Chromium lo ignora
+app.commandLine.appendSwitch("remote-debugging-port", "9222");
 
 // Servir la home por http (no file://): evita el problema de composición de
 // iframes cross-origin en Electron y deja todo en un origen web real
@@ -302,8 +305,6 @@ setInterval(() => { if (win && Object.keys(panes).length) saveAppState(false); }
 app.whenReady().then(async () => {
   // instancia duplicada (no obtuvo el lock): no crear ventana ni backends
   if (!gotTheLock) return;
-  // puerto de depuracion para agentes/antrenamiento con agent-browser
-  app.commandLine.appendSwitch("remote-debugging-port", "9222");
   createWindow();
   // MOSTRAR EL PANEL PRINCIPAL YA MISMO: el reintento interno hace que cargue
   // en cuanto su backend responda; los backends arrancan en paralelo sin
