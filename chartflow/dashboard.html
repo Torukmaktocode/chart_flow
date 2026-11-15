@@ -35,7 +35,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .indicator-btn:hover,.indicator-wrap.open .indicator-btn{background:var(--surface-3);color:var(--text)}
 .indicator-menu{position:absolute;left:0;top:35px;width:260px;background:var(--surface-2);border:1px solid var(--border);box-shadow:0 8px 22px rgba(0,0,0,.55);z-index:60;display:none;padding:8px;border-radius:8px}
 .indicator-wrap.open .indicator-menu{display:block}
-.indicator-row{width:100%;min-height:38px;display:flex;align-items:center;gap:9px;background:var(--surface-2);color:var(--text);border:0;border-radius:5px;padding:8px;text-align:left;font-size:13px;font-family:var(--font-ui);cursor:pointer;transition:background .12s}
+  .indicator-row{width:100%;min-height:38px;display:flex;align-items:center;gap:9px;background:var(--surface-2);color:var(--text);border:0;border-radius:5px;padding:8px;text-align:left;font-size:13px;font-family:var(--font-ui);cursor:pointer;transition:background .12s}
+  .indicator-row .row-del{margin-left:auto;min-width:20px;width:20px;height:20px;border-radius:50%;display:none;align-items:center;justify-content:center;background:transparent;color:var(--text-dim);font:700 12px var(--font-mono);cursor:pointer;flex-shrink:0}
+  .indicator-row .row-del:hover{background:var(--bear);color:#fff}
+  /* tema claro del lienzo: header/leyenda con texto oscuro */
+  body.chart-light .ohlc,body.chart-light .change{color:#131722 !important}
+  body.chart-light .change.dn{color:#6b6d78 !important}
+  body.chart-light .unit,body.chart-light .btn-label,body.chart-light .main-title,body.chart-light .indicator-chip,body.chart-light .indicator-title{color:#131722 !important}
 .indicator-row:hover{background:var(--surface-3)}
 .indicator-check{display:none}
 .btn{height:28px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:14px;padding:0 12px;font-weight:700;font-family:var(--font-ui);font-size:12px;letter-spacing:.2px;transition:all .15s}
@@ -560,41 +566,29 @@ body{background:var(--bg)}
           <span style="margin-left:auto;font-size:10px;color:var(--text-dim)">Mis scripts</span>
         </button>
         <button class="indicator-row" id="killzoneToggle">
-          <span>ICT Killzones & Pivots [TFO]</span>
-        </button>
+          <span>ICT Killzones & Pivots [TFO]</span><span class="row-del" title="Eliminar">×</span>$3        </button>
         <button class="indicator-row" id="emaToggle">
-          <span>Moving Average Exponential</span>
-        </button>
+          <span>Moving Average Exponential</span><span class="row-del" title="Eliminar">×</span>$3        </button>
         <button class="indicator-row" id="bibiruToggle">
-          <span>Bibiru SMA</span>
-        </button>
+          <span>Bibiru SMA</span><span class="row-del" title="Eliminar">×</span>$3        </button>
         <button class="indicator-row" id="displacementToggle">
-          <span>Institutional Displacement & Volume Delta</span>
-        </button>
+          <span>Institutional Displacement & Volume Delta</span><span class="row-del" title="Eliminar">×</span>$3        </button>
         <button class="indicator-row" id="smartSignalToggle">
-          <span>Smart Reversal & Breakout Assistant</span>
-        </button>
+          <span>Smart Reversal & Breakout Assistant</span><span class="row-del" title="Eliminar">×</span>$3        </button>
         <button class="indicator-row" id="smfToggle">
-          <span>Smart Money Flow Cloud [BOSWaves]</span>
-        </button>
+          <span>Smart Money Flow Cloud [BOSWaves]</span><span class="row-del" title="Eliminar">×</span>$3        </button>
         <button class="indicator-row" id="rtcStrategyToggle">
-          <span>RTC Strategy V8</span>
-        </button>
+          <span>RTC Strategy V8</span><span class="row-del" title="Eliminar">×</span>$3        </button>
         <button class="indicator-row" id="rtcScreenerToggle">
-          <span>RTC Screener</span>
-        </button>
+          <span>RTC Screener</span><span class="row-del" title="Eliminar">×</span>$3        </button>
         <button class="indicator-row" id="rtcStochToggle">
-          <span>RTC Estocástico RSI</span>
-        </button>
+          <span>RTC Estocástico RSI</span><span class="row-del" title="Eliminar">×</span>$3        </button>
         <button class="indicator-row" id="strategyJrToggle">
-          <span>Strategy JR V8</span>
-        </button>
+          <span>Strategy JR V8</span><span class="row-del" title="Eliminar">×</span>$3        </button>
         <button class="indicator-row" id="rtcStoch6Toggle">
-          <span>RTC Estocástico v6</span>
-        </button>
+          <span>RTC Estocástico v6</span><span class="row-del" title="Eliminar">×</span>$3        </button>
         <button class="indicator-row" id="macdProToggle">
-          <span>MACD Pro</span>
-        </button>
+          <span>MACD Pro</span><span class="row-del" title="Eliminar">×</span>$3        </button>
       </div>
     </div>
     <div class="tool">Alerta</div>
@@ -1037,36 +1031,36 @@ body{background:var(--bg)}
         <div class="setting-row"><label>Estilo</label><select class="select" id="jrStyle"><option>Colored</option><option>Monochrome</option></select><span class="info-dot">i</span></div>
         <div class="option-line"><input class="check" id="jrColorCandles" type="checkbox"><label>Color Candles</label><span class="info-dot">i</span></div>
         <div class="option-line"><input class="check" id="jrShowTexts" type="checkbox"><label>Mostrar Textos</label></div>
-        <div class="option-line"><input class="check" id="jrShowStructureLines" type="checkbox" checked><label>Mostrar Líneas BOS/CHoCH</label></div>
+        <div class="option-line"><input class="check" id="jrShowStructureLines" type="checkbox"><label>Mostrar Líneas BOS/CHoCH</label></div>
 
         <div class="settings-section">Real Time Internal Structure</div>
         <div class="option-line"><input class="check" id="jrShowInternals" type="checkbox" checked><label>Show Internal Structure</label><span class="info-dot">i</span></div>
-        <div class="setting-row"><label>Bullish Structure</label><select class="select" id="jrInternalBullMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrInternalBullColor" type="color" value="#f4f4f5"></div>
-        <div class="setting-row"><label>Bearish Structure</label><select class="select" id="jrInternalBearMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrInternalBearColor" type="color" value="#7a7b82"></div>
+        <div class="setting-row"><label>Bullish Structure</label><select class="select" id="jrInternalBullMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrInternalBullColor" type="color" value="#089981"></div>
+        <div class="setting-row"><label>Bearish Structure</label><select class="select" id="jrInternalBearMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrInternalBearColor" type="color" value="#f23645"></div>
         <div class="option-line"><input class="check" id="jrConfluenceFilter" type="checkbox"><label>Confluence Filter</label><span class="info-dot">i</span></div>
         <div class="setting-row"><label>Internal Label Size</label><select class="select" id="jrInternalLabelSize"><option>tiny</option><option>small</option><option>normal</option></select><span></span></div>
 
         <div class="settings-section">Real Time Swing Structure</div>
         <div class="option-line"><input class="check" id="jrShowSwingStructure" type="checkbox" checked><label>Show Swing Structure</label><span class="info-dot">i</span></div>
-        <div class="setting-row"><label>Bullish Structure</label><select class="select" id="jrSwingBullMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrSwingBullColor" type="color" value="#f4f4f5"></div>
-        <div class="setting-row"><label>Bearish Structure</label><select class="select" id="jrSwingBearMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrSwingBearColor" type="color" value="#7a7b82"></div>
+        <div class="setting-row"><label>Bullish Structure</label><select class="select" id="jrSwingBullMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrSwingBullColor" type="color" value="#089981"></div>
+        <div class="setting-row"><label>Bearish Structure</label><select class="select" id="jrSwingBearMode"><option value="All">Todo</option><option value="BOS">BOS</option><option value="CHoCH">CHoCH</option></select><input class="color-box" id="jrSwingBearColor" type="color" value="#f23645"></div>
         <div class="setting-row"><label>Swing Label Size</label><select class="select" id="jrSwingLabelSize"><option>small</option><option>tiny</option><option>normal</option></select><span></span></div>
         <div class="setting-row compact"><input class="check" id="jrShowSwings" type="checkbox"><label>Show Swings Points</label><input class="field" id="jrSwingsLength" type="number" min="10" max="500" value="50"><span class="info-dot">i</span></div>
-        <div class="option-line"><input class="check" id="jrShowStrongWeak" type="checkbox" checked><label>Show Strong/Weak High/Low</label><span class="info-dot">i</span></div>
+        <div class="option-line"><input class="check" id="jrShowStrongWeak" type="checkbox"><label>Show Strong/Weak High/Low</label><span class="info-dot">i</span></div>
 
         <div class="settings-section">Order Blocks</div>
         <div class="setting-row compact"><input class="check" id="jrInternalOrderBlocks" type="checkbox" checked><label>Internal Order Blocks</label><input class="field" id="jrInternalOrderBlocksSize" type="number" min="1" max="20" value="5"><span class="info-dot">i</span></div>
-        <div class="setting-row compact"><input class="check" id="jrSwingOrderBlocks" type="checkbox"><label>Swing Order Blocks</label><input class="field" id="jrSwingOrderBlocksSize" type="number" min="1" max="20" value="5"><span class="info-dot">i</span></div>
+        <div class="setting-row compact"><input class="check" id="jrSwingOrderBlocks" type="checkbox" checked><label>Swing Order Blocks</label><input class="field" id="jrSwingOrderBlocksSize" type="number" min="1" max="20" value="5"><span class="info-dot">i</span></div>
         <div class="setting-row"><label>Order Block Filter</label><select class="select" id="jrOrderBlockFilter"><option>Atr</option><option>Cumulative Mean Range</option></select><span class="info-dot">i</span></div>
         <div class="setting-row"><label>Order Block Mitigation</label><select class="select" id="jrOrderBlockMitigation"><option>High/Low</option><option>Close</option></select><span class="info-dot">i</span></div>
         <div class="option-line"><input class="check" id="jrGrayOrderBlocks" type="checkbox" checked><label>Order Blocks Grises</label></div>
-        <div class="setting-row"><label>Internal Bullish OB</label><input class="color-box" id="jrInternalBullObColor" type="color" value="#f4f4f5"><span></span></div>
-        <div class="setting-row"><label>Internal Bearish OB</label><input class="color-box" id="jrInternalBearObColor" type="color" value="#7a7b82"><span></span></div>
-        <div class="setting-row"><label>Bullish OB</label><input class="color-box" id="jrSwingBullObColor" type="color" value="#f4f4f5"><span></span></div>
-        <div class="setting-row"><label>Bearish OB</label><input class="color-box" id="jrSwingBearObColor" type="color" value="#7a7b82"><span></span></div>
+        <div class="setting-row"><label>Internal Bullish OB</label><input class="color-box" id="jrInternalBullObColor" type="color" value="#3179f5"><span></span></div>
+        <div class="setting-row"><label>Internal Bearish OB</label><input class="color-box" id="jrInternalBearObColor" type="color" value="#f77c80"><span></span></div>
+        <div class="setting-row"><label>Bullish OB</label><input class="color-box" id="jrSwingBullObColor" type="color" value="#1848cc"><span></span></div>
+        <div class="setting-row"><label>Bearish OB</label><input class="color-box" id="jrSwingBearObColor" type="color" value="#b22833"><span></span></div>
 
         <div class="settings-section">EQH/EQL</div>
-        <div class="option-line"><input class="check" id="jrShowEqualHighLow" type="checkbox" checked><label>Equal High/Low</label><span class="info-dot">i</span></div>
+        <div class="option-line"><input class="check" id="jrShowEqualHighLow" type="checkbox"><label>Equal High/Low</label><span class="info-dot">i</span></div>
         <div class="setting-row"><label>Bars Confirmation</label><input class="field" id="jrEqualBars" type="number" min="1" max="20" value="3"><span class="info-dot">i</span></div>
         <div class="setting-row"><label>Threshold</label><input class="field" id="jrEqualThreshold" type="number" min="0" max="0.5" step="0.1" value="0.1"><span class="info-dot">i</span></div>
         <div class="setting-row"><label>Label Size</label><select class="select" id="jrEqualLabelSize"><option>tiny</option><option>small</option><option>normal</option></select><span></span></div>
@@ -1076,8 +1070,8 @@ body{background:var(--bg)}
         <div class="option-line"><input class="check" id="jrShowFvg" type="checkbox"><label>Fair Value Gaps</label><span class="info-dot">i</span></div>
         <div class="option-line"><input class="check" id="jrFvgAutoThreshold" type="checkbox" checked><label>Auto Threshold</label><span class="info-dot">i</span></div>
         <div class="setting-row"><label>Intervalo de tiempo</label><select class="select" id="jrFvgTimeframe"><option value="">Gráfico</option><option value="1m">1 minuto</option><option value="5m">5 minutos</option><option value="15m">15 minutos</option><option value="1h">1 hora</option></select><span class="info-dot">i</span></div>
-        <div class="setting-row"><label>Bullish FVG</label><input class="color-box" id="jrFvgBull" type="color" value="#f4f4f5"><span></span></div>
-        <div class="setting-row"><label>Bearish FVG</label><input class="color-box" id="jrFvgBear" type="color" value="#7a7b82"><span></span></div>
+        <div class="setting-row"><label>Bullish FVG</label><input class="color-box" id="jrFvgBull" type="color" value="#00ff68"><span></span></div>
+        <div class="setting-row"><label>Bearish FVG</label><input class="color-box" id="jrFvgBear" type="color" value="#ff0008"><span></span></div>
         <div class="setting-row"><label>Extend FVG</label><input class="field" id="jrFvgExtend" type="number" min="0" max="200" value="1"><span class="info-dot">i</span></div>
 
         <div class="settings-section">Highs & Lows MTF</div>
@@ -1111,12 +1105,12 @@ body{background:var(--bg)}
         <div class="setting-row"><label>Sobreventa</label><input class="field" id="jrOverSold" type="number" min="1" max="99" value="20"><span></span></div>
         <div class="setting-row"><label>Posición Panel</label><select class="select" id="jrPanelPosition"><option>Top Right</option><option>Top Left</option><option>Bottom Right</option><option>Bottom Left</option></select><span></span></div>
         <div class="setting-row"><label>Decimales</label><input class="field" id="jrDecimals" type="number" min="0" max="6" value="2"><span></span></div>
-        <div class="setting-row"><label>Fondo Panel</label><input class="color-box" id="jrPanelBg" type="color" value="#1f2024"><span></span></div>
-        <div class="setting-row"><label>Fondo Header</label><input class="color-box" id="jrPanelHeaderBg" type="color" value="#2b2c31"><span></span></div>
-        <div class="setting-row"><label>Fondo TF</label><input class="color-box" id="jrPanelTfBg" type="color" value="#242424"><span></span></div>
-        <div class="setting-row"><label>Color Sobrecompra</label><input class="color-box" id="jrPanelOverColor" type="color" value="#7a7b82"><span></span></div>
-        <div class="setting-row"><label>Color Sobreventa</label><input class="color-box" id="jrPanelUnderColor" type="color" value="#f4f4f5"><span></span></div>
-        <div class="setting-row"><label>Color Neutral</label><input class="color-box" id="jrPanelNeutralColor" type="color" value="#666666"><span></span></div>
+        <div class="setting-row"><label>Fondo Panel</label><input class="color-box" id="jrPanelBg" type="color" value="#232323"><span></span></div>
+        <div class="setting-row"><label>Fondo Header</label><input class="color-box" id="jrPanelHeaderBg" type="color" value="#000000"><span></span></div>
+        <div class="setting-row"><label>Fondo TF</label><input class="color-box" id="jrPanelTfBg" type="color" value="#2d2d2d"><span></span></div>
+        <div class="setting-row"><label>Color Sobrecompra</label><input class="color-box" id="jrPanelOverColor" type="color" value="#d23a41"><span></span></div>
+        <div class="setting-row"><label>Color Sobreventa</label><input class="color-box" id="jrPanelUnderColor" type="color" value="#089981"><span></span></div>
+        <div class="setting-row"><label>Color Neutral</label><input class="color-box" id="jrPanelNeutralColor" type="color" value="#5a5a5a"><span></span></div>
       </div>
       <div class="settings-foot"><button class="modal-btn" id="strategyJrSettingsCancel">Cancelar</button><button class="modal-btn primary" id="strategyJrSettingsApply">Aceptar</button></div>
     </div>
@@ -1499,6 +1493,47 @@ const DARK_NEON_BLUE_TEMPLATE = {
     wmVisible: true,
   }
 };
+// ===== TEMPLATE PRECARGADO: CLARO TRADINGVIEW =====
+// Paleta del tema claro de TradingView (fondo #f0f3fa, mechas grises, texto oscuro)
+const TV_LIGHT_TEMPLATE = {
+  name: "Claro TradingView",
+  settings: {
+    bgColor: "#f0f3fa",
+    gridColor: "#e0e3eb",
+    gridMode: "both",
+    panelBorder: "#d5d9e2",
+    reticleColor: "#9598a1",
+    reticleStyle: "dashed",
+    closeColor: false,
+    bodyEnabled: true,
+    borderEnabled: true,
+    wickEnabled: true,
+    bullBody: "#089981",
+    bearBody: "#f23645",
+    bullBorder: "#089981",
+    bearBorder: "#f23645",
+    bullWick: "#b2b5be",
+    bearWick: "#b2b5be",
+    axisText: "#787b86",
+    axisLine: "#d1d4dc",
+    timeSepColor: "#d1d4dc",
+    titleColor: "#131722",
+    strategyColor: "#131722",
+    axisSize: 12,
+    navButtons: "hover",
+    panelButtons: "hidden",
+    topMargin: 10,
+    bottomMargin: 8,
+    rightBars: 10,
+    priceLineColor: "#787b86",
+    priceLineOpacity: 95,
+    priceBadgeBg: "#434651",
+    priceBadgeText: "#f0f3fa",
+    wmColor: "#2a2e39",
+    wmOpacity: 0.10,
+    wmVisible: true,
+  }
+};
 // ===== FIN TEMPLATE PRECARGADO =====
 
 const indicatorSettings = {
@@ -1634,13 +1669,14 @@ const rtcSettings = {
 const strategyJrSettings = {
   mode: "Historical",
   style: "Colored",
-  fast: 2,
+  fast: 5,
   slow: 22,
   minBars: 18,
   structureFilter: true,
   colorCandles: true,
-  showArrows: true,
-  showStructure: true,
+  smcColorCandles: false,
+  showArrows: false,
+  showStructure: false,
   showAllTexts: false,
   showZones: true,
   showOrderBlocks: true,
@@ -1657,15 +1693,15 @@ const strategyJrSettings = {
   swingLabelSize: "small",
   showSwings: false,
   swingsLength: 50,
-  showStrongWeak: true,
+  showStrongWeak: false,
   internalOrderBlocks: true,
   internalOrderBlocksSize: 5,
-  swingOrderBlocks: false,
+  swingOrderBlocks: true,
   swingOrderBlocksSize: 5,
   orderBlockFilter: "Atr",
   orderBlockMitigation: "High/Low",
   grayOrderBlocks: true,
-  showEqualHighLow: true,
+  showEqualHighLow: false,
   equalBars: 3,
   equalThreshold: 0.1,
   equalLabelSize: "tiny",
@@ -1676,35 +1712,35 @@ const strategyJrSettings = {
   showWeekly: false,
   showMonthly: false,
   showPremiumDiscount: false,
-  arrowSize: "Normal",
+  arrowSize: "Pequeño",
   stochLength: 14,
   stochTf1: "15M",
   stochTf2: "30M",
   stochTf3: "1H",
-  panelPosition: "Top Left",
+  panelPosition: "Top Right",
   decimals: 2,
   panelBg: "#232323",
   panelHeaderBg: "#000000",
   panelTfBg: "#2d2d2d",
-  bullColor: "#f4f4f5",
-  bearColor: "#7a7b82",
-  internalBullColor: "#f4f4f5",
-  internalBearColor: "#7a7b82",
-  swingBullColor: "#f4f4f5",
-  swingBearColor: "#7a7b82",
+  bullColor: "#089981",
+  bearColor: "#f23645",
+  internalBullColor: "#089981",
+  internalBearColor: "#f23645",
+  swingBullColor: "#089981",
+  swingBearColor: "#f23645",
   neutralColor: "#b2b3b9",
   zoneColor: "#c9c9cf",
-  fvgBull: "#f4f4f5",
-  fvgBear: "#7a7b82",
-  internalBullObColor: "#f4f4f5",
-  internalBearObColor: "#7a7b82",
-  swingBullObColor: "#f4f4f5",
-  swingBearObColor: "#7a7b82",
-  premiumColor: "#7a7b82",
-  equilibriumColor: "#a5a5ac",
-  discountColor: "#f4f4f5",
-  panelOverColor: "#7a7b82",
-  panelUnderColor: "#f4f4f5",
+  fvgBull: "#00ff68",
+  fvgBear: "#ff0008",
+  internalBullObColor: "#3179f5",
+  internalBearObColor: "#f77c80",
+  swingBullObColor: "#1848cc",
+  swingBearObColor: "#b22833",
+  premiumColor: "#f23645",
+  equilibriumColor: "#878b94",
+  discountColor: "#089981",
+  panelOverColor: "#d23a41",
+  panelUnderColor: "#089981",
   panelNeutralColor: "#5a5a5a",
   overBought: 80,
   overSold: 20,
@@ -2275,7 +2311,13 @@ function getRtcSettingsFor(item){
 }
 function getStrategyJrSettingsFor(item){
   if(!item) return strategyJrSettings;
-  item.settings = cloneStrategyJrSettings(item.settings || {});
+  // migración: instancias guardadas con la config vieja (sin smcColorCandles)
+  // adoptan los defaults nuevos alineados a TradingView
+  if(item.settings && item.settings.smcColorCandles === undefined){
+    item.settings = cloneStrategyJrSettings({});
+  } else {
+    item.settings = cloneStrategyJrSettings(item.settings || {});
+  }
   return item.settings;
 }
 function getRtcStoch6SettingsFor(item){
@@ -2361,6 +2403,24 @@ function syncIndicatorState(){
   showKillzones = hasVisibleIndicator("ict");
   showEMA = hasVisibleIndicator("ema");
   showMACDPro = hasVisibleIndicator("macdPro");
+  syncIndicatorMenuDel();
+}
+const INDICATOR_MENU_TYPES = {
+  killzoneToggle: "ict", emaToggle: "ema", bibiruToggle: "bibiru",
+  displacementToggle: "displacement", smartSignalToggle: "smartSignal",
+  smfToggle: "smf", rtcStrategyToggle: "rtcStrategy", rtcScreenerToggle: "rtcScreener",
+  rtcStochToggle: "rtcStoch", strategyJrToggle: "strategyJrV8",
+  rtcStoch6Toggle: "rtcStoch6", macdProToggle: "macdPro",
+};
+function syncIndicatorMenuDel(){
+  Object.entries(INDICATOR_MENU_TYPES).forEach(([rowId, type]) => {
+    const del = document.querySelector("#" + rowId + " .row-del");
+    if(!del) return;
+    const count = activeIndicators.filter(i => i.type === type).length;
+    del.style.display = count ? "flex" : "none";
+    del.textContent = "×";
+    del.title = count === 1 ? "Eliminar indicador" : "Eliminar " + count + " instancias";
+  });
 }
 function addIndicator(type, opts = {}){
   const item = {id:`${type}-${Date.now()}-${indicatorSeq++}`, type, visible:true};
@@ -3251,166 +3311,337 @@ function computeMACDPro(data, settings = macdProSettings){
   return {macd, signal: displaced, hist};
 }
 
+// ===== Strategy JR V8 — port 1:1 del Pine (LuxAlgo SMC + RTC EMA + RTC Stoch MTF) =====
+const JR_TF_MAP = {"1M":"1m","3M":"3m","5M":"5m","15M":"15m","30M":"30m","45M":"45m","1H":"1h","2H":"2h","3H":"3h","4H":"4h","6H":"6h","8H":"8h","12H":"12h","1D":"D"};
+const jrStochCache = new Map();
+function jrStochFor(symbol, tfLabel, len){
+  const tfKey = JR_TF_MAP[tfLabel] || "15m";
+  const key = (symbol || "?") + "|" + tfKey + "|" + len;
+  const now = Date.now();
+  let c = jrStochCache.get(key);
+  if(c && now - c.ts < 30000) return c.value ?? null;
+  if(c && c.pending) return null;
+  if(!c){ c = {ts: 0}; jrStochCache.set(key, c); }
+  c.pending = true;
+  fetch(`/api/chart?tf=${encodeURIComponent(tfKey)}&symbol=${encodeURIComponent(symbol || "NAS100")}&count=180`, {cache:"no-store"})
+    .then(r => r.json())
+    .then(j => {
+      const bars = j?.candles || [];
+      let value = null;
+      if(bars.length >= len){
+        const w = bars.slice(-len);
+        let hh = -Infinity, ll = Infinity;
+        w.forEach(b => { if(b.h > hh) hh = b.h; if(b.l < ll) ll = b.l; });
+        const cl = w[w.length - 1].c;
+        value = hh > ll ? clamp(100 * (cl - ll) / (hh - ll), 0, 100) : 50;
+      }
+      c.value = value; c.ts = Date.now(); c.pending = false;
+      redrawAll();
+    })
+    .catch(() => { c.pending = false; c.ts = Date.now() - 20000; });
+  return null;
+}
 function computeStrategyJr(data, settings = strategyJrSettings){
+  const n = data.length;
+  const BULL = 1, BEAR = -1;
+  const mono = settings.style === "Monochrome";
+  const swingBullC = mono ? "#b2b5be" : (settings.swingBullColor || "#089981");
+  const swingBearC = mono ? "#5d606b" : (settings.swingBearColor || "#f23645");
+  const internalBullC = mono ? "#b2b5be" : (settings.internalBullColor || "#089981");
+  const internalBearC = mono ? "#5d606b" : (settings.internalBearColor || "#f23645");
+
+  // ── ATR(200) RMA + Cumulative Mean Range + highs/lows parseados (OB Filter)
+  const tr = new Array(n).fill(0);
+  for(let i = 0; i < n; i++){
+    const pc = i > 0 ? data[i - 1].c : data[0].o;
+    tr[i] = Math.max(data[i].h - data[i].l, Math.abs(data[i].h - pc), Math.abs(data[i].l - pc));
+  }
+  const atr = new Array(n).fill(NaN);
+  let rma = NaN, atrAcc = 0;
+  for(let i = 0; i < n; i++){
+    if(i < 200){ atrAcc += tr[i]; if(i === 199) rma = atrAcc / 200; }
+    else rma = (rma * 199 + tr[i]) / 200;
+    atr[i] = rma;
+  }
+  const parsedHighs = new Array(n), parsedLows = new Array(n);
+  let cumRunning = 0;
+  for(let i = 0; i < n; i++){
+    cumRunning += tr[i];
+    const vol = (settings.orderBlockFilter === "Cumulative Mean Range")
+      ? (i > 0 ? cumRunning / i : NaN)
+      : atr[i];
+    const hv = Number.isFinite(vol) && (data[i].h - data[i].l) >= 2 * vol;
+    parsedHighs[i] = hv ? data[i].l : data[i].h;
+    parsedLows[i] = hv ? data[i].h : data[i].l;
+  }
+
+  // ── leg(size): high[size] > highest(size) → pata bajista (0); low[size] < lowest(size) → alcista (1)
+  const legSwing = new Array(n).fill(0), legInt = new Array(n).fill(0), legEq = new Array(n).fill(0);
+  const legCalc = (arr, size) => {
+    let leg = 0;
+    for(let i = 0; i < n; i++){
+      if(i >= size){
+        let hh = -Infinity, ll = Infinity;
+        for(let j = i - size + 1; j <= i; j++){
+          if(data[j].h > hh) hh = data[j].h;
+          if(data[j].l < ll) ll = data[j].l;
+        }
+        if(data[i - size].h > hh) leg = 0;
+        else if(data[i - size].l < ll) leg = 1;
+      }
+      arr[i] = leg;
+    }
+  };
+  const swingLen = clamp(Number(settings.swingsLength) || 50, 10, 500);
+  const eqLen = clamp(Number(settings.equalBars) || 3, 1, 20);
+  legCalc(legSwing, swingLen);
+  legCalc(legInt, 5);
+  legCalc(legEq, eqLen);
+
+  // ── pivots / trend / trailing (UDTs del Pine)
+  const mkPivot = () => ({currentLevel:NaN, lastLevel:NaN, levelPrev:NaN, crossed:false, barTime:0, barIndex:0});
+  const swingHigh = mkPivot(), swingLow = mkPivot();
+  const internalHigh = mkPivot(), internalLow = mkPivot();
+  const equalHigh = mkPivot(), equalLow = mkPivot();
+  const swingTrend = {bias: 0}, internalTrend = {bias: 0};
+  const trailing = {top:NaN, bottom:NaN, barTime:0, barIndex:0, lastTopTime:0, lastBottomTime:0, lastTopIdx:0, lastBotIdx:0};
+  const structure = [], equals = [], fvgs = [];
+  const internalObs = [], swingObs = [];
+  const showEqual = !!settings.showEqualHighLow;
+  const showFvg = !!settings.showFairValueGaps;
+  const eqThresh = Number(settings.equalThreshold) || 0.1;
+  const fvgExtend = clamp(Number(settings.fvgExtend) || 0, 0, 200);
+  const internalObOn = settings.internalOrderBlocks !== false;
+  const swingObOn = !!settings.swingOrderBlocks;
+
+  // getCurrentStructure(size, equalHighLow, internal)
+  const getCurrentStructure = (i, size, equalHighLow, internal) => {
+    const legArr = equalHighLow ? legEq : internal ? legInt : legSwing;
+    const legNow = legArr[i], legPrev = i > 0 ? legArr[i - 1] : 0;
+    if(legNow === legPrev) return;
+    const pivotLow = legPrev === 0 && legNow === 1;
+    const sizeOff = i - size;
+    const p = pivotLow ? (equalHighLow ? equalLow : internal ? internalLow : swingLow)
+                       : (equalHighLow ? equalHigh : internal ? internalHigh : swingHigh);
+    const level = pivotLow ? data[sizeOff].l : data[sizeOff].h;
+    if(equalHighLow && Number.isFinite(p.currentLevel) && Number.isFinite(atr[i])
+       && Math.abs(p.currentLevel - level) < eqThresh * atr[i]){
+      equals.push({dir: pivotLow ? 1 : -1, from: p.barIndex, index: sizeOff, price: level, label: pivotLow ? "EQL" : "EQH"});
+    }
+    p.lastLevel = p.currentLevel;
+    p.currentLevel = level;
+    p.crossed = false;
+    p.barTime = data[sizeOff].t;
+    p.barIndex = sizeOff;
+    if(!equalHighLow && !internal){
+      if(pivotLow){
+        trailing.bottom = p.currentLevel;
+        trailing.barTime = p.barTime;
+        trailing.barIndex = p.barIndex;
+        trailing.lastBottomTime = p.barTime;
+        trailing.lastBotIdx = sizeOff;
+      } else {
+        trailing.top = p.currentLevel;
+        trailing.barTime = p.barTime;
+        trailing.barIndex = p.barIndex;
+        trailing.lastTopTime = p.barTime;
+        trailing.lastTopIdx = sizeOff;
+      }
+    }
+    if(settings.showSwings && !internal && !equalHighLow){
+      if(pivotLow) equals.push({point:true, dir:1, index:sizeOff, price:p.currentLevel, label:p.currentLevel < p.lastLevel ? "LL" : "HL"});
+      else equals.push({point:true, dir:-1, index:sizeOff, price:p.currentLevel, label:p.currentLevel > p.lastLevel ? "HH" : "LH"});
+    }
+  };
+
+  // storeOrdeBlock: busca el extremo parseado entre el pivot y la ruptura
+  const storeOrderBlock = (i, p, internal, bias) => {
+    if(internal ? !internalObOn : !swingObOn) return;
+    let parsedIdx = -1;
+    if(bias === BEAR){
+      let mx = -Infinity;
+      for(let j = p.barIndex; j < i; j++){ if(parsedHighs[j] > mx){ mx = parsedHighs[j]; parsedIdx = j; } }
+    } else {
+      let mn = Infinity;
+      for(let j = p.barIndex; j < i; j++){ if(parsedLows[j] < mn){ mn = parsedLows[j]; parsedIdx = j; } }
+    }
+    if(parsedIdx < 0) return;
+    const arr = internal ? internalObs : swingObs;
+    if(arr.length >= 100) arr.pop();
+    arr.unshift({dir: bias, index: parsedIdx, hi: parsedHighs[parsedIdx], lo: parsedLows[parsedIdx]});
+  };
+
+  let bullishBar = true, bearishBar = true;
+  const displayStructure = (i, internal) => {
+    if(settings.confluenceFilter){
+      const b = data[i];
+      const upWick = b.h - Math.max(b.c, b.o);
+      const dnWick = Math.min(b.c, b.o - b.l);   // literal del Pine
+      bullishBar = upWick > dnWick;
+      bearishBar = upWick < dnWick;
+    }
+    const pH = internal ? internalHigh : swingHigh;
+    const pL = internal ? internalLow : swingLow;
+    const t_ = internal ? internalTrend : swingTrend;
+    const otherHigh = swingHigh.currentLevel, otherLow = swingLow.currentLevel;
+    const prevClose = i > 0 ? data[i - 1].c : NaN;
+    {
+      const lvl = pH.currentLevel, lvlPrev = pH.levelPrev;
+      const crossed = Number.isFinite(lvl) && Number.isFinite(lvlPrev) && data[i].c > lvl && prevClose <= lvlPrev;
+      const extra = internal
+        ? (Number.isFinite(lvl) && Number.isFinite(otherHigh) && lvl !== otherHigh && bullishBar)
+        : true;
+      if(crossed && !pH.crossed && extra){
+        const tag = t_.bias === BEAR ? "CHoCH" : "BOS";
+        pH.crossed = true;
+        t_.bias = BULL;
+        const mode = internal ? settings.internalBullMode : settings.swingBullMode;
+        const dc = internal
+          ? !!settings.showInternals && (mode === "All" || (mode === "BOS" && tag !== "CHoCH") || (mode === "CHoCH" && tag === "CHoCH"))
+          : !!settings.showSwingStructure && (mode === "All" || (mode === "BOS" && tag !== "CHoCH") || (mode === "CHoCH" && tag === "CHoCH"));
+        if(dc) structure.push({kind: internal ? "internal" : "swing", dir: 1, tag, from: pH.barIndex, index: i, price: pH.currentLevel});
+        storeOrderBlock(i, pH, internal, BULL);
+      }
+    }
+    {
+      const lvl = pL.currentLevel, lvlPrev = pL.levelPrev;
+      const crossed = Number.isFinite(lvl) && Number.isFinite(lvlPrev) && data[i].c < lvl && prevClose >= lvlPrev;
+      const extra = internal
+        ? (Number.isFinite(lvl) && Number.isFinite(otherLow) && lvl !== otherLow && bearishBar)
+        : true;
+      if(crossed && !pL.crossed && extra){
+        const tag = t_.bias === BULL ? "CHoCH" : "BOS";
+        pL.crossed = true;
+        t_.bias = BEAR;
+        const mode = internal ? settings.internalBearMode : settings.swingBearMode;
+        const dc = internal
+          ? !!settings.showInternals && (mode === "All" || (mode === "BOS" && tag !== "CHoCH") || (mode === "CHoCH" && tag === "CHoCH"))
+          : !!settings.showSwingStructure && (mode === "All" || (mode === "BOS" && tag !== "CHoCH") || (mode === "CHoCH" && tag === "CHoCH"));
+        if(dc) structure.push({kind: internal ? "internal" : "swing", dir: -1, tag, from: pL.barIndex, index: i, price: pL.currentLevel});
+        storeOrderBlock(i, pL, internal, BEAR);
+      }
+    }
+  };
+
+  // deleteOrderBlocks (mitigación Close o High/Low, replica el quirk de índice del Pine)
+  const deleteOrderBlocks = (i, internal) => {
+    const arr = internal ? internalObs : swingObs;
+    const bearSrc = settings.orderBlockMitigation === "Close" ? data[i].c : data[i].h;
+    const bullSrc = settings.orderBlockMitigation === "Close" ? data[i].c : data[i].l;
+    for(let k = 0; k < arr.length; k++){
+      const ob = arr[k];
+      if((bearSrc > ob.hi && ob.dir === BEAR) || (bullSrc < ob.lo && ob.dir === BULL)){
+        arr.splice(k, 1);
+      }
+    }
+  };
+
+  // Fair Value Gaps (TF gráfico; umbral auto = media acumulada x2; literal del Pine)
+  let fvgCum = 0;
+  const processFvg = (i) => {
+    if(i < 2) return;
+    const b0 = data[i], b1 = data[i - 1], b2 = data[i - 2];
+    const bdp = (b1.c - b1.o) / (b1.o * 100);
+    fvgCum += Math.abs(bdp);
+    const threshold = settings.fvgAutoThreshold !== false ? (i > 0 ? fvgCum / i * 2 : 0) : 0;
+    if(b0.l > b2.h && b1.c > b2.h && bdp > threshold){
+      fvgs.push({dir: 1, top: b0.l, bottom: b2.h, mid: (b0.l + b2.h) / 2, from: i - 1, end: i + fvgExtend});
+    }
+    if(b0.h < b2.l && b1.c < b2.l && -bdp > threshold){
+      fvgs.push({dir: -1, topField: b0.h, top: b2.l, bottom: b0.h, mid: (b0.h + b2.l) / 2, from: i - 1, end: i + fvgExtend});
+    }
+    for(let k = 0; k < fvgs.length; k++){
+      const g = fvgs[k];
+      const hit = g.dir === 1 ? b0.l < g.bottom : b0.h > g.topField;
+      if(hit){ fvgs.splice(k, 1); }
+    }
+  };
+
+  // updateTrailingExtremes
+  const updateTrailing = (i) => {
+    if(!Number.isFinite(trailing.top) || data[i].h >= trailing.top){
+      trailing.top = data[i].h; trailing.lastTopTime = data[i].t; trailing.lastTopIdx = i;
+    }
+    if(!Number.isFinite(trailing.bottom) || data[i].l <= trailing.bottom){
+      trailing.bottom = data[i].l; trailing.lastBottomTime = data[i].t; trailing.lastBotIdx = i;
+    }
+  };
+
+  // ── RTC EMA (barcolor + flechas filtradas por estructura BOS/CHoCH)
   const closes = data.map(b => b.c);
-  const fast = emaSeries(closes, clamp(Number(settings.fast) || 2, 1, 100));
-  const slow = emaSeries(closes, clamp(Number(settings.slow) || 22, 2, 300));
-  const atr = data.map((_, i) => averageTrueRange(data.slice(0, i + 1), 14));
+  const emaF = emaSeries(closes, clamp(Number(settings.fast) || 5, 1, 300));
+  const emaS = emaSeries(closes, clamp(Number(settings.slow) || 22, 2, 500));
+  const barColors = new Array(n).fill(null);
+  const events = [];
+  let lastSignal = NaN;
+  const minBars = clamp(Number(settings.minBars) || 18, 1, 120);
   const stoch = computeRtcStoch6(data, {
     kPeriod: clamp(Number(settings.stochLength) || 14, 1, 200),
     slow: 3,
     overBought: clamp(Number(settings.overBought) || 80, 1, 100),
     overSold: clamp(Number(settings.overSold) || 20, 0, 99),
   });
-  const swingLength = clamp(Number(settings.swingsLength) || 50, 10, 500);
-  const pivots = findPivots(data, 4);
-  const pivotHighByIndex = new Map(pivots.highs.map(p => [p.index, p]));
-  const pivotLowByIndex = new Map(pivots.lows.map(p => [p.index, p]));
-  const swingPivots = findPivots(data, swingLength);
-  const swingHighByIndex = new Map(swingPivots.highs.map(p => [p.index, p]));
-  const swingLowByIndex = new Map(swingPivots.lows.map(p => [p.index, p]));
-  const candleState = data.map((bar, i) => {
-    if(!Number.isFinite(fast[i]) || !Number.isFinite(slow[i])) return 0;
-    return fast[i] >= slow[i] ? 1 : -1;
-  });
-  const events = [];
-  let zones = [];
-  let internalObs = [];
-  let swingObs = [];
-  const structure = [];
-  const MAX_INTERNAL_OBS = clamp(Number(settings.internalOrderBlocksSize) || 5, 1, 20);
-  const MAX_SWING_OBS = clamp(Number(settings.swingOrderBlocksSize) || 5, 1, 20);
-  const MAX_FVGS = 4;
-  const atrVal = averageTrueRange(data, 14);
-  const parsedHighs = data.map(bar => {
-    return (bar.h - bar.l) >= (2 * atrVal) ? bar.l : bar.h;
-  });
-  const parsedLows = data.map(bar => {
-    return (bar.h - bar.l) >= (2 * atrVal) ? bar.h : bar.l;
-  });
-  const storeOrderBlock = (pivotBarIndex, dir, isSwing, currentBar) => {
-    if(pivotBarIndex == null || pivotBarIndex < 0) return null;
-    let parsedIndex = pivotBarIndex;
-    if(dir < 0) {
-      let maxVal = -Infinity;
-      for(let j = pivotBarIndex; j <= currentBar; j++) {
-        if(parsedHighs[j] > maxVal) { maxVal = parsedHighs[j]; parsedIndex = j; }
-      }
-    } else {
-      let minVal = Infinity;
-      for(let j = pivotBarIndex; j <= currentBar; j++) {
-        if(parsedLows[j] < minVal) { minVal = parsedLows[j]; parsedIndex = j; }
+  const candleState = new Array(n).fill(0);
+  const smcActive = !!settings.smcColorCandles;
+  const strongWeakOn = !!settings.showStrongWeak;
+  const pdOn = !!settings.showPremiumDiscount;
+  const pivotList = [swingHigh, swingLow, internalHigh, internalLow, equalHigh, equalLow];
+  for(let i = 0; i < n; i++){
+    pivotList.forEach(p => { p.levelPrev = p.currentLevel; });
+    if(strongWeakOn || pdOn) updateTrailing(i);
+    getCurrentStructure(i, swingLen, false, false);
+    getCurrentStructure(i, 5, false, true);
+    if(showEqual) getCurrentStructure(i, eqLen, true, false);
+    if(settings.showInternals || internalObOn || smcActive) displayStructure(i, true);
+    if(settings.showSwingStructure || swingObOn || strongWeakOn) displayStructure(i, false);
+    if(internalObOn) deleteOrderBlocks(i, true);
+    if(swingObOn) deleteOrderBlocks(i, false);
+    if(showFvg) processFvg(i);
+    candleState[i] = internalTrend.bias;
+    const f = emaF[i], s = emaS[i], fp = emaF[i - 1], sp = emaS[i - 1];
+    if(Number.isFinite(f) && Number.isFinite(s) && Number.isFinite(fp) && Number.isFinite(sp)){
+      barColors[i] = f > s ? "#089981" : "#f23645";
+      const canSignal = !Number.isFinite(lastSignal) || (i - lastSignal > minBars);
+      if(canSignal){
+        if(f > s && fp <= sp && (!settings.structureFilter || internalTrend.bias === BULL || swingTrend.bias === BULL)){
+          events.push({index: i, price: data[i].l, dir: 1});
+          lastSignal = i;
+        } else if(f < s && fp >= sp && (!settings.structureFilter || internalTrend.bias === BEAR || swingTrend.bias === BEAR)){
+          events.push({index: i, price: data[i].h, dir: -1});
+          lastSignal = i;
+        }
       }
     }
-    return {
-      index: parsedIndex,
-      end: data.length - 1,
-      lo: data[parsedIndex].l,
-      hi: data[parsedIndex].h,
-      dir: dir,
-      label: dir > 0 ? "Bull OB" : "Bear OB",
-      kind: isSwing ? "pivot-ob" : "ob"
-    };
-  };
-  let lastSignal = -9999;
-  let lastHigh = null, lastLow = null, swingLastHigh = null, swingLastLow = null, bias = 0;
-  for(let i = 0; i < data.length; i++){
-    if(pivotHighByIndex.has(i)) { lastHigh = pivotHighByIndex.get(i); lastHigh.crossed = false; }
-    if(pivotLowByIndex.has(i)) { lastLow = pivotLowByIndex.get(i); lastLow.crossed = false; }
-    if(swingHighByIndex.has(i)) { swingLastHigh = swingHighByIndex.get(i); swingLastHigh.crossed = false; }
-    if(swingLowByIndex.has(i)) { swingLastLow = swingLowByIndex.get(i); swingLastLow.crossed = false; }
-    if(lastHigh && !lastHigh.crossed && data[i].c > lastHigh.price) {
-      structure.push({from:lastHigh.index, index:i, price:lastHigh.price, dir:1, label:bias < 0 ? "CHoCH" : "BOS"});
-      if(settings.internalOrderBlocks !== false) {
-        const ob = storeOrderBlock(lastHigh.index, -1, false, i);
-        if(ob) internalObs.push(ob);
-      }
-      bias = 1;
-      lastHigh.crossed = true;
-    }
-    if(lastLow && !lastLow.crossed && data[i].c < lastLow.price) {
-      structure.push({from:lastLow.index, index:i, price:lastLow.price, dir:-1, label:bias > 0 ? "CHoCH" : "BOS"});
-      if(settings.internalOrderBlocks !== false) {
-        const ob = storeOrderBlock(lastLow.index, 1, false, i);
-        if(ob) internalObs.push(ob);
-      }
-      bias = -1;
-      lastLow.crossed = true;
-    }
-    if(settings.swingOrderBlocks !== false && swingLastHigh && !swingLastHigh.crossed && data[i].c > swingLastHigh.price) {
-      structure.push({from:swingLastHigh.index, index:i, price:swingLastHigh.price, dir:1, label:bias < 0 ? "CHoCH" : "BOS", swing:true});
-      const ob = storeOrderBlock(swingLastHigh.index, -1, true, i);
-      if(ob) swingObs.push(ob);
-      bias = 1;
-      swingLastHigh.crossed = true;
-    }
-    if(settings.swingOrderBlocks !== false && swingLastLow && !swingLastLow.crossed && data[i].c < swingLastLow.price) {
-      structure.push({from:swingLastLow.index, index:i, price:swingLastLow.price, dir:-1, label:bias > 0 ? "CHoCH" : "BOS", swing:true});
-      const ob = storeOrderBlock(swingLastLow.index, 1, true, i);
-      if(ob) swingObs.push(ob);
-      bias = -1;
-      swingLastLow.crossed = true;
-    }
-    const bullCross = Number.isFinite(fast[i - 1]) && Number.isFinite(slow[i - 1]) && fast[i - 1] <= slow[i - 1] && fast[i] > slow[i];
-    const bearCross = Number.isFinite(fast[i - 1]) && Number.isFinite(slow[i - 1]) && fast[i - 1] >= slow[i - 1] && fast[i] < slow[i];
-    const structureOkBuy = !settings.structureFilter || bias >= 0 || data[i].c > data[Math.max(0, i - 8)].c;
-    const structureOkSell = !settings.structureFilter || bias <= 0 || data[i].c < data[Math.max(0, i - 8)].c;
-    const stochOkBuy = !settings.stochFilter || (() => {
-      if(!Number.isFinite(stoch.k[i])) return false;
-      const s1 = clamp(stoch.k[i] + 1.7, 0, 100);
-      const s2 = clamp(stoch.k[i] - 0.9, 0, 100);
-      const s3 = clamp(stoch.k[i] - 2.6, 0, 100);
-      return [s1, s2, s3].filter(v => v <= settings.overSold).length >= 2;
-    })();
-    const stochOkSell = !settings.stochFilter || (() => {
-      if(!Number.isFinite(stoch.k[i])) return false;
-      const s1 = clamp(stoch.k[i] + 1.7, 0, 100);
-      const s2 = clamp(stoch.k[i] - 0.9, 0, 100);
-      const s3 = clamp(stoch.k[i] - 2.6, 0, 100);
-      return [s1, s2, s3].filter(v => v >= settings.overBought).length >= 2;
-    })();
-    if(i - lastSignal >= clamp(Number(settings.minBars) || 18, 1, 120) && bullCross && structureOkBuy && stochOkBuy) {
-      events.push({index:i, price:data[i].l, type:"buy", label:"BUY", score:clamp(Math.round(58 + Math.min(28, Math.abs(fast[i] - slow[i]) / Math.max(0.000001, atr[i]) * 32) + (bias >= 0 ? 10 : 0)), 1, 96)});
-      lastSignal = i;
-    } else if(i - lastSignal >= clamp(Number(settings.minBars) || 18, 1, 120) && bearCross && structureOkSell && stochOkSell) {
-      events.push({index:i, price:data[i].h, type:"sell", label:"SELL", score:clamp(Math.round(58 + Math.min(28, Math.abs(fast[i] - slow[i]) / Math.max(0.000001, atr[i]) * 32) + (bias <= 0 ? 10 : 0)), 1, 96)});
-      lastSignal = i;
-    }
-    if(i >= 2 && data[i].l > data[i - 2].h) zones.push({index:i - 2, end:i + 18, lo:data[i - 2].h, hi:data[i].l, dir:1, label:"FVG", kind:"fvg"});
-    if(i >= 2 && data[i].h < data[i - 2].l) zones.push({index:i - 2, end:i + 18, lo:data[i].h, hi:data[i - 2].l, dir:-1, label:"FVG", kind:"fvg"});
   }
-  const lastLow2 = data[data.length - 1].l;
-  const lastHigh2 = data[data.length - 1].h;
-  internalObs = internalObs.filter(ob => {
-    if(ob.dir > 0 && lastLow2 < ob.lo) return false;
-    if(ob.dir < 0 && lastHigh2 > ob.hi) return false;
-    return true;
-  });
-  swingObs = swingObs.filter(ob => {
-    if(ob.dir > 0 && lastLow2 < ob.lo) return false;
-    if(ob.dir < 0 && lastHigh2 > ob.hi) return false;
-    return true;
-  });
-  internalObs = internalObs.slice(-MAX_INTERNAL_OBS);
-  swingObs = swingObs.slice(-MAX_SWING_OBS);
-  const orderBlocks = [...swingObs, ...internalObs];
-  zones = zones.filter(z => {
-    if(z.dir > 0 && data[data.length - 1].l < z.lo) return false;
-    if(z.dir < 0 && data[data.length - 1].h > z.hi) return false;
-    return true;
-  }).slice(-MAX_FVGS);
-  const equals = [];
-  const tol = Math.max(0.000001, atrVal * 0.14);
-  pivots.highs.slice(-42).forEach((p, idx, arr) => {
-    const prev = arr[idx - 1];
-    if(prev && Math.abs(prev.price - p.price) <= tol) equals.push({index:p.index, from:prev.index, price:p.price, label:"EQH"});
-  });
-  pivots.lows.slice(-42).forEach((p, idx, arr) => {
-    const prev = arr[idx - 1];
-    if(prev && Math.abs(prev.price - p.price) <= tol) equals.push({index:p.index, from:prev.index, price:p.price, label:"EQL"});
-  });
-  return {fast, slow, candleState, events:events.slice(-36), zones, orderBlocks, structure:structure.slice(-36), equals:equals.slice(-20), stoch};
+
+  // drawOrderBlocks: los N más recientes de cada tipo, hasta el borde derecho
+  const maxIntOb = clamp(Number(settings.internalOrderBlocksSize) || 5, 1, 20);
+  const maxSwOb = clamp(Number(settings.swingOrderBlocksSize) || 5, 1, 20);
+  const internalObsDraw = internalObs.slice(0, maxIntOb);
+  const swingObsDraw = swingObs.slice(0, maxSwOb);
+
+  // Zonas Premium / Equilibrium / Discount (desde trailing, como drawZone)
+  const zonesPD = [];
+  if(pdOn && Number.isFinite(trailing.top) && Number.isFinite(trailing.bottom)){
+    const top = trailing.top, bottom = trailing.bottom;
+    zonesPD.push({label:"Premium", dir:-1, from: trailing.barIndex, top: top, bottom: 0.95 * top + 0.05 * bottom});
+    zonesPD.push({label:"Equilibrium", dir: 0, from: trailing.barIndex, top: 0.525 * top + 0.475 * bottom, bottom: 0.525 * bottom + 0.475 * top});
+    zonesPD.push({label:"Discount", dir: 1, from: trailing.barIndex, top: 0.95 * bottom + 0.05 * top, bottom: bottom});
+  }
+
+  return {
+    barColors, candleState,
+    events: events.slice(-60),
+    structure: structure.slice(-120),
+    equals: equals.slice(-80),
+    internalObsDraw, swingObsDraw,
+    fvgs: fvgs.slice(-20),
+    zonesPD,
+    trailing, swingTrend, internalTrend,
+    stoch,
+  };
 }
+
 function recentRtcExtreme(series, index, bars, dir){
   const start = Math.max(0, index - bars + 1);
   let value = dir === "low" ? Infinity : -Infinity;
@@ -4351,154 +4582,227 @@ class ChartPanel {
       ctx.restore();
     });
   }
-  drawStrategyJrOverlay(ctx, data, x, y, mainW, candleW){
+  drawStrategyJrOverlay(ctx, data, x, y, mainW, candleW, xr){
     visibleRtcItems("strategyJrV8").forEach(item => {
       const settings = getStrategyJrSettingsFor(item);
       const result = computeStrategyJr(data, settings);
       const mainH = this.lastScale?.mainH || this.el.clientHeight;
+      const rightEdge = mainW + 60;
+      const n = data.length;
+      // xr mapea el slice de render (rdata) que es lo que dibuja el chart base;
+      // x solo vale para la ventana logica y desplaza todo si hay pan/zoom
+      const xAt = idx => (xr || x)(clamp(idx, 0, n - 1));
+      const half = Math.max(1, (candleW || 8) / 2);
+      const labelPx = s => s === "normal" ? 11 : s === "small" ? 10 : 8;
       ctx.save();
-      if(settings.showOrderBlocks !== false) result.orderBlocks.forEach(zone => {
-        const isSwing = zone.kind === "pivot-ob";
-        if(isSwing && settings.swingOrderBlocks === false) return;
-        if(!isSwing && settings.internalOrderBlocks === false) return;
-        const x1 = x(clamp(zone.index, 0, data.length - 1));
-        const x2 = zone.end >= data.length - 1 ? mainW : Math.min(mainW, x(clamp(zone.end, 0, data.length - 1)));
-        const top = y(zone.hi), h = Math.max(2, y(zone.lo) - top);
-        const base = zone.dir > 0
-          ? (isSwing ? settings.swingBullObColor : settings.internalBullObColor)
-          : (isSwing ? settings.swingBearObColor : settings.internalBearObColor);
-        ctx.fillStyle = settings.grayOrderBlocks ? rgba("#a5a5ac", .28) : rgba(base, .16);
-        ctx.fillRect(x1, top, Math.max(10, x2 - x1), h);
-        if(isSwing) {
-          ctx.strokeStyle = settings.grayOrderBlocks ? "rgba(146,147,154,.70)" : rgba(base, .48);
-          ctx.strokeRect(x1 + .5, top + .5, Math.max(10, x2 - x1) - 1, h - 1);
-        }
-        if(settings.showAllTexts) {
-          ctx.font = "bold 9px 'JetBrains Mono', monospace";
-          ctx.fillStyle = rgba(base, .9);
-          ctx.fillText(zone.dir > 0 ? "OB+" : "OB-", x1 + 4, top + 11);
-        }
-      });
-      result.zones.forEach(zone => {
-        const x1 = x(clamp(zone.index, 0, data.length - 1));
-        const x2 = Math.min(mainW, x(clamp(zone.end, 0, data.length - 1)) + 14);
-        const top = y(zone.hi), h = Math.max(2, y(zone.lo) - top);
-        if(settings.showFairValueGaps) {
-          const color = zone.dir > 0 ? settings.fvgBull : settings.fvgBear;
-          ctx.fillStyle = rgba(color, .16);
-          ctx.strokeStyle = rgba(color, .42);
-          ctx.fillRect(x1, top, Math.max(8, x2 - x1), h);
-          ctx.strokeRect(x1 + .5, top + .5, Math.max(8, x2 - x1) - 1, h - 1);
-        } else if(settings.showZones !== false) {
-          ctx.fillStyle = "rgba(146,147,154,.18)";
-          ctx.strokeStyle = "rgba(146,147,154,.40)";
-          ctx.fillRect(x1, top, Math.max(8, x2 - x1), h);
-          ctx.strokeRect(x1 + .5, top + .5, Math.max(8, x2 - x1) - 1, h - 1);
-        }
-      });
-      if(settings.colorCandles) {
-        data.forEach((bar, i) => {
-          const state = result.candleState[i];
-          if(!state) return;
-          const color = state > 0 ? settings.bullColor : settings.bearColor;
-          const xx = x(i), yo = y(bar.o), yc = y(bar.c), yh = y(bar.h), yl = y(bar.l);
-          ctx.strokeStyle = rgba(color, .82);
-          ctx.beginPath(); ctx.moveTo(xx, yh); ctx.lineTo(xx, yl); ctx.stroke();
-          ctx.fillStyle = rgba(color, .82);
-          ctx.fillRect(xx - candleW / 2, Math.min(yo, yc), candleW, Math.max(1, Math.abs(yc - yo)));
+
+      // ── 1. barcolor RTC (Cambio Color Velas) / plotcandle SMC (Color Candles)
+      const repaintCandle = (b, xx, col) => {
+        const yo = y(b.o), yc = y(b.c), yh = y(b.h), yl = y(b.l);
+        const bh = Math.max(1, Math.abs(yc - yo));
+        ctx.strokeStyle = col; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(xx, yh); ctx.lineTo(xx, yl); ctx.stroke();
+        ctx.fillStyle = col;
+        ctx.fillRect(xx - half, Math.min(yo, yc), Math.max(1, candleW), bh);
+        ctx.strokeRect(xx - half + .5, Math.min(yo, yc) + .5, Math.max(1, candleW) - 1, bh - 1);
+        ctx.lineWidth = 1;
+      };
+      if(settings.colorCandles){
+        data.forEach((b, i) => {
+          const col = result.barColors[i];
+          if(col) repaintCandle(b, xAt(i), col);
+        });
+      } else if(settings.smcColorCandles){
+        data.forEach((b, i) => {
+          const st = result.candleState[i];
+          if(!st) return;
+          repaintCandle(b, xAt(i), st > 0 ? settings.swingBullColor : settings.swingBearColor);
         });
       }
-      if(settings.showStructure) {
-        const swingEvents = result.structure.filter(ev => ev.swing);
-        const labelFont = settings.swingLabelSize === "normal" ? "bold 11px 'JetBrains Mono', monospace" : settings.swingLabelSize === "small" ? "bold 10px 'JetBrains Mono', monospace" : "bold 9px 'JetBrains Mono', monospace";
-        swingEvents.forEach(ev => {
-          const yy = y(ev.price);
-          const xL = x(clamp(ev.from, 0, data.length - 1));
-          const xR = x(clamp(ev.index, 0, data.length - 1));
-          ctx.setLineDash(ev.label === "CHoCH" ? [5,4] : []);
-          ctx.lineWidth = 2.5;
-          ctx.strokeStyle = ev.dir > 0 ? rgba(settings.bullColor, .78) : rgba(settings.bearColor, .78);
-          ctx.beginPath(); ctx.moveTo(xL, yy); ctx.lineTo(xR, yy); ctx.stroke();
-          ctx.setLineDash([]);
-          ctx.lineWidth = 1;
-          if(settings.showAllTexts) {
-            ctx.fillStyle = ev.dir > 0 ? settings.bullColor : settings.bearColor;
-            ctx.font = labelFont;
-            ctx.fillText(ev.label, xR + 4, yy + (ev.dir > 0 ? -5 : 13));
-          }
-        });
-        result.equals.forEach(eq => {
-          const x1 = x(eq.from), x2 = x(eq.index), yy = y(eq.price);
-          ctx.setLineDash([3,4]);
-          ctx.strokeStyle = "rgba(244,244,245,.38)";
+
+      // ── 2. Order Blocks (grises o color; solo swing lleva borde, como en TV)
+      const drawOb = (ob, kind) => {
+        const x1 = xAt(ob.index) - half;
+        const top = y(ob.hi), h = Math.max(2, y(ob.lo) - top);
+        let bg;
+        if(settings.grayOrderBlocks){
+          bg = "rgba(148,149,154,0.26)";
+        } else {
+          const base = ob.dir > 0
+            ? (kind === "internal" ? settings.internalBullObColor : settings.swingBullObColor)
+            : (kind === "internal" ? settings.internalBearObColor : settings.swingBearObColor);
+          bg = rgba(base, 0.20);
+        }
+        ctx.fillStyle = bg;
+        ctx.fillRect(x1, top, Math.max(8, rightEdge - x1), h);
+        if(kind === "swing"){
+          ctx.strokeStyle = bg;
+          ctx.strokeRect(x1 + .5, top + .5, Math.max(8, rightEdge - x1) - 1, h - 1);
+        }
+      };
+      if(settings.swingOrderBlocks) result.swingObsDraw.forEach(ob => drawOb(ob, "swing"));
+      if(settings.internalOrderBlocks) result.internalObsDraw.forEach(ob => drawOb(ob, "internal"));
+
+      // ── 3. Zonas Premium / Equilibrium / Discount
+      if(settings.showPremiumDiscount) result.zonesPD.forEach(z => {
+        const x1 = xAt(z.from) - half;
+        const color = z.label === "Premium" ? settings.premiumColor : z.label === "Equilibrium" ? settings.equilibriumColor : settings.discountColor;
+        const top = y(z.top), bot = y(z.bottom);
+        ctx.fillStyle = rgba(color, 0.20);
+        ctx.fillRect(x1, top, Math.max(8, rightEdge - x1), Math.max(2, bot - top));
+        if(settings.showAllTexts){
+          ctx.font = `bold ${labelPx("small")}px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = color;
+          ctx.fillText(z.label, z.label === "Equilibrium" ? x1 + 4 : x1 + (rightEdge - x1) / 2, top + 12);
+        }
+      });
+
+      // ── 4. Fair Value Gaps (dos cajas divididas en la media, como en TV)
+      if(settings.showFairValueGaps) result.fvgs.forEach(g => {
+        const x1 = xAt(g.from) - half;
+        const x2 = Math.max(xAt(g.from) + 6, Math.min(rightEdge, xAt(Math.min(g.end, n - 1)) + half));
+        const color = g.dir > 0 ? settings.fvgBull : settings.fvgBear;
+        const c = rgba(color, 0.30);
+        const yTop = y(g.top), yMid = y(g.mid), yBot = y(g.bottom);
+        ctx.fillStyle = c;
+        ctx.fillRect(x1, yTop, Math.max(6, x2 - x1), Math.max(1, yMid - yTop));
+        ctx.fillRect(x1, yMid, Math.max(6, x2 - x1), Math.max(1, yBot - yMid));
+      });
+
+      // ── 5. Estructura BOS/CHoCH (internal dashed, swing solid) + labels
+      result.structure.forEach(ev => {
+        if(ev.kind === "internal" && !settings.showInternals) return;
+        if(ev.kind === "swing" && !settings.showSwingStructure) return;
+        const color = ev.dir > 0
+          ? (ev.kind === "internal" ? settings.internalBullColor : settings.swingBullColor)
+          : (ev.kind === "internal" ? settings.internalBearColor : settings.swingBearColor);
+        const x1 = xAt(ev.from), x2 = xAt(ev.index), yy = y(ev.price);
+        if(settings.showStructure){
+          ctx.setLineDash(ev.kind === "internal" ? [4,3] : []);
+          ctx.strokeStyle = color; ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(x1, yy); ctx.lineTo(x2, yy); ctx.stroke();
           ctx.setLineDash([]);
-          if(settings.showAllTexts) {
-            ctx.fillStyle = "rgba(244,244,245,.75)";
-            ctx.fillText(eq.label, x2 + 4, yy - 4);
-          }
-        });
-      }
-      if(settings.showArrows) {
-        const arrowSize = settings.arrowSize === "Grande" ? 11 : settings.arrowSize === "Normal" ? 9 : 7;
-        const arrowOffset = arrowSize + 9;
-        result.events.forEach(ev => {
-          const xx = x(ev.index), yy = y(ev.price);
-          const buy = ev.type === "buy";
-          const color = buy ? settings.bullColor : settings.bearColor;
+        }
+        if(settings.showAllTexts){
+          ctx.font = `bold ${labelPx(ev.kind === "internal" ? settings.internalLabelSize : settings.swingLabelSize)}px 'JetBrains Mono', monospace`;
           ctx.fillStyle = color;
-          ctx.beginPath();
-          if(buy) { ctx.moveTo(xx, yy + arrowOffset); ctx.lineTo(xx - arrowSize, yy + 4); ctx.lineTo(xx + arrowSize, yy + 4); }
-          else { ctx.moveTo(xx, yy - arrowOffset); ctx.lineTo(xx - arrowSize, yy - 4); ctx.lineTo(xx + arrowSize, yy - 4); }
-          ctx.closePath(); ctx.fill();
-          if(settings.showAllTexts) {
-            ctx.font = "bold 10px 'JetBrains Mono', monospace";
-            ctx.fillText(`${ev.label} ${ev.score}%`, xx + 9, yy + (buy ? 15 : -9));
+          ctx.textAlign = "center";
+          ctx.fillText(ev.tag, (x1 + x2) / 2, yy + (ev.dir > 0 ? -5 : 11));
+          ctx.textAlign = "left";
+        }
+      });
+
+      // ── 6. EQH/EQL (line punteada) + puntos de swing HH/HL/LH/LL
+      if(settings.showEqualHighLow){
+        result.equals.forEach(eq => {
+          if(eq.point) return;
+          const color = eq.label === "EQH" ? settings.swingBearColor : settings.swingBullColor;
+          const x1 = xAt(eq.from), x2 = xAt(eq.index), yy = y(eq.price);
+          ctx.setLineDash([2,3]);
+          ctx.strokeStyle = color; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(x1, yy); ctx.lineTo(x2, yy); ctx.stroke();
+          ctx.setLineDash([]);
+          if(settings.showAllTexts){
+            ctx.font = `bold ${labelPx(settings.equalLabelSize)}px 'JetBrains Mono', monospace`;
+            ctx.fillStyle = color;
+            ctx.textAlign = "center";
+            ctx.fillText(eq.label, (x1 + x2) / 2, yy + (eq.label === "EQH" ? -5 : 11));
+            ctx.textAlign = "left";
           }
         });
       }
-      if(settings.showStochPanel) {
-        const lastStoch = result.stoch.k.filter(Number.isFinite).at(-1) ?? 50;
-        const tableW = 112, rowH = 16;
-        const panelPos = settings.panelPosition || "Top Left";
-        const x0 = panelPos.includes("Left") ? 2 : Math.max(2, mainW - tableW - 2);
-        const y0 = panelPos.includes("Bottom") ? mainH - 18 - 4 * rowH - 8 : 8;
+      if(settings.showSwings){
+        result.equals.forEach(eq => {
+          if(!eq.point) return;
+          ctx.font = `bold ${labelPx(settings.swingLabelSize)}px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = eq.dir > 0 ? settings.swingBullColor : settings.swingBearColor;
+          ctx.textAlign = "center";
+          ctx.fillText(eq.label, xAt(eq.index), y(eq.price) + (eq.dir > 0 ? -6 : 12));
+          ctx.textAlign = "left";
+        });
+      }
+
+      // ── 7. Strong/Weak High/Low (trailing)
+      if(settings.showStrongWeak && Number.isFinite(result.trailing.top) && Number.isFinite(result.trailing.bottom)){
+        const t = result.trailing, tBias = result.swingTrend.bias;
+        const x2 = Math.min(rightEdge, xAt(n - 1) + 20 * (candleW || 8));
+        const drawTw = (price, fromIdx, color, text) => {
+          const x1 = xAt(fromIdx);
+          ctx.strokeStyle = color; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(x1, y(price)); ctx.lineTo(x2, y(price)); ctx.stroke();
+          if(settings.showAllTexts && text){
+            ctx.font = "8px 'JetBrains Mono', monospace";
+            ctx.fillStyle = color;
+            ctx.fillText(text, x2 + 3, y(price) + 3);
+          }
+        };
+        drawTw(t.top, t.lastTopIdx, settings.swingBearColor, tBias === -1 ? "Strong High" : "Weak High");
+        drawTw(t.bottom, t.lastBotIdx, settings.swingBullColor, tBias === 1 ? "Strong Low" : "Weak Low");
+      }
+
+      // ── 8. Flechas EMA filtradas
+      if(settings.showArrows){
+        const sizeMap = {"Tiny": 6, "Pequeño": 8, "Small": 8, "Normal": 10, "Grande": 14, "Large": 14, "Huge": 18};
+        const as = sizeMap[settings.arrowSize] || 10;
+        result.events.forEach(ev => {
+          const xx = xAt(ev.index);
+          const buy = ev.dir > 0;
+          ctx.fillStyle = buy ? "#089981" : "#f23645";
+          ctx.beginPath();
+          if(buy){ ctx.moveTo(xx, y(ev.price) + as + 4); ctx.lineTo(xx - as, y(ev.price) + 6); ctx.lineTo(xx + as, y(ev.price) + 6); }
+          else { ctx.moveTo(xx, y(ev.price) - as - 4); ctx.lineTo(xx - as, y(ev.price) - 6); ctx.lineTo(xx + as, y(ev.price) - 6); }
+          ctx.closePath(); ctx.fill();
+        });
+      }
+
+      // ── 9. Panel Stoch MTF (valores reales por TF, estilo tabla de TV)
+      if(settings.showStochPanel){
+        const symbol = designSettings.syncSymbol ? activeSymbolKey : (this.symbolKey || activeSymbolKey);
+        const len = clamp(Number(settings.stochLength) || 14, 1, 100);
         const rows = [
-          [settings.stochTf1 || "15M", clamp(lastStoch + 1.7, 0, 100)],
-          [settings.stochTf2 || "30M", clamp(lastStoch - .9, 0, 100)],
-          [settings.stochTf3 || "1H", clamp(lastStoch - 2.6, 0, 100)],
+          {tf: settings.stochTf1 || "15M", value: jrStochFor(symbol, settings.stochTf1 || "15M", len)},
+          {tf: settings.stochTf2 || "30M", value: jrStochFor(symbol, settings.stochTf2 || "30M", len)},
+          {tf: settings.stochTf3 || "1H", value: jrStochFor(symbol, settings.stochTf3 || "1H", len)},
         ];
-        const stochBuyCount = rows.filter(r => r[1] <= settings.overSold).length;
-        const stochSellCount = rows.filter(r => r[1] >= settings.overBought).length;
-        const finalSignal = stochBuyCount >= 2 ? "BUY" : stochSellCount >= 2 ? "SELL" : "NEUTRAL";
-        const finalColor = finalSignal === "BUY" ? settings.panelUnderColor : finalSignal === "SELL" ? settings.panelOverColor : settings.panelNeutralColor;
-        ctx.fillStyle = rgba(settings.panelBg || "#232323", .92);
-        ctx.fillRect(x0, y0, tableW, 18 + rows.length * rowH);
-        ctx.strokeStyle = "rgba(255,255,255,.12)";
-        ctx.strokeRect(x0 + .5, y0 + .5, tableW - 1, 17 + rows.length * rowH);
-        ctx.fillStyle = rgba(settings.panelHeaderBg || "#000000", .95);
-        ctx.fillRect(x0, y0, tableW, 18);
-        ctx.font = "bold 9px 'JetBrains Mono', monospace";
-        ctx.fillStyle = "#f4f6fb";
-        ctx.fillText("TF", x0 + 6, y0 + 11);
-        ctx.fillText("Stoch", x0 + 30, y0 + 11);
-        ctx.fillText("Signal", x0 + 74, y0 + 11);
+        const dec = clamp(Number(settings.decimals) || 2, 0, 6);
+        const obLvl = Number(settings.overBought) || 80;
+        const osLvl = Number(settings.overSold) || 20;
+        const valColor = v => v == null ? settings.panelNeutralColor : v >= obLvl ? settings.panelOverColor : v <= osLvl ? settings.panelUnderColor : settings.panelNeutralColor;
+        const valSignal = v => v == null ? "…" : v >= obLvl ? "SELL" : v <= osLvl ? "BUY" : "NEUTRAL";
+        const colTf = 30, colStoch = 46, colSig = 62;
+        const W = colTf + colStoch + colSig, rowH = 17, headH = 17;
+        const pos = settings.panelPosition || "Top Right";
+        const x0 = pos.includes("Left") ? 8 : Math.max(8, mainW - W - 10);
+        const y0 = pos.includes("Bottom") ? mainH - 8 - headH - rows.length * rowH : 8;
+        ctx.fillStyle = settings.panelBg || "#232323";
+        ctx.fillRect(x0, y0, W, headH + rows.length * rowH);
+        ctx.strokeStyle = "#000000";
+        ctx.strokeRect(x0 + .5, y0 + .5, W - 1, headH + rows.length * rowH - 1);
+        ctx.fillStyle = settings.panelHeaderBg || "#000000";
+        ctx.fillRect(x0, y0, W, headH);
+        ctx.font = "bold 10px 'JetBrains Mono', monospace";
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText("TF", x0 + 4, y0 + 12);
+        ctx.fillText("Stoch", x0 + colTf + 4, y0 + 12);
+        ctx.fillText("Signal", x0 + colTf + colStoch + 4, y0 + 12);
         rows.forEach((row, idx) => {
-          const yy = y0 + 18 + idx * rowH;
-          const value = row[1];
-          const signal = value > settings.overBought ? "SELL" : value < settings.overSold ? "BUY" : "NEUTRAL";
-          ctx.fillStyle = idx % 2 ? rgba(settings.panelTfBg || "#2d2d2d", .76) : rgba(settings.panelTfBg || "#2d2d2d", .96);
-          ctx.fillRect(x0, yy, tableW, rowH);
-          ctx.fillStyle = "#f4f6fb";
-          ctx.fillText(row[0], x0 + 6, yy + 10);
-          ctx.fillText(value.toFixed(clamp(Number(settings.decimals) || 2, 0, 4)), x0 + 30, yy + 10);
-          ctx.fillStyle = signal === "BUY" ? settings.panelUnderColor : signal === "SELL" ? settings.panelOverColor : settings.panelNeutralColor;
-          ctx.fillText(signal, x0 + 74, yy + 10);
+          const yy = y0 + headH + idx * rowH;
+          ctx.fillStyle = settings.panelTfBg || "#2d2d2d";
+          ctx.fillRect(x0, yy, colTf, rowH);
+          const vc = valColor(row.value);
+          ctx.fillStyle = vc;
+          ctx.fillRect(x0 + colTf, yy, colStoch + colSig, rowH);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "10px 'JetBrains Mono', monospace";
+          ctx.fillText(row.tf, x0 + 4, yy + 12);
+          ctx.fillText(row.value == null ? "…" : row.value.toFixed(dec), x0 + colTf + 4, yy + 12);
+          ctx.fillText(valSignal(row.value), x0 + colTf + colStoch + 4, yy + 12);
         });
       }
       ctx.restore();
     });
   }
+
   drawRtcStoch6Overlay(ctx, data, x, y, mainW){
     visibleRtcItems("rtcStoch6").forEach((item, panelIndex) => {
       const settings = getRtcStoch6SettingsFor(item);
@@ -5269,7 +5573,7 @@ class ChartPanel {
       }
     });
     this.drawSMFCloudOverlay(ctx, rdata, xr, y, mainW, candleW);
-    this.drawStrategyJrOverlay(ctx, rdata, xr, y, mainW, candleW);
+    this.drawStrategyJrOverlay(ctx, rdata, xr, y, mainW, candleW, xr);
     this.drawRtcStrategyOverlay(ctx, rdata, xr, y, mainW);
     this.drawRtcStochOverlay(ctx, rdata, xr, y, mainW);
     this.drawRtcStoch6Overlay(ctx, rdata, xr, y, mainW);
@@ -5580,7 +5884,7 @@ function loadDesignSettings(){
 }
 
 function injectPresetTemplates(){
-  const presets = [DARK_NEON_BLUE_TEMPLATE];
+  const presets = [DARK_NEON_BLUE_TEMPLATE, TV_LIGHT_TEMPLATE];
   presets.forEach(preset => {
     const exists = designTemplates.some(t => t.name === preset.name);
     if(!exists) designTemplates.unshift({...preset});
@@ -5609,6 +5913,15 @@ function applyDesignToDom(){
     app.style.background = designSettings.bgColor;
   }
   document.body.style.background = designSettings.bgColor;
+  // tema claro automatico: si el fondo del lienzo es claro, el texto HTML
+  // del header/leyenda cambia a oscuro para mantener legibilidad
+  try {
+    const hex = (designSettings.bgColor || "#141519").replace("#", "");
+    const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+    const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    document.body.classList.toggle("chart-light", lum > 0.55);
+  } catch(e) {}
+  applyTitleColors();
   document.querySelectorAll(".chart-wrap").forEach(el => {
     el.style.background = designSettings.bgColor;
     el.style.borderColor = designSettings.panelBorder;
@@ -6268,7 +6581,7 @@ function hydrateStrategyJrSettingsPanel(){
   const s = strategyJrCurrentSettings();
   setValue("jrMode", s.mode || "Historical");
   setValue("jrStyle", s.style || "Colored");
-  setChecked("jrColorCandles", s.colorCandles);
+  setChecked("jrColorCandles", s.smcColorCandles);
   setChecked("jrShowTexts", s.showAllTexts);
   setChecked("jrShowStructureLines", s.showStructure);
   setChecked("jrShowInternals", s.showInternals);
@@ -6346,6 +6659,7 @@ function readStrategyJrSettingsPanel(){
   const s = getStrategyJrSettingsFor(item);
   s.mode = document.getElementById("jrMode").value;
   s.style = document.getElementById("jrStyle").value;
+  s.smcColorCandles = document.getElementById("jrColorCandles").checked;
   s.showAllTexts = document.getElementById("jrShowTexts").checked;
   s.showStructure = document.getElementById("jrShowStructureLines").checked;
   s.showInternals = document.getElementById("jrShowInternals").checked;
@@ -7323,6 +7637,22 @@ function init(){
     addIndicator("macdPro");
     document.getElementById("indicatorWrap").classList.remove("open");
   };
+  // ── Borrar indicadores desde el menú: × en cada fila elimina TODAS las instancias
+  // (INDICATOR_MENU_TYPES está declarado junto a syncIndicatorState)
+  Object.entries(INDICATOR_MENU_TYPES).forEach(([rowId, type]) => {
+    const row = document.getElementById(rowId);
+    const del = row?.querySelector(".row-del");
+    if(!del) return;
+    del.addEventListener("click", e => {
+      e.stopPropagation();
+      e.preventDefault();
+      const items = activeIndicators.filter(i => i.type === type);
+      if(!items.length) return;
+      items.forEach(i => removeIndicator(i.id));
+      showToast(items.length === 1 ? "Indicador eliminado" : `${items.length} indicadores eliminados`);
+      document.getElementById("indicatorWrap").classList.remove("open");
+    });
+  });
   syncIndicatorToggle();
   document.getElementById("settingsClose").onclick = closeSettings;
   document.getElementById("settingsCancel").onclick = closeSettings;
@@ -7614,8 +7944,6 @@ function saveCurrentPanelTemplate() {
     syncGrid: designSettings.syncGrid || false,
     syncTime: designSettings.syncTime || false,
     syncRange: designSettings.syncRange || false,
-    watchlistTabs: JSON.parse(JSON.stringify(watchlistTabs)),
-    activeWatchlistTab: activeWatchlistTab,
     savedAt: new Date().toISOString()
   };
   savePanelTemplates(templates);
@@ -7645,8 +7973,6 @@ function savePanelTemplateAs() {
     syncGrid: designSettings.syncGrid || false,
     syncTime: designSettings.syncTime || false,
     syncRange: designSettings.syncRange || false,
-    watchlistTabs: JSON.parse(JSON.stringify(watchlistTabs)),
-    activeWatchlistTab: activeWatchlistTab,
     savedAt: new Date().toISOString()
   };
   savePanelTemplates(templates);
@@ -7707,14 +8033,9 @@ function loadPanelTemplate(num) {
     window.__savedPanelSymbols = [...templateSymbols];
   }
   
-  // Restaurar watchlist tabs
-  if (template.watchlistTabs && Array.isArray(template.watchlistTabs)) {
-    watchlistTabs = template.watchlistTabs;
-    if (typeof template.activeWatchlistTab === "number") {
-      activeWatchlistTab = template.activeWatchlistTab;
-    }
-    renderWatchlist();
-  }
+  // El watchlist es UNA SOLA LISTA GLOBAL: los templates ya NO la pisan.
+  // (antes cada template restauraba su copia de watchlistTabs y al cambiar de
+  // panel la lista cambiaba; ahora el watchlist vive solo en nas100Watchlist)
   
   // Cargar datos
   panels.slice(0, layoutMode).forEach(p => { p.resetView(); p.loadData(); });
