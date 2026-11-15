@@ -625,6 +625,9 @@ body{background:var(--bg)}
       <button class="profile-btn active" data-panel-template="1" onclick="loadPanelTemplate(1)" title="Panel template 1">1</button>
       <button class="profile-btn" data-panel-template="2" onclick="loadPanelTemplate(2)" title="Panel template 2">2</button>
       <button class="profile-btn" data-panel-template="3" onclick="loadPanelTemplate(3)" title="Panel template 3">3</button>
+      <button class="profile-btn" data-panel-template="4" onclick="loadPanelTemplate(4)" title="Panel template 4">4</button>
+      <button class="profile-btn" data-panel-template="5" onclick="loadPanelTemplate(5)" title="Panel template 5">5</button>
+      <button class="profile-btn" data-panel-template="6" onclick="loadPanelTemplate(6)" title="Panel template 6">6</button>
       <div class="profile-sep"></div>
       <button class="profile-save" onclick="saveCurrentPanelTemplate()" title="Guardar en template activo"><span class="ico-save"><svg viewBox="0 0 16 16"><path d="M2 2h10l2 2v10H2z"/><path d="M4.5 2v4h5V2"/><rect x="4.5" y="9" width="5" height="5"/></svg></span></button>
       <button class="profile-save" onclick="savePanelTemplateAs()" title="Guardar como...">✎</button>
@@ -7572,7 +7575,7 @@ function init(){
 
 // ===== (Perfiles P1-P2-P3 reemplazados por Panel Templates 1-3 y Color Modes M1-M3) =====
 
-// ============ SISTEMA DE TEMPLATES DE PANEL (1-3) ============
+// ============ SISTEMA DE TEMPLATES DE PANEL (1-6) ============
 function getPanelTemplates() {
   try { return JSON.parse(localStorage.getItem("chartflow_panel_templates") || "{}"); }
   catch { return {}; }
