@@ -17,6 +17,11 @@ const SYMBOL_MAP_TO_DASHBOARD = {
   'BTC': 'BTC',
   'ETH': 'ETHUSDT_P',
   'SOL': 'SOLUSDT_P',
+  'BNB': 'BNBUSDT_P',
+  'DOGE': 'DOGEUSDT_P',
+  'LINK': 'LINKUSDT_P',
+  'XRP': 'XRPUSDT_P',
+  'ADA': 'ADAUSDT_P',
   'NAS100': 'NAS100',
   'US30': 'US30',
   'US500': 'US500',
@@ -176,6 +181,56 @@ const INSTRUMENTS = {
     tv: process.env.SOLUSDT_P_TV_SYMBOL || "BINANCE:SOLUSDT.P",
     yahoo: ["SOL-USD"],
     tag: "SOL",
+    unit: "USD",
+  },
+  BNBUSDT_P: {
+    key: "BNBUSDT_P",
+    label: "BNBUSDT.P",
+    title: "BNB / Tether Perpetual",
+    exchange: "Binance",
+    tv: process.env.BNBUSDT_P_TV_SYMBOL || "BINANCE:BNBUSDT.P",
+    yahoo: ["BNB-USD"],
+    tag: "BNB",
+    unit: "USD",
+  },
+  DOGEUSDT_P: {
+    key: "DOGEUSDT_P",
+    label: "DOGEUSDT.P",
+    title: "Dogecoin / Tether Perpetual",
+    exchange: "Binance",
+    tv: process.env.DOGEUSDT_P_TV_SYMBOL || "BINANCE:DOGEUSDT.P",
+    yahoo: ["DOGE-USD"],
+    tag: "DOGE",
+    unit: "USD",
+  },
+  LINKUSDT_P: {
+    key: "LINKUSDT_P",
+    label: "LINKUSDT.P",
+    title: "Chainlink / Tether Perpetual",
+    exchange: "Binance",
+    tv: process.env.LINKUSDT_P_TV_SYMBOL || "BINANCE:LINKUSDT.P",
+    yahoo: ["LINK-USD"],
+    tag: "LINK",
+    unit: "USD",
+  },
+  XRPUSDT_P: {
+    key: "XRPUSDT_P",
+    label: "XRPUSDT.P",
+    title: "XRP / Tether Perpetual",
+    exchange: "Binance",
+    tv: process.env.XRPUSDT_P_TV_SYMBOL || "BINANCE:XRPUSDT.P",
+    yahoo: ["XRP-USD"],
+    tag: "XRP",
+    unit: "USD",
+  },
+  ADAUSDT_P: {
+    key: "ADAUSDT_P",
+    label: "ADAUSDT.P",
+    title: "Cardano / Tether Perpetual",
+    exchange: "Binance",
+    tv: process.env.ADAUSDT_P_TV_SYMBOL || "BINANCE:ADAUSDT.P",
+    yahoo: ["ADA-USD"],
+    tag: "ADA",
     unit: "USD",
   },
   EURUSD: {
@@ -364,6 +419,9 @@ function publicInstrument(inst) {
 function normalizeInstrument(value) {
   const raw = String(value || "NAS100").trim().toUpperCase();
   if (INSTRUMENTS[raw]) return INSTRUMENTS[raw];
+  // alias: los perps se guardan con _P (BTCUSDT_P) pero el usuario escribe .P (BTCUSDT.P)
+  const alias = raw.replace(/\.P$/, "_P");
+  if (INSTRUMENTS[alias]) return INSTRUMENTS[alias];
   if (/^[A-Z0-9_.:^=-]{2,40}$/.test(raw)) {
     const key = raw.replace(/^[A-Z]+:/, "");
     return {

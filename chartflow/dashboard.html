@@ -1350,6 +1350,11 @@ const INSTRUMENTS = {
   BTCUSDT_P: {key:"BTCUSDT_P", label:"BTCUSDT.P", title:"Bitcoin / Tether Perpetual", exchange:"Binance", tag:"BTC", unit:"USD", color:"#c9c9cf"},
   ETHUSDT_P: {key:"ETHUSDT_P", label:"ETHUSDT.P", title:"Ethereum / Tether Perpetual", exchange:"Binance", tag:"ETH", unit:"USD", color:"#d4d4d9"},
   SOLUSDT_P: {key:"SOLUSDT_P", label:"SOLUSDT.P", title:"Solana / Tether Perpetual", exchange:"Binance", tag:"SOL", unit:"USD", color:"#94949b"},
+  BNBUSDT_P: {key:"BNBUSDT_P", label:"BNBUSDT.P", title:"BNB / Tether Perpetual", exchange:"Binance", tag:"BNB", unit:"USD", color:"#d4d4d9"},
+  DOGEUSDT_P: {key:"DOGEUSDT_P", label:"DOGEUSDT.P", title:"Dogecoin / Tether Perpetual", exchange:"Binance", tag:"DOGE", unit:"USD", color:"#c9c9cf"},
+  LINKUSDT_P: {key:"LINKUSDT_P", label:"LINKUSDT.P", title:"Chainlink / Tether Perpetual", exchange:"Binance", tag:"LINK", unit:"USD", color:"#94949b"},
+  XRPUSDT_P: {key:"XRPUSDT_P", label:"XRPUSDT.P", title:"XRP / Tether Perpetual", exchange:"Binance", tag:"XRP", unit:"USD", color:"#d4d4d9"},
+  ADAUSDT_P: {key:"ADAUSDT_P", label:"ADAUSDT.P", title:"Cardano / Tether Perpetual", exchange:"Binance", tag:"ADA", unit:"USD", color:"#a1a1aa"},
   EURUSD: {key:"EURUSD", label:"EURUSD", title:"Euro / U.S. Dollar", exchange:"Pepperstone", tag:"€", unit:"USD", color:"#c9c9cf"},
   DXY: {key:"DXY", label:"USDX", title:"US Dollar Index", exchange:"Pepperstone", tag:"$", unit:"USD", color:"#d4d4d9"},
   VIX: {key:"VIX", label:"VIX", title:"CBOE Volatility Index", exchange:"CBOE", tag:"VIX", unit:"USD", color:"#94949b"},
@@ -1370,7 +1375,7 @@ let layoutPresetId = "1";
 let activeSymbolKey = "NAS100";
 let watchlistOpen = false;
 let watchlistTabs = [
-  { name: "Crypto", symbols: ["BTC", "BTCUSDT_P", "ETHUSDT_P", "SOLUSDT_P"] },
+  { name: "Crypto", symbols: ["BTC", "BTCUSDT_P", "ETHUSDT_P", "SOLUSDT_P", "BNBUSDT_P", "DOGEUSDT_P", "LINKUSDT_P", "XRPUSDT_P", "ADAUSDT_P"] },
   { name: "Forex", symbols: ["EURUSD", "GBPUSD", "USDJPY", "USDCLP"] },
   { name: "Indices", symbols: ["NAS100", "US30", "US500"] },
   { name: "Macro", symbols: ["XAUUSD", "DXY", "VIX"] },
@@ -1739,7 +1744,8 @@ const macdProSettings = {
 
 function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
 function normalizeSymbolKey(value){
-  return String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+  // los perps USDT se guardan con _P (XRPUSDT_P); si el usuario escribe .P (XRPUSDT.P) se mapea igual
+  return String(value || "").trim().toUpperCase().replace(/\s+/g, "").replace(/\.P$/, "_P");
 }
 function instrumentFor(key){
   const normalized = normalizeSymbolKey(key) || "NAS100";
@@ -1803,6 +1809,13 @@ function loadWatchlist(){
   if(activeWatchlistTab >= watchlistTabs.length) activeWatchlistTab = 0;
   if(!watchlistTabs[activeWatchlistTab].symbols.includes(activeSymbolKey)) {
     watchlistTabs[activeWatchlistTab].symbols.push(activeSymbolKey);
+  }
+  // asegurar que los perps USDT.P nuevos existan en la pestaña Crypto aunque el
+  // usuario ya tuviera su watchlist guardada (los defaults solo aplican a installs frescos)
+  const CRYPTO_PERPS = ["BTCUSDT_P","ETHUSDT_P","SOLUSDT_P","BNBUSDT_P","DOGEUSDT_P","LINKUSDT_P","XRPUSDT_P","ADAUSDT_P"];
+  const cryptoTab = watchlistTabs.find(t => (t.name || "").toLowerCase() === "crypto");
+  if (cryptoTab && Array.isArray(cryptoTab.symbols)) {
+    CRYPTO_PERPS.forEach(s => { if (!cryptoTab.symbols.includes(s)) cryptoTab.symbols.push(s); });
   }
 }
 function applyWatchlistOpen(){
@@ -7598,6 +7611,9 @@ function saveCurrentPanelTemplate() {
     panels: panelConfigs,
     syncSymbol: designSettings.syncSymbol || false,
     syncInterval: designSettings.syncInterval || false,
+    syncGrid: designSettings.syncGrid || false,
+    syncTime: designSettings.syncTime || false,
+    syncRange: designSettings.syncRange || false,
     watchlistTabs: JSON.parse(JSON.stringify(watchlistTabs)),
     activeWatchlistTab: activeWatchlistTab,
     savedAt: new Date().toISOString()
@@ -7626,6 +7642,9 @@ function savePanelTemplateAs() {
     panels: panelConfigs,
     syncSymbol: designSettings.syncSymbol || false,
     syncInterval: designSettings.syncInterval || false,
+    syncGrid: designSettings.syncGrid || false,
+    syncTime: designSettings.syncTime || false,
+    syncRange: designSettings.syncRange || false,
     watchlistTabs: JSON.parse(JSON.stringify(watchlistTabs)),
     activeWatchlistTab: activeWatchlistTab,
     savedAt: new Date().toISOString()
@@ -7656,11 +7675,13 @@ function loadPanelTemplate(num) {
     window.__savedPanelSymbols = [...templateSymbols];
   }
   
-  // Desactivar sync
-  designSettings.syncSymbol = false;
-  designSettings.syncInterval = false;
-  designSettings.syncGrid = false;
-  designSettings.syncTime = false;
+  // Restaurar la sincronizacion EXACTA que tenia el template al guardarse
+  // (antes se forzaba todo a false y se perdia la sync de temporalidades)
+  designSettings.syncSymbol = template.syncSymbol || false;
+  designSettings.syncInterval = template.syncInterval || false;
+  designSettings.syncGrid = template.syncGrid || false;
+  designSettings.syncTime = template.syncTime || false;
+  designSettings.syncRange = template.syncRange || false;
   syncDesignSwitches();
   
   // Aplicar layout
