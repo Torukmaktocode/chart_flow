@@ -4582,47 +4582,36 @@ class ChartPanel {
       ctx.restore();
     });
   }
-  drawStrategyJrOverlay(ctx, data, x, y, mainW, candleW, xr){
+  drawStrategyJrOverlay(ctx, data, x, y, mainW, candleW, xr, rStart){
     visibleRtcItems("strategyJrV8").forEach(item => {
       const settings = getStrategyJrSettingsFor(item);
-      const result = computeStrategyJr(data, settings);
+      // El algoritmo corre sobre el HISTORICO COMPLETO (como Pine); si se
+      // calculara sobre el slice visible, los OB/estructuras formados fuera
+      // de la ventana desaparecian al hacer zoom. Reutiliza el prepass del
+      // render base si existe (items[0]); si no, calcula aqui
+      const full = this.candles;
+      const result = this._jrPrepass || computeStrategyJr(full, settings);
       const mainH = this.lastScale?.mainH || this.el.clientHeight;
       const rightEdge = mainW + 60;
       const n = data.length;
-      // xr mapea el slice de render (rdata) que es lo que dibuja el chart base;
-      // x solo vale para la ventana logica y desplaza todo si hay pan/zoom
-      const xAt = idx => (xr || x)(clamp(idx, 0, n - 1));
+      const off = Number.isFinite(rStart) ? rStart : 0;
+      const barWpx = n >= 2 ? Math.max(0.5, Math.abs(xr(1) - xr(0))) : 8;
+      // xr es lineal: xr(i) = xr(0) + i*barW. La extension exacta a indices
+      // del historico completo vale TAMBIEN fuera del slice (x negativas =
+      // cajas que entran desde fuera de pantalla, como en TradingView)
+      const xFull = gi => xr(0) + (clamp(gi, 0, full.length - 1) - off) * barWpx;
       const half = Math.max(1, (candleW || 8) / 2);
       const labelPx = s => s === "normal" ? 11 : s === "small" ? 10 : 8;
       ctx.save();
 
-      // ── 1. barcolor RTC (Cambio Color Velas) / plotcandle SMC (Color Candles)
-      const repaintCandle = (b, xx, col) => {
-        const yo = y(b.o), yc = y(b.c), yh = y(b.h), yl = y(b.l);
-        const bh = Math.max(1, Math.abs(yc - yo));
-        ctx.strokeStyle = col; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(xx, yh); ctx.lineTo(xx, yl); ctx.stroke();
-        ctx.fillStyle = col;
-        ctx.fillRect(xx - half, Math.min(yo, yc), Math.max(1, candleW), bh);
-        ctx.strokeRect(xx - half + .5, Math.min(yo, yc) + .5, Math.max(1, candleW) - 1, bh - 1);
-        ctx.lineWidth = 1;
-      };
-      if(settings.colorCandles){
-        data.forEach((b, i) => {
-          const col = result.barColors[i];
-          if(col) repaintCandle(b, xAt(i), col);
-        });
-      } else if(settings.smcColorCandles){
-        data.forEach((b, i) => {
-          const st = result.candleState[i];
-          if(!st) return;
-          repaintCandle(b, xAt(i), st > 0 ? settings.swingBullColor : settings.swingBearColor);
-        });
-      }
+      // ── 1. barcolor: ahora lo aplica el render base via prepass
+      // (this._jrBarColors) — aqui ya NO se repintan velas para evitar el
+      // doble render (velas blancas asomando en zoom y layouts de 6)
 
       // ── 2. Order Blocks (grises o color; solo swing lleva borde, como en TV)
       const drawOb = (ob, kind) => {
-        const x1 = xAt(ob.index) - half;
+        const x1 = xFull(ob.index) - half;
+        if(x1 > rightEdge) return;
         const top = y(ob.hi), h = Math.max(2, y(ob.lo) - top);
         let bg;
         if(settings.grayOrderBlocks){
@@ -4645,7 +4634,7 @@ class ChartPanel {
 
       // ── 3. Zonas Premium / Equilibrium / Discount
       if(settings.showPremiumDiscount) result.zonesPD.forEach(z => {
-        const x1 = xAt(z.from) - half;
+        const x1 = xFull(z.from) - half;
         const color = z.label === "Premium" ? settings.premiumColor : z.label === "Equilibrium" ? settings.equilibriumColor : settings.discountColor;
         const top = y(z.top), bot = y(z.bottom);
         ctx.fillStyle = rgba(color, 0.20);
@@ -4659,8 +4648,9 @@ class ChartPanel {
 
       // ── 4. Fair Value Gaps (dos cajas divididas en la media, como en TV)
       if(settings.showFairValueGaps) result.fvgs.forEach(g => {
-        const x1 = xAt(g.from) - half;
-        const x2 = Math.max(xAt(g.from) + 6, Math.min(rightEdge, xAt(Math.min(g.end, n - 1)) + half));
+        const x1 = xFull(g.from) - half;
+        const x2 = Math.max(xFull(g.from) + 6, Math.min(rightEdge, xFull(Math.min(g.end, full.length - 1)) + half));
+        if(x2 < 0) return;
         const color = g.dir > 0 ? settings.fvgBull : settings.fvgBear;
         const c = rgba(color, 0.30);
         const yTop = y(g.top), yMid = y(g.mid), yBot = y(g.bottom);
@@ -4673,10 +4663,12 @@ class ChartPanel {
       result.structure.forEach(ev => {
         if(ev.kind === "internal" && !settings.showInternals) return;
         if(ev.kind === "swing" && !settings.showSwingStructure) return;
+        const x1 = xFull(ev.from), x2 = xFull(ev.index);
+        if(x2 < 0 || x1 > rightEdge) return;
         const color = ev.dir > 0
           ? (ev.kind === "internal" ? settings.internalBullColor : settings.swingBullColor)
           : (ev.kind === "internal" ? settings.internalBearColor : settings.swingBearColor);
-        const x1 = xAt(ev.from), x2 = xAt(ev.index), yy = y(ev.price);
+        const yy = y(ev.price);
         if(settings.showStructure){
           ctx.setLineDash(ev.kind === "internal" ? [4,3] : []);
           ctx.strokeStyle = color; ctx.lineWidth = 1;
@@ -4696,8 +4688,10 @@ class ChartPanel {
       if(settings.showEqualHighLow){
         result.equals.forEach(eq => {
           if(eq.point) return;
+          const x1 = xFull(eq.from), x2 = xFull(eq.index);
+          if(x2 < 0 || x1 > rightEdge) return;
           const color = eq.label === "EQH" ? settings.swingBearColor : settings.swingBullColor;
-          const x1 = xAt(eq.from), x2 = xAt(eq.index), yy = y(eq.price);
+          const yy = y(eq.price);
           ctx.setLineDash([2,3]);
           ctx.strokeStyle = color; ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(x1, yy); ctx.lineTo(x2, yy); ctx.stroke();
@@ -4714,10 +4708,12 @@ class ChartPanel {
       if(settings.showSwings){
         result.equals.forEach(eq => {
           if(!eq.point) return;
+          const xx = xFull(eq.index);
+          if(xx < -20 || xx > rightEdge + 20) return;
           ctx.font = `bold ${labelPx(settings.swingLabelSize)}px 'JetBrains Mono', monospace`;
           ctx.fillStyle = eq.dir > 0 ? settings.swingBullColor : settings.swingBearColor;
           ctx.textAlign = "center";
-          ctx.fillText(eq.label, xAt(eq.index), y(eq.price) + (eq.dir > 0 ? -6 : 12));
+          ctx.fillText(eq.label, xx, y(eq.price) + (eq.dir > 0 ? -6 : 12));
           ctx.textAlign = "left";
         });
       }
@@ -4725,9 +4721,10 @@ class ChartPanel {
       // ── 7. Strong/Weak High/Low (trailing)
       if(settings.showStrongWeak && Number.isFinite(result.trailing.top) && Number.isFinite(result.trailing.bottom)){
         const t = result.trailing, tBias = result.swingTrend.bias;
-        const x2 = Math.min(rightEdge, xAt(n - 1) + 20 * (candleW || 8));
-        const drawTw = (price, fromIdx, color, text) => {
-          const x1 = xAt(fromIdx);
+        const x2 = Math.min(rightEdge, xFull(full.length - 1) + 20 * (candleW || 8));
+        const drawTw = (price, fromGi, color, text) => {
+          const x1 = xFull(fromGi);
+          if(x1 > rightEdge) return;
           ctx.strokeStyle = color; ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(x1, y(price)); ctx.lineTo(x2, y(price)); ctx.stroke();
           if(settings.showAllTexts && text){
@@ -4745,7 +4742,8 @@ class ChartPanel {
         const sizeMap = {"Tiny": 6, "Pequeño": 8, "Small": 8, "Normal": 10, "Grande": 14, "Large": 14, "Huge": 18};
         const as = sizeMap[settings.arrowSize] || 10;
         result.events.forEach(ev => {
-          const xx = xAt(ev.index);
+          const xx = xFull(ev.index);
+          if(xx < -20 || xx > rightEdge + 20) return;
           const buy = ev.dir > 0;
           ctx.fillStyle = buy ? "#089981" : "#f23645";
           ctx.beginPath();
@@ -5517,6 +5515,27 @@ class ChartPanel {
     ctx.fillRect(0,0,mainW,totalH);
     drawGrid(ctx, mainW, totalH);
     const candleW = clamp(barW * .62, 3, 13);
+    // ── Prepass barcolor de Strategy JR V8 (igual que MACD Pro / Pine):
+    // se calcula UNA vez sobre el historico completo y alimenta el render
+    // base de velas; asi cada vela se dibuja UNA sola vez con su color y el
+    // repintado opaco encima (que dejaba velas blancas asomar al hacer zoom
+    // o en layouts de 6) desaparece por completo
+    this._jrPrepass = null;
+    this._jrBarColors = null;
+    const jrItemsPre = visibleRtcItems("strategyJrV8");
+    if(jrItemsPre.length && this.candles.length > 30){
+      try {
+        const jrItem = jrItemsPre[0];
+        const jrSettings = getStrategyJrSettingsFor(jrItem);
+        this._jrPrepass = computeStrategyJr(this.candles, jrSettings);
+        if(jrSettings.colorCandles){
+          this._jrBarColors = this._jrPrepass.barColors;
+        } else if(jrSettings.smcColorCandles){
+          this._jrBarColors = this._jrPrepass.candleState.map(st =>
+            st > 0 ? jrSettings.swingBullColor : st < 0 ? jrSettings.swingBearColor : null);
+        }
+      } catch(e) { this._jrPrepass = null; this._jrBarColors = null; }
+    }
     this.drawKillzones(ctx, rdata, scale, xr, y, mainW, candleW);
     this.drawOpeningPrices(ctx, rdata, xr, y, mainW);
     // Pre-calcular colores MACD Pro para barcolorear velas
@@ -5543,6 +5562,7 @@ class ChartPanel {
     }
     try { this.drawPineBarColorPrepass(rdata); } catch(e) { this._pineBarColors = []; }
     const pineBarColors = this._pineBarColors || [];
+    const jrBarColors = this._jrBarColors || null;
     rdata.forEach((p,i) => {
       const xx = xr(i), yo = y(p.o), yc = y(p.c), yh = y(p.h), yl = y(p.l);
       const style = {...candleStyle(p, rdata[i - 1])};
@@ -5557,6 +5577,12 @@ class ChartPanel {
         style.body = pineBarColors[i];
         style.border = pineBarColors[i];
         style.wick = pineBarColors[i];
+      }
+      // Aplicar barcolor de Strategy JR V8 (EMA 5/22 o velas por trend SMC)
+      else if(jrBarColors && jrBarColors[rStart + i]) {
+        style.body = jrBarColors[rStart + i];
+        style.border = jrBarColors[rStart + i];
+        style.wick = jrBarColors[rStart + i];
       }
       if(designSettings.wickEnabled) {
         ctx.strokeStyle = style.wick;
@@ -5573,7 +5599,7 @@ class ChartPanel {
       }
     });
     this.drawSMFCloudOverlay(ctx, rdata, xr, y, mainW, candleW);
-    this.drawStrategyJrOverlay(ctx, rdata, xr, y, mainW, candleW, xr);
+    this.drawStrategyJrOverlay(ctx, rdata, xr, y, mainW, candleW, xr, rStart);
     this.drawRtcStrategyOverlay(ctx, rdata, xr, y, mainW);
     this.drawRtcStochOverlay(ctx, rdata, xr, y, mainW);
     this.drawRtcStoch6Overlay(ctx, rdata, xr, y, mainW);
